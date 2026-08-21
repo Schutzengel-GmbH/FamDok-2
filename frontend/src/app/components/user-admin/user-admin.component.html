@@ -1,0 +1,15 @@
+<div class="input-group mb-2">
+  <span class="input-group-text"><i class="bi bi-search"></i></span>
+  <div class="form-floating">
+    <input class="form-control" id="filter" type="text" [(ngModel)]="filter" />
+    <label for="filter">Filter</label>
+  </div>
+</div>
+
+<ul class="list-group">
+  @for (user of filteredUsers(); track user.id) {
+    <li class="list-group-item">
+      <app-user-item [orgs]="orgs" [user]="user" />
+    </li>
+  }
+</ul>

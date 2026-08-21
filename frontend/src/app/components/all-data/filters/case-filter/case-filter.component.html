@@ -1,0 +1,37 @@
+<button
+  class="btn btn-sm {{
+    active() ? 'btn-outline-success' : 'btn-outline-secondary'
+  }} btn-no-outline"
+  (click)="open(modalTmpl)">
+  <i class="bi bi-filter-square-fill"></i>
+</button>
+
+<ng-template #modalTmpl let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title">Fall-Filter einstellen</h4>
+  </div>
+  <div class="modal-body p-2">
+    @if (!anon()) {
+      <app-string-filter name="Familienname" [(filter)]="filterInput.name" />
+    }
+    <app-string-filter name="PLZ" [(filter)]="filterInput.plz" />
+    <app-date-filter name="Aufnahmedatum" [(filter)]="filterInput.startedAt" />
+    <app-date-filter
+      name="Ende der Betreuung"
+      [(filter)]="filterInput.closedAt" />
+  </div>
+  <div class="modal-footer">
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="modal.close('apply')">
+      Anwenden
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="modal.close('cancel')">
+      Zurücksetzen
+    </button>
+  </div>
+</ng-template>

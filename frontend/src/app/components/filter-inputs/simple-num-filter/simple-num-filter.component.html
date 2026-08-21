@@ -1,0 +1,14 @@
+<div class="card p-2">
+  <p>{{ name() }}</p>
+  <div class="d-flex gap-1">
+    <input
+      class="form-input flex-grow-1"
+      type="text"
+      [value]="filter()"
+      (change)="changeValue($event)"
+    />
+    <button class="btn btn-sm btn-outline-secondary" (click)="resetFilter()">
+      <i class="bi bi-x"></i>
+    </button>
+  </div>
+</div>

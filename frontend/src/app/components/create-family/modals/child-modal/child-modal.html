@@ -1,0 +1,125 @@
+<div class="modal-header">
+  <h4 class="modal-title">Kind Bearbeiten</h4>
+  <button
+    type="button"
+    class="btn-close"
+    aria-label="Close"
+    (click)="activeModal.dismiss('Cross click')"></button>
+</div>
+<div class="modal-body">
+  <form [formGroup]="form">
+    <!-- Name -->
+    <div class="form-group mb-2">
+      <label for="name">Vorname</label>
+      <input
+        id="name"
+        type="text"
+        class="form-control"
+        formControlName="name"
+        placeholder="Vorname"
+        [class.is-invalid]="form.get('name')?.invalid" />
+      @if (form.get("name")!.invalid) {
+        <div class="invalid-feedback">
+          @if (form.get("name")?.hasError("required")) {
+            Vorname erforderlich
+          }
+          @if (form.get("name")?.hasError("minlength")) {
+            Vorname zu kurz
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Nachname -->
+    <div class="form-group mb-2">
+      <label for="lastName">Familienname</label>
+      <input
+        id="lastName"
+        type="text"
+        class="form-control"
+        formControlName="lastName"
+        placeholder="Familienname"
+        [class.is-invalid]="form.get('lastName')?.invalid" />
+      @if (form.get("lastName")!.invalid) {
+        <div class="invalid-feedback">
+          @if (form.get("lastName")?.hasError("required")) {
+            Familienname erforderlich
+          }
+          @if (form.get("lastName")?.hasError("minlength")) {
+            Familienname zu kurz
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Gender -->
+    <div class="form-group mb-2">
+      <label for="gender">Geschlecht</label>
+      <select
+        class="form-select"
+        id="gender"
+        formControlName="gender"
+        [class.is-invalid]="form.get('gender')?.invalid">
+        <option value="male">Männlich</option>
+        <option value="female">Weiblich</option>
+        <option value="other">Anderes</option>
+        <option value="unspecified" selected>Keine Angabe</option>
+      </select>
+      @if (form.get("gender")!.invalid) {
+        <div class="invalid-feedback">
+          @if (form.get("gender")?.hasError("required")) {
+            Verhältnis erforderlich
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Geburtsdatum -->
+    <div class="form-group mb-2">
+      <label for="dateOfBirth">Geburtsdatum</label>
+
+      <div class="input-group">
+        <input
+          id="dateOfBirth"
+          [class.form-control]="true"
+          [class.is-invalid]="form.get('dateOfBirth')?.invalid"
+          placeholder="Geburtsdatum"
+          formControlName="dateOfBirth"
+          navigation="select"
+          name="dp"
+          (click)="d.toggle()"
+          ngbDatepicker
+          #d="ngbDatepicker"
+          [minDate]="minDate"
+          [maxDate]="maxDate"
+          required />
+        <button
+          class="btn btn-outline-secondary bi bi-calendar3"
+          (click)="d.toggle()"
+          type="button"></button>
+        @if (form.get("dateOfBirth")!.invalid) {
+          <div class="invalid-feedback">
+            @if (form.get("dateOfBirth")?.hasError("required")) {
+              Geburtsdatum erforderlich
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <button
+    [disabled]="form.invalid"
+    type="button"
+    class="btn btn-outline-secondary"
+    (click)="save()">
+    Speichern
+  </button>
+  <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+    Abbrechen
+  </button>
+  @if (form.dirty) {
+    <span class="badge text-bg-warning">Ungespeicherte Änderungen</span>
+  }
+</div>

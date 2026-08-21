@@ -1,0 +1,183 @@
+.modal-backdrop {
+  z-index: 1050;
+  backdrop-filter: blur(4px);
+  background-color: rgba(15, 23, 42, 0.55);
+}
+
+.modal.d-block {
+  z-index: 1051;
+}
+
+.family-detail-modal .modal-dialog {
+  max-width: 1080px;
+}
+
+.family-detail-modal .modal-content {
+  border-radius: 18px;
+  border: 1px solid var(--bs-border-color);
+  background-color: var(--bs-card-bg);
+  box-shadow: var(--app-shadow-2);
+}
+
+.family-detail-modal .modal-header {
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.family-detail-modal .modal-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.family-detail-modal .modal-kicker {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.modal-tabs {
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.modal-tabs .nav-tabs {
+  border-bottom: none;
+}
+
+.modal-tabs .nav-link {
+  border: none;
+  color: var(--bs-secondary-color);
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-tabs .nav-link.active {
+  color: var(--bs-body-color);
+  background: color-mix(in oklab, var(--bs-card-bg) 88%, var(--bs-primary) 12%);
+  border: 1px solid var(--bs-border-color);
+  border-bottom: none;
+}
+
+.family-detail-modal .modal-body {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.family-detail-modal .modal-footer {
+  padding: 0.9rem 1.5rem;
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.footer-hint {
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+@media (max-width: 992px) {
+  .modal-tabs {
+    padding: 0 1rem;
+  }
+
+  .family-detail-modal .modal-header,
+  .family-detail-modal .modal-body,
+  .family-detail-modal .modal-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .family-detail-modal .modal-dialog {
+    margin: 0.5rem;
+  }
+
+  .family-detail-modal .modal-content {
+    border-radius: 14px;
+  }
+
+  .modal-tabs .nav-link {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
+.tab-section--fixed {
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ziel-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bs-card-bg);
+}
+
+.ziel-table thead th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(148, 163, 184, 0.95);
+  background: color-mix(in oklab, var(--bs-card-bg) 88%, var(--bs-primary) 12%);
+  border-bottom: 1px solid var(--bs-border-color);
+  padding: 0.6rem 0.75rem;
+  white-space: nowrap;
+}
+
+.ziel-table td {
+  padding: 0.6rem 0.75rem;
+  border-color: var(--bs-border-color);
+  vertical-align: top;
+}
+
+.ziel-cell-strong {
+  font-weight: 600;
+}
+
+.ziel-cell-desc {
+  max-width: 520px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ziel-actions {
+  display: inline-flex;
+  gap: 0.65rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.ziel-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--bs-primary);
+  font-weight: 600;
+  padding: 0.6rem 0.75rem;
+}
+
+.ziel-form-shell {
+  border-radius: 14px;
+  border: 1px solid var(--bs-border-color);
+  background: color-mix(in oklab, var(--bs-card-bg) 92%, var(--bs-secondary-bg) 8%);
+  padding: 0.75rem;
+}
+
+.ziel-save-btn i {
+  font-size: 1.2rem;
+}
+
+@media (max-width: 576px) {
+  .tab-section--fixed {
+    min-height: 560px;
+  }
+
+  .ziel-cell-desc {
+    max-width: 220px;
+  }
+}

@@ -1,0 +1,96 @@
+<div class="stats-root container-fluid">
+  <div
+    class="stats-header d-flex flex-wrap align-items-center justify-content-between mb-3">
+    <h2 class="stats-title mb-2 mb-md-0">Statistik-Übersicht</h2>
+
+    <div class="d-flex flex-wrap align-items-center gap-3 stats-range-wrapper">
+      <div class="d-flex align-items-center gap-2 stats-range-group">
+        <label for="regionSelect" class="stats-range-label mb-0"
+          >Ort / Region</label
+        >
+        <select
+          id="regionSelect"
+          class="form-select form-select-sm stats-range-select"
+          [disabled]="plz() !== undefined && plz() !== ''"
+          [(ngModel)]="city">
+          <option value="">Alle Orte</option>
+          <option *ngFor="let c of availableCities()" [value]="c">
+            {{ c }}
+          </option>
+        </select>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 stats-range-group">
+        <label for="plzSelect" class="stats-range-label mb-0">PLZ</label>
+        <input
+          type="text"
+          id="plzSelect"
+          class="stats-range-select stats-range-select--plz"
+          [disabled]="city() !== undefined && city() !== ''"
+          [(ngModel)]="plz" />
+      </div>
+
+      <div class="d-flex align-items-center gap-2 stats-range-group">
+        <label class="stats-range-label mb-0">Zeitraum</label>
+        <input
+          type="date"
+          class="form-control form-control-sm stats-date-input"
+          [value]="dateFrom()"
+          (change)="dateFromChange($event)" />
+        <span class="stats-range-sep">–</span>
+        <input
+          type="date"
+          class="form-control form-control-sm stats-date-input"
+          [value]="dateTo()"
+          (change)="dateToChange($event)" />
+      </div>
+
+      <div class="d-flex align-items-center gap-2 stats-range-group">
+        <app-org-select [(org)]="selectedOrg" />
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm stats-export-btn"
+        (click)="exportCsv()"
+        title="CSV exportieren">
+        <i class="bi bi-download"></i>
+        <span class="visually-hidden">CSV exportieren</span>
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm stats-export-btn"
+        (click)="exportJson()"
+        title="JSON exportieren">
+        <i class="bi bi-download"></i>
+        <span class="visually-hidden">JSON exportieren</span>
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm stats-export-btn"
+        (click)="exportXlsx()"
+        title="XLSX exportieren">
+        <i class="bi bi-download"></i>
+        <span class="visually-hidden">XLSX exportieren</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="row gx-3 align-items-start stats-kpi-row">
+    <div class="col-auto">
+      <app-count-cases-card [count]="(caseCount$() | async) ?? 0" />
+    </div>
+    <div class="col-auto">
+      <app-contact-card [docs]="(docs$() | async) ?? []" />
+    </div>
+  </div>
+
+  <div class="row gx-3 align-items-stretch stats-main-row">
+    <div class="col-6">
+      <app-stats-chart-card [filter]="filter()" [range]="range()" />
+    </div>
+    <div class="col-6">
+      <app-stats-card-dynamic [range]="range()" />
+    </div>
+  </div>
+</div>

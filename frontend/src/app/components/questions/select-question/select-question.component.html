@@ -1,0 +1,11 @@
+@if (question.multiple) {
+  <app-select-multiple
+    [question]="question"
+    [answer]="answer()"
+    (answerChange)="answer.set($event)" />
+} @else {
+  <app-select-one
+    [question]="question"
+    [answer]="answer()"
+    (answerChange)="answer.set($event)" />
+}

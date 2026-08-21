@@ -1,0 +1,112 @@
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+      <i class="bi bi-folder2-open"></i>
+      {{ " " }}
+      <strong>Dokumente</strong>
+    </div>
+    @if ((user$ | async)?.role === Role.Admin) {
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        (click)="openUploadModal()">
+        <i class="bi bi-upload"></i> Dokument hochladen
+      </button>
+    }
+  </div>
+  <div class="card-body">
+    <div class="row mb-3 g-2">
+      <div class="col-md-6">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input
+            class="form-control"
+            placeholder="Suchen..."
+            [(ngModel)]="search" />
+        </div>
+      </div>
+      <div class="col-md-6">
+        <app-multi-select
+          [items]="allTags()"
+          labelProp="name"
+          [(value)]="selectedTags"
+          placeholder="Nach Tags filtern" />
+      </div>
+    </div>
+
+    @if ((user$ | async)?.role === Role.Admin) {
+      <div class="mb-3">
+        <strong>Tags verwalten:</strong>
+        <div class="d-flex flex-wrap gap-2 mt-1">
+          @for (tag of allTags(); track tag.id) {
+            <span class="badge text-bg-secondary d-flex align-items-center gap-1">
+              {{ tag.name }}
+              <i
+                class="bi bi-pencil-fill"
+                role="button"
+                (click)="renameTag(tag)"></i>
+              <i
+                class="bi bi-x-lg"
+                role="button"
+                (click)="deleteTagAction(tag)"></i>
+            </span>
+          }
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            (click)="addTag()">
+            <i class="bi bi-plus-lg"></i> Tag
+          </button>
+        </div>
+      </div>
+    }
+
+    <ul class="list-group">
+      @for (doc of filteredDocuments(); track doc.id) {
+        <li
+          class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <div>
+              <strong>{{ doc.title }}</strong>
+              @for (tag of doc.tags; track tag.id) {
+                <span class="badge text-bg-secondary ms-1">{{ tag.name }}</span>
+              }
+            </div>
+            @if (doc.description) {
+              <div class="text-muted small">{{ doc.description }}</div>
+            }
+            <div class="text-muted small">
+              {{ doc.uploadedBy?.firstName }} {{ doc.uploadedBy?.lastName }}
+              &middot;
+              {{ doc.createdAt | date: "dd.MM.yyyy" }}
+            </div>
+          </div>
+          <div class="btn-group btn-group-sm">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              (click)="download(doc)">
+              <i class="bi bi-download"></i>
+            </button>
+            @if ((user$ | async)?.role === Role.Admin) {
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="openEditModal(doc)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-danger"
+                (click)="deleteDocument(doc)">
+                <i class="bi bi-trash"></i>
+              </button>
+            }
+          </div>
+        </li>
+      } @empty {
+        <li class="list-group-item text-muted">Keine Dokumente gefunden.</li>
+      }
+    </ul>
+  </div>
+</div>

@@ -1,0 +1,33 @@
+<button
+  class="btn btn-sm {{
+    active() ? 'btn-outline-success' : 'btn-outline-secondary'
+  }} btn-no-outline"
+  (click)="open(modalTmpl)"
+>
+  <i class="bi bi-filter-square-fill"></i>
+</button>
+
+<ng-template #modalTmpl let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title">Fragen-Filter einstellen</h4>
+  </div>
+  <div class="modal-body p-2">
+    <app-simple-text-filter [name]="question().text" [(filter)]="filterInput" />
+  </div>
+  <div class="modal-footer">
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="modal.close('apply')"
+    >
+      Anwenden
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="modal.close('cancel')"
+    >
+      Zurücksetzen
+    </button>
+  </div>
+</ng-template>

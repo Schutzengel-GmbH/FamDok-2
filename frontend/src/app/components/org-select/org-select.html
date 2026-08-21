@@ -1,0 +1,15 @@
+<ng-select
+  ariaLabel="Organisation auswählen"
+  placeholder="Organisation auswählen"
+  [items]="orgs || []"
+  [multiple]="false"
+  bindLabel="name"
+  (change)="handleChange($event)"
+  [(ngModel)]="org"
+  clearAllText="Auswahl aufheben"
+  appendTo="body"
+>
+  <ng-template ng-label-tmp let-item="item">
+    {{ item.name }}
+  </ng-template>
+</ng-select>

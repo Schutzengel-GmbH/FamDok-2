@@ -1,0 +1,127 @@
+<div class="d-flex justify-content-end mb-2 gap-2">
+  <button
+    type="button"
+    class="btn btn-outline-secondary btn-sm"
+    (click)="exportCsv()">
+    <i class="bi bi-download me-1"></i>
+    CSV exportieren
+  </button>
+  <button
+    type="button"
+    class="btn btn-outline-secondary btn-sm"
+    (click)="exportJson()">
+    <i class="bi bi-download me-1"></i>
+    JSON exportieren
+  </button>
+  <button
+    type="button"
+    class="btn btn-outline-secondary btn-sm"
+    (click)="exportXlsx()">
+    <i class="bi bi-download me-1"></i>
+    XLSX exportieren
+  </button>
+</div>
+
+<ngx-datatable
+  class="bootstrap fullscreen"
+  [columnMode]="ColumnMode.flex"
+  [headerHeight]="50"
+  [footerHeight]="50"
+  rowHeight="auto"
+  [scrollbarH]="true"
+  [rows]="rows()">
+  <ngx-datatable-column prop="id" [sortable]="false" flexGrow="1">
+    <ng-template ngx-datatable-header-template>
+      <i class="bi bi-pencil"></i>
+    </ng-template>
+    <ng-template let-value="value" let-row="row" ngx-datatable-cell-template>
+      @if (canEditRow(row)) {
+        <button class="btn btn-sm btn-outline-secondary" (click)="edit(value)">
+          <i class="bi bi-pencil"></i>
+        </button>
+      } @else {
+        <button
+          class="btn btn-sm btn-outline-secondary"
+          (click)="inspect(value)">
+          <i class="bi bi-eye"></i>
+        </button>
+      }
+    </ng-template>
+  </ngx-datatable-column>
+  <ngx-datatable-column
+    name="Fall"
+    prop="case"
+    [pipe]="caseIdentifierPipe"
+    flexGrow="2">
+    <ng-template ngx-datatable-header-template>
+      Fall
+      <app-case-filter (filterChanged)="caseFilterChange($event)" />
+    </ng-template>
+    <ng-template let-value="value" ngx-datatable-cell-template>
+      {{ value }}
+    </ng-template>
+  </ngx-datatable-column>
+  @for (question of form().questions; track question.id) {
+    <ngx-datatable-column
+      [name]="question.id.toString()"
+      [flexGrow]="question.type === 'Date' ? '3' : '2'">
+      <ng-template ngx-datatable-header-template>
+        <span
+          container="body"
+          placement="bottom"
+          [ngbTooltip]="question.text"
+          >{{ question.text | truncate: 12 }}</span
+        >
+        @switch (question.type) {
+          @case ("Select") {
+            <app-select-question-filter
+              [question]="question"
+              (filterChanged)="questionFilterChange(question.id, $event)" />
+          }
+          @case ("Text") {
+            <app-text-question-filter
+              [question]="question"
+              (filterChanged)="questionFilterChange(question.id, $event)" />
+          }
+          @case ("Textarea") {
+            <app-text-question-filter
+              [question]="question"
+              (filterChanged)="questionFilterChange(question.id, $event)" />
+          }
+          @case ("Integer") {
+            <app-num-question-filter
+              [question]="question"
+              (filterChanged)="questionFilterChange(question.id, $event)" />
+          }
+          @case ("Float") {
+            <app-num-question-filter
+              [question]="question"
+              (filterChanged)="questionFilterChange(question.id, $event)" />
+          }
+          @case ("Date") {
+            <app-date-question-filter
+              [question]="question"
+              (filterChanged)="questionFilterChange(question.id, $event)" />
+          }
+          @default {}
+        }
+      </ng-template>
+      <ng-template ngx-datatable-cell-template let-row="row">
+        <span>{{ getValue(row, question) }}</span>
+      </ng-template>
+    </ngx-datatable-column>
+  }
+  <ngx-datatable-column
+    name="Erstellt von"
+    prop="createdBy"
+    [pipe]="userWithOrgPipe"
+    flexGrow="2">
+    <ng-template ngx-datatable-header-template>
+      Erstellt von
+      <app-created-by-org-filter (filterChanged)="createdByOrgFilterChanged($event)" />
+    </ng-template>
+    <ng-template let-value="value" ngx-datatable-cell-template>
+      {{ value }}
+    </ng-template>
+  </ngx-datatable-column>
+</ngx-datatable>

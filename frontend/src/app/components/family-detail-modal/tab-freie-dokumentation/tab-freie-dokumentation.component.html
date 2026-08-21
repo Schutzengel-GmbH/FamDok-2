@@ -1,0 +1,21 @@
+<div class="tab-section">
+  @if (!readOnly()) {
+    <button class="btn btn-outline-secondary mb-2" (click)="addContact()">
+      Neue Dokumentation
+    </button>
+  }
+  <h6 class="section-title">Letzte Kontakte</h6>
+  @if (latestDocs()) {
+    <div class="container d-flex gap-2 flex-column">
+      @for (doc of latestDocs(); track doc.id) {
+        <app-contact-brief
+          [doc]="doc"
+          [hasWarning]="hasWarning(doc.id)"
+          [readOnly]="readOnly()" />
+      }
+    </div>
+  } @else {
+    Kein Kontakt
+  }
+  <br />
+</div>

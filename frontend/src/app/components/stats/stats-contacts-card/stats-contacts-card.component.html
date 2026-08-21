@@ -1,0 +1,18 @@
+<div class="card shadow-sm stats-kpi-card stats-kpi-card--green">
+  <div class="card-body">
+    <div class="stats-kpi-topline">
+      <span class="stats-kpi-label">Intensivberatungen</span>
+      <span class="stats-kpi-icon-wrap"
+        ><i class="bi bi-telephone-fill"></i
+      ></span>
+    </div>
+    <div class="stats-kpi-items">
+      @for (option of artOptions; track option.id) {
+        <div class="stats-kpi-item">
+          <div class="stats-kpi-item-label">{{ option.text }}</div>
+          <div class="stats-kpi-item-value">{{ countBy(option.id) }}</div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

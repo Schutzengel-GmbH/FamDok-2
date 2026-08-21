@@ -1,0 +1,183 @@
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-gear"></i>
+    {{ " " }}
+    <strong>Einstellungen</strong>
+  </div>
+  <div class="card-body">
+    <ul class="list-group">
+      <li class="list-group-item bg-secondary text-light">
+        <i class="bi bi-gear"></i>{{ " " }}
+        <strong>Non Admin Settings</strong>
+      </li>
+      <li class="list-group-item">### NON ADMIN SETTINGS ###</li>
+      <!--
+        TODO: consider permissions - this section (and therefore the entry points to the
+        form editors) is only shown to Admin, but the routes it links to
+        (/allgemeine-formulare, /fallbezogene-formulare) are guarded for
+        [Admin, Controller, OrgController] in app.routes.ts to match what the backend
+        actually authorizes. If that route guard is reverted back to Admin-only, this is
+        already consistent; if it's kept as-is, Controller/OrgController users can reach
+        the editors directly by URL but won't see these entry points here - widen this
+        check to match if that's the intended behavior.
+      -->
+      @if ((user$ | async)?.role === "Admin") {
+        <li class="list-group-item bg-secondary text-light">
+          <i class="bi bi-building"></i>{{ " " }}
+          <strong>Organisationen</strong>
+        </li>
+
+        <li class="list-group-item">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="addOrg()">
+            <i class="bi bi-building-add">{{ " " }}</i
+            >Organisation hinzufügen
+          </button>
+          <div class="mb-2 mt-2">Vorhandene Organisationen bearbeiten:</div>
+        </li>
+        @if (orgs.length) {
+          @for (org of orgs; track org.id) {
+            <div class="org-item-group">
+              <li
+                class="list-group-item d-flex justify-content-between align-items-center org-item">
+                {{ org.name }}
+                <div class="btn-group btn-group-sm">
+                  <button
+                    class="btn btn-outline-secondary"
+                    (click)="editOrg(org)">
+                    Bearbeiten
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger"
+                    (click)="deleteOrg(org)">
+                    Löschen
+                  </button>
+                </div>
+              </li>
+              @for (subOrg of org.subOrganisations; track subOrg.id) {
+                <li
+                  class="list-group-item d-flex justify-content-between align-items-center sub-org-item">
+                  {{ subOrg.name }}
+                  <div class="btn-group btn-group-sm">
+                    <button
+                      class="btn btn-outline-secondary"
+                      (click)="editSubOrg(subOrg)">
+                      Bearbeiten
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      (click)="deleteSubOrg(subOrg)">
+                      Löschen
+                    </button>
+                  </div>
+                </li>
+              }
+              <li class="list-group-item sub-org-item">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  (click)="addSubOrg(org)">
+                  <i class="bi bi-building-add">{{ " " }}</i
+                  >Unterorganisation hinzufügen
+                </button>
+              </li>
+            </div>
+          }
+        }
+        <li class="list-group-item bg-secondary text-light">
+          <i class="bi bi-journal-text"></i>{{ " " }}
+          <strong>Fragebögen</strong>
+        </li>
+        <li class="list-group-item">
+          <a class="btn btn-outline-secondary" href="/import/survey"
+            >Fragebogen importieren</a
+          >
+        </li>
+        <li class="list-group-item">
+          <a
+            class="btn btn-outline-secondary"
+            [routerLink]="['/allgemeine-formulare', 'neu']"
+            >Neues allgemeines Formular erstellen</a
+          >
+        </li>
+        @if (generalForms.length) {
+          <li class="list-group-item">
+            <div class="mb-2">Vorhandene allgemeine Formulare bearbeiten:</div>
+            <ul class="list-group">
+              @for (form of generalForms; track form.id) {
+                <li
+                  class="list-group-item d-flex justify-content-between align-items-center">
+                  {{ form.name }}
+                  <div class="btn-group btn-group-sm">
+                    <a
+                      class="btn btn-outline-secondary"
+                      [routerLink]="['/allgemeine-formulare', form.id]"
+                      >Bearbeiten</a
+                    >
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      (click)="downloadGeneralForm(form)">
+                      Exportieren
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      (click)="deleteGeneralForm(form)">
+                      Löschen
+                    </button>
+                  </div>
+                </li>
+              }
+            </ul>
+          </li>
+        }
+        <li class="list-group-item">
+          <a
+            class="btn btn-outline-secondary"
+            [routerLink]="['/fallbezogene-formulare', 'neu']"
+            >Neues fallbezogenes Formular erstellen</a
+          >
+        </li>
+        @if (caseForms.length) {
+          <li class="list-group-item">
+            <div class="mb-2">
+              Vorhandene fallbezogene Formulare bearbeiten:
+            </div>
+            <ul class="list-group">
+              @for (form of caseForms; track form.id) {
+                <li
+                  class="list-group-item d-flex justify-content-between align-items-center">
+                  {{ form.name }}
+                  <div class="btn-group btn-group-sm">
+                    <a
+                      class="btn btn-outline-secondary"
+                      [routerLink]="['/fallbezogene-formulare', form.id]"
+                      >Bearbeiten</a
+                    >
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      (click)="downloadCaseForm(form)">
+                      Exportieren
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      (click)="deleteCaseForm(form)">
+                      Löschen
+                    </button>
+                  </div>
+                </li>
+              }
+            </ul>
+          </li>
+        }
+      }
+    </ul>
+  </div>
+</div>

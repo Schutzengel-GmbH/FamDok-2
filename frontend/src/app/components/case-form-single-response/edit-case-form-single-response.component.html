@@ -1,0 +1,50 @@
+@if (answers) {
+  <div class="card">
+    <div class="card-header">
+      <i
+        class="bi {{
+          caseForm() ? 'bi-ui-checks' : 'bi-exclamation-triangle'
+        }}"></i>
+      {{ " " }}
+      <strong>{{
+        caseForm() ? caseForm().name : "Kein Formular ausgewählt"
+      }}</strong>
+    </div>
+    <div class="card-body" [class.pe-none]="readOnly()" [class.opacity-75]="readOnly()">
+      <ul class="list-group">
+        <li class="list-group-item">
+          <h3>{{ caseForm().name + " für Familie " + case().family.name }}</h3>
+        </li>
+        @if (caseForm().isPersonal) {
+          <li class="list-group-item">
+            <app-select-person-component
+              [person]="person()"
+              (personChange)="person.set($event)"
+              [case]="case()" />
+          </li>
+        }
+        @for (q of caseForm().questions; track q.id) {
+          <li class="list-group-item">
+            <app-question [question]="q" [(answer)]="answers[q.id]" />
+          </li>
+        }
+      </ul>
+    </div>
+    @if (!readOnly()) {
+      <div class="card-footer d-flex flex-column align-items-end">
+        <button class="btn btn-primary" (click)="saveResponse()">
+          Speichern
+        </button>
+        {{ " " }}
+        @if (responseId) {
+          <button
+            type="button"
+            (click)="delete()"
+            class="btn btn-outline-danger">
+            Löschen
+          </button>
+        }
+      </div>
+    }
+  </div>
+}

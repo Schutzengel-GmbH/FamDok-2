@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Case" ALTER COLUMN "closedAt" DROP NOT NULL,
+ALTER COLUMN "closingDocId" DROP NOT NULL;

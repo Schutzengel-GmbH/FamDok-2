@@ -1,0 +1,71 @@
+<div class="family-worklist">
+  <div
+    class="family-worklist-item"
+    *ngFor="let row of rows()"
+    (click)="selectCase(row)"
+    [class.family-worklist-item--active]="selectedCase?.id === row.id">
+    <div class="family-worklist-main">
+      <div class="family-worklist-title">
+        {{ familyNamePipe.transform(row.family) }}
+      </div>
+
+      <div class="family-worklist-meta">
+        <span>{{ getChildrenCount(row) }} Kinder</span>
+        <span>Letzter Kontakt: {{ getLatestContactText(row) }}</span>
+        <span>Notiz: {{ row.family.note }}</span>
+        <span
+          >Verantwortlich:
+          {{ userArrayPipe.transform(row.responsibleUsers) }}</span
+        >
+      </div>
+    </div>
+
+    <div class="family-worklist-status">
+      <span class="status-dot" [ngClass]="getZielStatusClass(row)"></span>
+      <span>{{ getZielStatusText(row) }}</span>
+    </div>
+
+    <div class="family-worklist-actions">
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        (click)="$event.stopPropagation(); openDetails(row, 'stammdaten')">
+        Details
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        (click)="
+          $event.stopPropagation(); openDetails(row, 'zielvereinbarungen')
+        ">
+        Ziele
+      </button>
+
+      @if (canEditCase(row)) {
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          (click)="$event.stopPropagation(); openDetails(row, 'formulare')">
+          Formulare
+        </button>
+      }
+
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        (click)="
+          $event.stopPropagation(); openDetails(row, 'freie-dokumentation')
+        ">
+        Doku
+      </button>
+    </div>
+  </div>
+</div>
+
+<app-family-detail-modal
+  [isOpen]="isDetailModalOpen()"
+  [selectedCase]="selectedCase"
+  [initialTab]="modalInitialTab"
+  [readOnly]="modalReadOnly"
+  (closed)="closeDetails()"></app-family-detail-modal>

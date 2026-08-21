@@ -1,0 +1,43 @@
+<nav class="navbar navbar-expand bg-body border-bottom">
+  <div class="container-fluid">
+    <div class="d-flex align-items-center">
+      <label
+        for="mobile-menu-toggle"
+        class="btn btn-outline-secondary mobile-menu-toggle-btn">
+        <i class="bi bi-list"></i>
+        <span class="visually-hidden">Menü öffnen</span>
+      </label>
+
+      <span class="navbar-brand fw-semibold ms-2">FamDok 2.0</span>
+    </div>
+
+    <div class="ms-auto d-flex align-items-center gap-2">
+      <button
+        class="btn btn-outline-secondary"
+        type="button"
+        (click)="toggleTheme()"
+        [attr.aria-pressed]="theme === 'dark'">
+        <i
+          class="bi"
+          [ngClass]="
+            theme === 'dark' ? 'bi-moon-stars' : 'bi-brightness-high'
+          "></i>
+        <span class="visually-hidden">Theme wechseln</span>
+      </button>
+
+      <button
+        [class]="
+          authenticated ? 'btn btn-outline-danger' : 'btn btn-outline-primary'
+        "
+        type="button"
+        (click)="authenticated ? logout() : login()">
+        <i
+          [class]="
+            authenticated ? 'bi bi-box-arrow-left' : 'bi bi-box-arrow-in-right'
+          "></i>
+        <span class="visually-hidden">Logout</span>
+      </button>
+    </div>
+  </div>
+</nav>
+

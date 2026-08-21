@@ -1,0 +1,16 @@
+<dl class="row">
+  <dt class="col-sm-3">Vorname</dt>
+  <dd class="col-sm-9">{{ user?.firstName ?? '---' }}</dd>
+
+  <dt class="col-sm-3">Nachname</dt>
+  <dd class="col-sm-9">{{ user?.lastName ?? '---' }}</dd>
+
+  <dt class="col-sm-3">Job Title</dt>
+  <dd class="col-sm-9">{{ user?.jobTitle ?? '---' }}</dd>
+
+  <dt class="col-sm-3">Organisation</dt>
+  <dd class="col-sm-9">{{ user?.organisation?.name ?? '---' }}</dd>
+
+  <dt class="col-sm-3">E-Mail</dt>
+  <dd class="col-sm-9">{{ user?.email ?? '---' }}</dd>
+</dl>

@@ -1,0 +1,35 @@
+{
+  "name": "Angebotsdokumentation",
+  "questions": [
+    {
+      "text": "Datum",
+      "type": "Date",
+      "required": true
+    },
+    {
+      "text": "Angebot",
+      "type": "Text",
+      "required": true
+    },
+    {
+      "text": "Ort",
+      "type": "Text",
+      "required": true
+    },
+    {
+      "text": "Anzahl Erwachsener",
+      "type": "Integer",
+      "required": false
+    },
+    {
+      "text": "Davon Schwangere",
+      "type": "Integer",
+      "required": false
+    },
+    {
+      "text": "Anzahl Kinder",
+      "type": "Integer",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+@use "@swimlane/ngx-datatable/index.scss";
+@use "@swimlane/ngx-datatable/themes/bootstrap.scss";
+@use "@swimlane/ngx-datatable/themes/material.scss";
+@use "@swimlane/ngx-datatable/themes/dark.scss";
+@use "@swimlane/ngx-datatable/assets/icons.css";
+
+/* Bootstrap imports */
+@import "bootstrap/dist/css/bootstrap.min.css";
+@import "bootstrap-icons/font/bootstrap-icons.css";
+@import "@ng-select/ng-select/themes/default.theme.css";
+@import "styles/theme";
+
+:root {
+  --sidebar-w: 280px;
+}
+
+html,
+body,
+app-root {
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+
+app-root {
+  display: block;
+  height: 100%;
+}
+
+html {
+  font-size: clamp(14px, 1vw, 16px);
+}
+
+body {
+  font-size: 1rem;
+}
+
+.app-main {
+  padding: clamp(0.9rem, 2vw, 1.5rem);
+}
+
+.app-shell {
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main";
+}
+
+.app-sidebar {
+  grid-area: sidebar;
+}
+.app-header {
+  grid-area: header;
+}
+.app-main {
+  grid-area: main;
+}
+
+/* Hauptbereich als weiche Fläche */
+.app-main {
+  padding: 20px;
+}
+
+/* Header-Schlagschatten zurückhaltend */
+.navbar {
+  box-shadow: var(--app-shadow-1);
+}
+
+/* Hilfsklasse für Sektionen */
+.section {
+  background: var(--bs-card-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow-1);
+  padding: 16px;
+}
+
+@media (max-height: 800px) and (min-width: 900px) {
+  html {
+    font-size: 14px;
+  }
+}

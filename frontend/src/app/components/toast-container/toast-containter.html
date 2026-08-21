@@ -1,0 +1,10 @@
+@for(toast of toastService.toasts(); track toast) {
+<ngb-toast
+  [class]="getClass(toast.severity)"
+  [autohide]="true"
+  [delay]="toast.delay || 5000"
+  (hidden)="toastService.remove(toast)"
+  [header]="toast.title"
+  >{{toast.text}}</ngb-toast
+>
+}

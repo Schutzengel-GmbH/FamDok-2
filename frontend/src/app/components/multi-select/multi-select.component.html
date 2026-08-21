@@ -1,0 +1,28 @@
+<div ngbDropdown autoClose="outside" container="body">
+  <button #dropdownButton ngbDropdownToggle class="btn btn-outline-secondary">
+    {{ valueText() || placeholder() }}
+  </button>
+  <div ngbDropdownMenu aria-labelledby="dropdownButton">
+    @for (item of items(); track $index) {
+      <button
+        (click)="itemClick(item)"
+        ngbDropdownItem
+        class="dropdown-item"
+        [disabled]="
+          maximum() !== undefined &&
+          value() !== undefined &&
+          value()!.length >= maximum()! &&
+          !selected(item)
+        ">
+        <span class="row">
+          <span class="w-25">
+            @if (selected(item)) {
+              <i class="bi bi-check-lg"></i>
+            }
+          </span>
+          <span class="w-75">{{ label(item) }}</span>
+        </span>
+      </button>
+    }
+  </div>
+</div>

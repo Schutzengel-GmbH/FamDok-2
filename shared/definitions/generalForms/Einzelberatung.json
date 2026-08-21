@@ -1,0 +1,46 @@
+{
+  "name": "Kurz- und Einzelberatungen",
+  "questions": [
+    {
+      "text": "Datum",
+      "type": "Date",
+      "required": true
+    },
+    {
+      "text": "Lotsenfunktion",
+      "min": 0,
+      "type": "Integer",
+      "required": false
+    },
+    {
+      "text": "Migration",
+      "min": 0,
+      "type": "Integer",
+      "required": false
+    },
+    {
+      "text": "Erziehungskompetenz",
+      "min": 0,
+      "type": "Integer",
+      "required": false
+    },
+    {
+      "text": "Wohnsituation",
+      "min": 0,
+      "type": "Integer",
+      "required": false
+    },
+    {
+      "text": "Gesundheit",
+      "min": 0,
+      "type": "Integer",
+      "required": false
+    },
+    {
+      "text": "Bürokratie",
+      "min": 0,
+      "type": "Integer",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+<div class="card p-2">
+  <p>{{ name() }}</p>
+  <div class="d-flex gap-1">
+    <select
+      [value]="filter()?.filter"
+      (change)="changeFilter($event)"
+      class="form-select"
+    >
+      <option value="equals">Ist gleich</option>
+      <option value="gt">Ist nach</option>
+      <option value="gte">Ist nach oder am</option>
+      <option value="lt">Ist vor</option>
+      <option value="lte">Ist vor oder am</option>
+      <option value="range">Ist zwischen</option>
+    </select>
+    @if (filter()?.filter !== "range") {
+      <div class="input-group">
+        <input
+          class="form-control"
+          placeholder="Datum"
+          ngbDatepicker
+          #d="ngbDatepicker"
+          [ngModel]="filter()?.value"
+          (ngModelChange)="changeValue($event)"
+        />
+        <button
+          class="btn btn-outline-secondary bi bi-calendar3"
+          (click)="d.toggle()"
+          type="button"
+        ></button>
+      </div>
+    } @else {
+      <div class="input-group">
+        <input
+          class="form-control"
+          placeholder="Startdatum"
+          ngbDatepicker
+          #ds="ngbDatepicker"
+          [ngModel]="startDate"
+          (ngModelChange)="changeStartValue($event)"
+        />
+        <button
+          class="btn btn-outline-secondary bi bi-calendar3"
+          (click)="ds.toggle()"
+          type="button"
+        ></button>
+      </div>
+      <div class="input-group">
+        <input
+          class="form-control"
+          placeholder="Enddatum"
+          ngbDatepicker
+          #de="ngbDatepicker"
+          [ngModel]="endDate"
+          (ngModelChange)="changeEndValue($event)"
+        />
+        <button
+          class="btn btn-outline-secondary bi bi-calendar3"
+          (click)="de.toggle()"
+          type="button"
+        ></button>
+      </div>
+    }
+    <button class="btn btn-sm btn-outline-secondary" (click)="resetFilter()">
+      <i class="bi bi-x"></i>
+    </button>
+  </div>
+</div>

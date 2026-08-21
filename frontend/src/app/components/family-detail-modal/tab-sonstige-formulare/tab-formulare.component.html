@@ -1,0 +1,13 @@
+<div class="tab-section">
+  <h6 class="section-title">Sonstige Formulare</h6>
+  <div class="d-flex flex-column gap-2">
+    @for (form of forms$ | async; track form) {
+      <button
+        class="btn btn-outline-secondary"
+        [disabled]="readOnly()"
+        (click)="gotoForm(form.id)">
+        {{ form.name }}
+      </button>
+    }
+  </div>
+</div>

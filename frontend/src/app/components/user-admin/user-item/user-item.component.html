@@ -1,0 +1,82 @@
+<form [formGroup]="form">
+  <h5>User: {{ user.email }}</h5>
+  <div class="form-group d-flex gap-2">
+    <div class="form-floating">
+      <input
+        class="form-control"
+        id="firstName"
+        type="text"
+        formControlName="firstName" />
+      <label for="firstName">Vorname</label>
+    </div>
+    <div class="form-floating">
+      <input
+        class="form-control"
+        id="lastname"
+        type="text"
+        formControlName="lastName" />
+      <label for="lastName">Nachname</label>
+    </div>
+    <div class="form-floating">
+      <select class="form-select" formControlName="role" id="role">
+        <option value="Admin">Admin</option>
+        <option value="Controller">Controller</option>
+        <option value="OrgController">OrgController</option>
+        <option value="OrgCoordinator">OrgCoordinator</option>
+        <option value="SubOrgCoordinator">SubOrgCoordinator</option>
+        <option value="User">User</option>
+      </select>
+      <label for="role">Rolle</label>
+    </div>
+    <div class="form-floating">
+      <select class="form-select" formControlName="jobTitle" id="jobTitle">
+        <option [value]="undefined">Keine</option>
+        @for (jobTitle of jobTitles; track $index) {
+          <option [value]="jobTitle">{{ jobTitle }}</option>
+        }
+      </select>
+      <label for="jobTitle">Fachrichtung</label>
+    </div>
+    <div class="form-floating">
+      <select
+        class="form-select"
+        formControlName="organisationId"
+        id="organisationId">
+        <option [ngValue]="null">Keine Organisation</option>
+        @for (org of orgs; track org.id) {
+          <option [value]="org.id">{{ org.name }}</option>
+        }
+      </select>
+      <label for="organisationId">Organisation</label>
+    </div>
+    <div>
+      <label class="form-label" for="subOrgSelect">Unterorganisationen</label>
+      <app-multi-select
+        id="subOrgSelect"
+        [items]="availableSubOrgs()"
+        [value]="selectedSubOrgs()"
+        [compareFn]="subOrgCompareFn"
+        labelProp="name"
+        placeholder="Keine"
+        (selectChange)="onSubOrgsChange($event)" />
+    </div>
+    <div class="d-flex flex-column justify-content-center gap-1">
+      <button
+        class="btn btn-outline-primary"
+        type="button"
+        (click)="save()"
+        [disabled]="form.pristine || form.invalid">
+        Speichern
+      </button>
+      @if (form.dirty) {
+        <span class="badge text-bg-warning">Ungespeicherte Änderungen</span>
+      }
+      @if (form.get('organisationId')?.invalid || form.get('subOrganisationIds')?.invalid) {
+        <span class="badge text-bg-danger">Organisation erforderlich</span>
+      }
+      <button class="btn btn-outline-danger" type="button" (click)="delete()">
+        Löschen
+      </button>
+    </div>
+  </div>
+</form>

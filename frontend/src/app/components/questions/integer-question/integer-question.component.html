@@ -1,0 +1,12 @@
+<label for="textInput">{{ question.text }}</label>
+<div class="input-group mb-3">
+  <input
+    id="textInput"
+    type="text"
+    [class]="`form-control ${answerValid() ? '' : 'is-invalid'}`"
+    [placeholder]="question.text"
+    [value]="value()"
+    (input)="onInput($event)"
+  />
+  <div class="invalid-feedback">{{ reason }}</div>
+</div>

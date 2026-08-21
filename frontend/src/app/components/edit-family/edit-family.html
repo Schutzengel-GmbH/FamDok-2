@@ -1,0 +1,321 @@
+@if (isLoading) {
+  <div class="spinner-border" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <!-- Family Name -->
+    <div class="form-group mb-2">
+      <label for="name">Familienname</label>
+      <input
+        id="name"
+        type="text"
+        class="form-control"
+        formControlName="name"
+        [class.is-invalid]="form.controls.name.invalid"
+        placeholder="z. B. Familie Müller" />
+      <div class="invalid-feedback"></div>
+    </div>
+
+    <!-- Optional Family Note -->
+    <div class="form-group mb-2">
+      <label for="note">Notiz</label>
+      <input
+        id="note"
+        type="text"
+        class="form-control"
+        formControlName="note"
+        [class.is-invalid]="form.controls.note.invalid"
+        placeholder="Notiz" />
+      <div class="invalid-feedback"></div>
+    </div>
+
+    <!-- Address Section -->
+    <div class="form-group mb-2">
+      <label>Adresse</label>
+      <div class="input-group">
+        <input
+          type="text"
+          class="form-control"
+          formControlName="street"
+          [class.is-invalid]="form.controls.street.invalid"
+          placeholder="Straße" />
+        <input
+          type="text"
+          class="form-control"
+          formControlName="number"
+          [class.is-invalid]="form.controls.number.invalid"
+          placeholder="Hausnr."
+          style="max-width: 120px" />
+        <div class="invalid-feedback"></div>
+      </div>
+    </div>
+
+    <!-- PLZ and City -->
+    <div class="form-group mb-2">
+      <div class="input-group">
+        <input
+          type="text"
+          class="form-control"
+          formControlName="plz"
+          [class.is-invalid]="form.controls.plz.invalid"
+          placeholder="PLZ"
+          style="max-width: 120px" />
+        <input
+          type="text"
+          class="form-control"
+          formControlName="city"
+          [class.is-invalid]="form.controls.city.invalid"
+          placeholder="Stadt" />
+        <div class="invalid-feedback"></div>
+      </div>
+    </div>
+
+    <!-- Phone -->
+    <div class="form-group mb-2">
+      <label for="phone">Telefon</label>
+      <input
+        id="phone"
+        type="tel"
+        class="form-control"
+        formControlName="phone"
+        placeholder="z. B. 0123 456789" />
+    </div>
+
+    <!-- Additional Phones -->
+    <!-- TODO: additionalPhones as array input -->
+    <div class="form-group mb-2">
+      <label for="additionalPhones"
+        >Weitere Telefonnummern, mit Komma getrennt</label
+      >
+      <input
+        id="additionalPhones"
+        type="text"
+        class="form-control"
+        formControlName="additionalPhones"
+        placeholder="z. B. 0123 987654, 987 654321" />
+    </div>
+
+    <!-- Migration Background -->
+    <div class="form-floating mb-2">
+      <select
+        class="form-select"
+        id="migrationBackground"
+        formControlName="migrationBackground">
+        <option
+          [value]="null"
+          [selected]="form.controls.migrationBackground.value === null">
+          Keine Angabe
+        </option>
+        <option
+          [value]="true"
+          [selected]="form.controls.migrationBackground.value === true">
+          Ja
+        </option>
+        <option
+          [value]="false"
+          [selected]="form.controls.migrationBackground.value === false">
+          Nein
+        </option>
+      </select>
+      <label for="migrationBackground">Migrationshintergrund</label>
+    </div>
+
+    <!-- Caregiver Section -->
+    <div class="form-group mb-2">
+      <label for="caregiverInput">Eltern/Sorgetragende</label>
+      <div #caregiverInput>
+        @if (!readOnly()) {
+          <button
+            type="button"
+            class="btn btn-outline-primary m-1"
+            (click)="handleOpenCaregiver()">
+            <i class="bi bi-person-add"></i>
+          </button>
+        }
+        @for (caregiver of caregivers; track $index) {
+          <div class="btn-group m-1">
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              [disabled]="readOnly()"
+              (click)="handleOpenCaregiver($index)">
+              {{ caregiver.name }} {{ caregiver.lastName }}
+            </button>
+            @if (!readOnly()) {
+              <button
+                type="button"
+                class="btn btn-outline-danger"
+                (click)="deleteCaregiver($index)">
+                <i class="bi bi-person-dash"></i>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Children Section -->
+    <div class="form-group mb-2">
+      <label for="childrenInput">Kinder</label>
+      <div #childrenInput>
+        @if (!readOnly()) {
+          <button
+            type="button"
+            class="btn btn-outline-primary m-1"
+            (click)="handleOpenChild()">
+            <i class="bi bi-person-add"></i>
+          </button>
+        }
+        @for (child of children; track $index) {
+          <div class="btn-group m-1">
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              [disabled]="readOnly()"
+              (click)="handleOpenChild($index)">
+              {{ child.name }} {{ child.lastName }}
+            </button>
+            @if (!readOnly()) {
+              <button
+                type="button"
+                class="btn btn-outline-danger"
+                (click)="deleteChild($index)">
+                <i class="bi bi-person-dash"></i>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="form-floating mb-2">
+      <select
+        class="form-select"
+        id="migrationBackground"
+        formControlName="migrationBackground">
+        <option
+          [ngValue]="null"
+          [selected]="form.controls.migrationBackground.value === null">
+          Keine Angabe
+        </option>
+        <option
+          [ngValue]="true"
+          [selected]="form.controls.migrationBackground.value === true">
+          Ja
+        </option>
+        <option
+          [ngValue]="false"
+          [selected]="form.controls.migrationBackground.value === false">
+          Nein
+        </option>
+      </select>
+      <label for="migrationBackground">Migrationshintergrund</label>
+    </div>
+
+    @if (migrationBackground.value !== null) {
+      <div class="form-group mb-2">
+        <label for="specificMigrationBackground"
+          >Migrationshintergrund, Details</label
+        >
+        <input
+          id="specificMigrationBackground"
+          type="text"
+          class="form-control"
+          formControlName="specificMigrationBackground"
+          placeholder="Migrationshintergrund" />
+      </div>
+    }
+
+    <div class="form-floating mb-2">
+      <select
+        class="form-select"
+        id="familienstand"
+        formControlName="familienstand">
+        @for (f of Familienstand; track $index) {
+          <option [ngValue]="f" [selected]="familienstandSelected(f)">
+            {{ familienstandString(f) }}
+          </option>
+        }
+      </select>
+      <label for="familienstand">Familienstand</label>
+    </div>
+
+    <div class="form-floating mb-2">
+      <select
+        class="form-select"
+        id="partnerInvolved"
+        formControlName="partnerInvolved">
+        <option
+          [ngValue]="null"
+          [selected]="form.controls.partnerInvolved.value === null">
+          Keine Angabe
+        </option>
+        <option
+          [ngValue]="true"
+          [selected]="form.controls.partnerInvolved.value === true">
+          Ja
+        </option>
+        <option
+          [ngValue]="false"
+          [selected]="form.controls.partnerInvolved.value === false">
+          Nein
+        </option>
+      </select>
+      <label for="partnerInvolved">Beide Partner involviert?</label>
+    </div>
+
+    <div class="form-floating mb-2">
+      <select class="form-select" id="bekanntJA" formControlName="bekanntJA">
+        <option
+          [ngValue]="null"
+          [selected]="form.controls.bekanntJA.value === null">
+          Keine Angabe
+        </option>
+        <option
+          [ngValue]="true"
+          [selected]="form.controls.bekanntJA.value === true">
+          Ja
+        </option>
+        <option
+          [ngValue]="false"
+          [selected]="form.controls.bekanntJA.value === false">
+          Nein
+        </option>
+      </select>
+      <label for="bekanntJA">Beim Jugendamt bekannt?</label>
+    </div>
+
+    <!-- Form Actions -->
+    @if (!readOnly()) {
+      <div class="form-actions float-end">
+        @if (isDirty) {
+          <span class="badge text-bg-warning">Ungespeicherte Änderungen</span>
+        }
+        <button
+          type="submit"
+          class="btn btn-primary m-2"
+          [disabled]="form.invalid || isLoading || isSaving || !isDirty">
+          @if (isSaving) {
+            <span>
+              <span
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"></span>
+              Wird gespeichert...
+            </span>
+          } @else {
+            <span>Änderungen speichern</span>
+          }
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="onReset()"
+          [disabled]="isLoading || isSaving">
+          Zurücksetzen
+        </button>
+      </div>
+    }
+  </form>
+}

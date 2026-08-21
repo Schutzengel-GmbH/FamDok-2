@@ -1,0 +1,177 @@
+@if (selectedCase()) {
+  <div
+    class="modal fade family-detail-modal"
+    tabindex="-1"
+    [ngClass]="{ show: isOpen(), 'd-block': isOpen() }">
+    <div
+      class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="d-flex flex-column">
+            <span class="modal-kicker">Familiendetails</span>
+            <h5 class="modal-title">
+              {{ familyNamePipe.transform(selectedCase()!.family) }}
+            </h5>
+          </div>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Schließen"
+            (click)="close()"></button>
+        </div>
+
+        <div class="modal-tabs">
+          <ul class="nav nav-tabs">
+            <li class="nav-item">
+              <button
+                type="button"
+                class="nav-link"
+                [class.active]="activeTab() === 'stammdaten'"
+                (click)="setTab('stammdaten')">
+                Stammdaten
+              </button>
+            </li>
+            <li class="nav-item">
+              <button
+                type="button"
+                class="nav-link"
+                [class.active]="activeTab() === 'zielvereinbarungen'"
+                (click)="setTab('zielvereinbarungen')">
+                Zielvereinbarungen
+              </button>
+            </li>
+            <li class="nav-item">
+              <button
+                type="button"
+                class="nav-link"
+                [class.active]="activeTab() === 'datenblaetter'"
+                (click)="setTab('datenblaetter')">
+                Alle Datenblätter
+              </button>
+            </li>
+            <li class="nav-item">
+              <button
+                type="button"
+                class="nav-link"
+                [class.active]="activeTab() === 'freie-dokumentation'"
+                (click)="setTab('freie-dokumentation')">
+                Fallkontaktdokumentation
+              </button>
+            </li>
+            @if (!readOnly()) {
+              <li class="nav-item">
+                <button
+                  type="button"
+                  class="nav-link"
+                  [class.active]="activeTab() === 'formulare'"
+                  (click)="setTab('formulare')">
+                  Sonstige Formulare
+                </button>
+              </li>
+            }
+            <li class="nav-item">
+              <button
+                type="button"
+                class="nav-link"
+                [class.active]="activeTab() === 'anhaenge'"
+                (click)="setTab('anhaenge')">
+                Anhänge
+              </button>
+            </li>
+            <li class="nav-item">
+              <button
+                type="button"
+                class="nav-link"
+                [class.active]="activeTab() === 'fachkraft'"
+                (click)="setTab('fachkraft')">
+                Fachkraft
+              </button>
+            </li>
+            <li class="nav-item">
+              <button
+                type="button"
+                class="nav-link"
+                [class.active]="activeTab() === 'close'"
+                (click)="setTab('close')">
+                Abschluss
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div class="modal-body">
+          @switch (activeTab()) {
+            @case ("stammdaten") {
+              <ng-container>
+                <app-tab-stammdaten [selectedCase]="selectedCase()!" />
+              </ng-container>
+            }
+            @case ("zielvereinbarungen") {
+              <ng-container>
+                <app-tab-zielvereinbarungen
+                  [selectedCase]="selectedCase()!"
+                  [readOnly]="readOnly()"
+                  (zielChange)="refreshCaseFromBackend('zielvereinbarungen')" />
+              </ng-container>
+            }
+            @case ("datenblaetter") {
+              <ng-container>
+                <app-tab-datenblaetter
+                  [selectedCase]="selectedCase()!"
+                  [readOnly]="readOnly()" />
+              </ng-container>
+            }
+            @case ("formulare") {
+              @if (!readOnly()) {
+                <ng-container>
+                  <app-tab-sonstige-formulare [selectedCase]="selectedCase()!" />
+                </ng-container>
+              }
+            }
+            @case ("freie-dokumentation") {
+              <ng-container>
+                <app-tab-freie-dokumentation
+                  [selectedCase]="selectedCase()!"
+                  [readOnly]="readOnly()" />
+              </ng-container>
+            }
+            @case ("anhaenge") {
+              <ng-container>
+                <app-tab-anhaenge
+                  [selectedCase]="selectedCase()!"
+                  [readOnly]="readOnly()" />
+              </ng-container>
+            }
+            @case ("fachkraft") {
+              <ng-container>
+                <app-tab-familienbetreuer
+                  [selectedCase]="selectedCase()!"
+                  [readOnly]="readOnly()"
+                  (changes)="responsibleUsersChanged($event.userRemoved)" />
+              </ng-container>
+            }
+            @case ("close") {
+              <ng-container>
+                <app-tab-close
+                  [selectedCase]="selectedCase()!"
+                  [readOnly]="readOnly()" />
+              </ng-container>
+            }
+          }
+        </div>
+        <div class="modal-footer justify-content-between">
+          <span class="footer-hint">Datenstand: aktuell aus der Fallakte</span>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            (click)="close()">
+            Schließen
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  @if (isOpen()) {
+    <div class="modal-backdrop fade show"></div>
+  }
+}

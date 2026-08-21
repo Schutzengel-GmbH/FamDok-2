@@ -1,0 +1,46 @@
+@if (form) {
+  <div class="modal-header">
+    <h4 class="modal-title">{{ title }}</h4>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="activeModal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <form [formGroup]="form">
+      <div class="form-group mb-2">
+        <label for="name">{{ label }}</label>
+        <input
+          id="name"
+          type="text"
+          class="form-control"
+          formControlName="name"
+          [placeholder]="label"
+          [class.is-invalid]="form.get('name')?.invalid" />
+        @if (form.get("name")!.invalid) {
+          <div class="invalid-feedback">
+            @if (form.get("name")?.hasError("required")) {
+              {{ label }} erforderlich
+            }
+            @if (form.get("name")?.hasError("minlength")) {
+              {{ label }} zu kurz
+            }
+          </div>
+        }
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button
+      [disabled]="form.invalid"
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="save()">
+      Speichern
+    </button>
+    <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+      Abbrechen
+    </button>
+  </div>
+}

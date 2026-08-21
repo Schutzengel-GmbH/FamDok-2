@@ -1,0 +1,17 @@
+<ng-select
+  class="w-100"
+  ariaLabel="Person auswählen"
+  placeholder="Person auswählen"
+  bindLabel="name"
+  (change)="select($event)"
+  clearAllText="Auswahl aufheben"
+  [items]="persons()"
+  [(ngModel)]="person"
+  groupBy="type"
+  appendTo="body"
+>
+  <ng-template ng-option-tmp let-item="item"> {{ item.name }} </ng-template>
+  <ng-template ng-label-tmp let-item="item">
+    {{ item.name + ' ' + item.lastName }}
+  </ng-template>
+</ng-select>

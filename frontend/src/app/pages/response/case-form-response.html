@@ -1,0 +1,25 @@
+@if (caseForm()) {
+  <!-- Select case (if applicable) -->
+  @if (!caseId && !responseId) {
+    <div class="m-1">
+      <app-select-case [case]="case()" (caseChange)="case.set($event)" />
+    </div>
+  }
+  <!-- If there is a case, see if we can show some data or if this is meant to be a fresh form -->
+  @if (case()) {
+    <!-- If the form is only supposed to have one response per case, show the single response component -->
+    @if (caseForm()!.type === "single") {
+      <app-edit-case-form-single-response
+        [caseForm]="caseForm()!"
+        [case]="case()!"
+        [readOnly]="readOnly" />
+    } @else {
+      <!-- Otherwise, we just show the response component with a possibly undefined response -->
+      <app-edit-case-form-response
+        [caseForm]="caseForm()!"
+        [case]="case()!"
+        [response]="response()"
+        [readOnly]="readOnly" />
+    }
+  }
+}

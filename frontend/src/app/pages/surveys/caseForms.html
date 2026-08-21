@@ -1,0 +1,230 @@
+<div class="case-forms-page">
+  <section class="page-header">
+    <div class="page-header__content">
+      <div class="page-header__top">
+        <div>
+          <span class="page-kicker">Übersicht</span>
+          <h1>Formulare</h1>
+          <p>
+            Suche, filtere und öffne Formulare schnell und ohne langes Scrollen
+            durch die gesamte Ansicht.
+          </p>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-field">
+          <span class="search-field__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path
+                d="M21 21l-4.35-4.35"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+              />
+              <circle
+                cx="11"
+                cy="11"
+                r="6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+            </svg>
+          </span>
+
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            placeholder="Nach Formularnamen suchen"
+            aria-label="Nach Formularnamen suchen"
+          />
+
+          @if (searchTerm.trim()) {
+            <button
+              type="button"
+              class="search-field__clear"
+              (click)="clearSearch()"
+              aria-label="Suche zurücksetzen"
+            >
+              ×
+            </button>
+          }
+        </div>
+
+        <div class="filter-group" role="tablist" aria-label="Formularbereich filtern">
+          <button
+            type="button"
+            class="filter-chip"
+            [class.filter-chip--active]="activeFilter === 'all'"
+            (click)="setFilter('all')"
+          >
+            Alle
+          </button>
+
+          <button
+            type="button"
+            class="filter-chip"
+            [class.filter-chip--active]="activeFilter === 'case'"
+            (click)="setFilter('case')"
+          >
+            Familien-Formulare
+          </button>
+
+          <button
+            type="button"
+            class="filter-chip"
+            [class.filter-chip--active]="activeFilter === 'general'"
+            (click)="setFilter('general')"
+          >
+            Sonstige Formulare
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div
+    class="forms-grid"
+    [class.forms-grid--single]="activeFilter !== 'all'"
+  >
+    @if (activeFilter !== 'general') {
+      <section class="forms-card">
+        <div class="forms-card__header">
+          <div>
+            <span class="forms-card__eyebrow">Bereich</span>
+            <h2>Familien-Formulare</h2>
+          </div>
+          <span class="forms-card__count">
+            {{ filteredCaseForms.length + filteredCaseSpecialForms.length }}
+          </span>
+        </div>
+
+        <p class="forms-card__intro">
+          Formulare rund um Fälle, Familien und ergänzende Fachdokumentation.
+        </p>
+
+        <div class="forms-list">
+          @for (caseForm of filteredCaseForms; track caseForm.id) {
+            <button
+              type="button"
+              class="form-entry"
+              (click)="selectFamForm(caseForm.id)"
+            >
+              <div class="form-entry__text">
+                <span class="form-entry__title">{{ caseForm.name }}</span>
+                <span class="form-entry__meta">Fallbezogenes Formular</span>
+              </div>
+
+              <span class="form-entry__arrow" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path
+                    d="M9 6l6 6-6 6"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                  />
+                </svg>
+              </span>
+            </button>
+          }
+
+          @for (specialForm of filteredCaseSpecialForms; track specialForm.id) {
+            <button
+              type="button"
+              class="form-entry form-entry--highlight"
+              (click)="selectFamForm(specialForm.id)"
+            >
+              <div class="form-entry__text">
+                <span class="form-entry__title">{{ specialForm.name }}</span>
+                <span class="form-entry__meta">Schnellzugriff</span>
+              </div>
+
+              <span class="form-entry__arrow" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path
+                    d="M9 6l6 6-6 6"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                  />
+                </svg>
+              </span>
+            </button>
+          }
+
+          @if (!filteredCaseForms.length && !filteredCaseSpecialForms.length) {
+            <div class="empty-state">
+              <h3>Keine passenden Familien-Formulare gefunden</h3>
+              <p>
+                Passe deine Suche an oder setze den Filter zurück.
+              </p>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (activeFilter !== 'case') {
+      <section class="forms-card">
+        <div class="forms-card__header">
+          <div>
+            <span class="forms-card__eyebrow">Bereich</span>
+            <h2>Sonstige Formulare</h2>
+          </div>
+          <span class="forms-card__count">
+            {{ filteredGeneralForms.length }}
+          </span>
+        </div>
+
+        <p class="forms-card__intro">
+          Allgemeine Formulare, die nicht direkt an einen einzelnen Fall
+          gebunden sind.
+        </p>
+
+        <div class="forms-list">
+          @for (generalForm of filteredGeneralForms; track generalForm.id) {
+            <button
+              type="button"
+              class="form-entry"
+              (click)="selectGenForm(generalForm.id)"
+            >
+              <div class="form-entry__text">
+                <span class="form-entry__title">{{ generalForm.name }}</span>
+                <span class="form-entry__meta">Allgemeines Formular</span>
+              </div>
+
+              <span class="form-entry__arrow" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path
+                    d="M9 6l6 6-6 6"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                  />
+                </svg>
+              </span>
+            </button>
+          }
+
+          @if (!filteredGeneralForms.length) {
+            <div class="empty-state">
+              <h3>Keine passenden sonstigen Formulare gefunden</h3>
+              <p>
+                Passe deine Suche an oder setze den Filter zurück.
+              </p>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  </div>
+</div>

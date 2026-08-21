@@ -1,0 +1,64 @@
+<button
+  class="btn btn-sm {{
+    active() ? 'btn-outline-success' : 'btn-outline-secondary'
+  }} btn-no-outline"
+  (click)="open(modalTmpl)"
+>
+  <i class="bi bi-filter-square-fill"></i>
+</button>
+
+<ng-template #modalTmpl let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title">
+      Nach Organisation filtern
+    </h4>
+  </div>
+  <div class="modal-body p-2">
+    <div class="mb-2">
+      <label class="form-label" for="createdByOrgFilterOrg">Organisation</label>
+      <select
+        class="form-select"
+        id="createdByOrgFilterOrg"
+        name="createdByOrgFilterOrg"
+        [(ngModel)]="organisationId"
+        (ngModelChange)="onOrgChange()">
+        <option [ngValue]="undefined">Alle</option>
+        @for (org of orgs; track org.id) {
+          <option [value]="org.id">{{ org.name }}</option>
+        }
+      </select>
+    </div>
+    <div class="mb-2">
+      <label class="form-label" for="createdByOrgFilterSubOrg"
+        >Unterorganisation</label
+      >
+      <select
+        class="form-select"
+        id="createdByOrgFilterSubOrg"
+        name="createdByOrgFilterSubOrg"
+        [(ngModel)]="subOrganisationId"
+        [disabled]="!organisationId">
+        <option [ngValue]="undefined">Alle</option>
+        @for (subOrg of availableSubOrgs; track subOrg.id) {
+          <option [value]="subOrg.id">{{ subOrg.name }}</option>
+        }
+      </select>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="modal.close('apply')"
+    >
+      Anwenden
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="modal.close('cancel')"
+    >
+      Zurücksetzen
+    </button>
+  </div>
+</ng-template>

@@ -1,0 +1,42 @@
+<div class="card shadow-sm h-100">
+  <div class="card-header d-flex align-items-center gap-2">
+    <i class="bi bi-people"></i>
+    <strong>Fragebogen importieren</strong>
+  </div>
+  <div class="card-body m-2">
+    <div class="d-flex mb-3 gap-2">
+      <input
+        type="checkbox"
+        class="btn-check"
+        id="general"
+        autocomplete="off"
+        [checked]="importGeneralForm()"
+        (change)="changeType()" />
+      <label class="btn btn-outline-primary" for="general"
+        >Allgemeines Formular</label
+      >
+      <input
+        type="checkbox"
+        class="btn-check"
+        id="case"
+        autocomplete="off"
+        [checked]="!importGeneralForm()"
+        (change)="changeType()" />
+
+      <label class="btn btn-outline-primary" for="case">Familienformular</label>
+    </div>
+    <div class="input-group mb-3">
+      <input
+        class="form-control"
+        type="file"
+        [files]="files"
+        (change)="filesChanged($event)" />
+      <span [ngbTooltip]="tooltip()" class="input-group-text">
+        <i [className]="classNames()"></i>
+      </span>
+    </div>
+    <button [disabled]="!fileValid()" class="btn btn-primary" (click)="save()">
+      Speichern
+    </button>
+  </div>
+</div>

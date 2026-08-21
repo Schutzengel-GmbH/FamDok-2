@@ -1,0 +1,14 @@
+<ng-select
+  ariaLabel="Kind auswählen"
+  placeholder="Kind auswählen"
+  [items]="case()?.family?.children || []"
+  [multiple]="false"
+  bindLabel="name"
+  [(ngModel)]="child"
+  (change)="change($event)"
+  clearAllText="Auswahl aufheben"
+  [disabled]="!case()?.family"
+  appendTo="body"
+>
+  <ng-template ng-label-tmp let-item="item"> {{ item.name }} </ng-template>
+</ng-select>

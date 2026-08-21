@@ -1,0 +1,9 @@
+<ng-select
+  [items]="users()"
+  bindLabel="email"
+  placeholder="Bitte auswählen"
+  (change)="selectUser.emit($event)"
+>
+  <ng-template ng-label-tmp let-item="item">{{ item | user }}</ng-template>
+  <ng-template ng-option-tmp let-item="item">{{ item | user }}</ng-template>
+</ng-select>

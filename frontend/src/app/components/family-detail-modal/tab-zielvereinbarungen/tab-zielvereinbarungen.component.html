@@ -1,0 +1,209 @@
+<div class="tab-section tab-section--fixed">
+  <div class="tab-header">
+    <div>
+      <h6 class="section-title mb-1">Zielvereinbarungen</h6>
+      <p class="section-subtitle">Zieldatum = Fälligkeit</p>
+    </div>
+  </div>
+
+  <div class="table-responsive ziel-table-wrap">
+    <table class="table table-sm align-middle ziel-table mb-0">
+      <thead>
+        <tr>
+          <th style="width: 34px"></th>
+          <th style="width: 200px">Thema</th>
+          <th>Beschreibung</th>
+          <th style="width: 140px">Zieldatum</th>
+          <th style="width: 140px">Status</th>
+          <th style="width: 110px" class="text-end">Aktionen</th>
+        </tr>
+      </thead>
+
+      <tbody *ngIf="ziele().length > 0; else noZiele">
+        <tr *ngFor="let z of ziele()">
+          <td>
+            <span [class]="zielDotClass(z.status)"></span>
+          </td>
+          <td class="ziel-cell-strong">
+            {{ z.topic }}
+          </td>
+          <td class="ziel-cell-desc">
+            {{ z.description }}
+          </td>
+          <td>
+            {{ z.finishBy | date }}
+            @if (zielWarningTooltip(z.id); as tooltip) {
+              <span
+                class="badge rounded-pill text-bg-danger ms-1"
+                [title]="tooltip">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+              </span>
+            }
+          </td>
+          <td>
+            <span [class]="zielBadgeClass(z.status)">
+              {{ zielBadgeText(z.status) || "Unbekannt" }}
+            </span>
+          </td>
+          <td class="text-end">
+            @if (!readOnly()) {
+              <div class="ziel-actions">
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0"
+                  title="Bearbeiten"
+                  (click)="openZielFormEdit(z.id)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm p-0 text-danger"
+                  title="Löschen"
+                  (click)="deleteZiel(z.id)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            }
+          </td>
+        </tr>
+      </tbody>
+
+      <ng-template #noZiele>
+        <tbody>
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              bisher keine Zielvereinbarungen definiert
+            </td>
+          </tr>
+        </tbody>
+      </ng-template>
+
+      @if (!readOnly()) {
+        <tfoot>
+          <tr>
+            <td colspan="6">
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 ziel-add-btn"
+                title="Zielvereinbarung hinzufügen"
+                (click)="openZielFormNew()">
+                <i class="bi bi-plus-circle"></i>
+                <span class="ms-2">Zielvereinbarung hinzufügen</span>
+              </button>
+            </td>
+          </tr>
+        </tfoot>
+      }
+    </table>
+  </div>
+
+  <div class="ziel-form-shell" [class.ziel-form-shell--open]="zielFormOpen()">
+    <div class="ziel-form" *ngIf="zielFormOpen()">
+      <div class="row g-2">
+        <div class="col-12 col-md-6">
+          <ng-select
+            [class.is-invalid]="zielErrors().topic"
+            [items]="Topics"
+            placeholder="Thema"
+            [ngModel]="currentZiel().topic"
+            (ngModelChange)="changeZiel('topic', $event)" />
+          <div class="invalid-feedback">Bitte ein Thema angeben</div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <div class="input-group">
+            <input
+              class="form-control"
+              [class.is-invalid]="zielErrors().startedAt"
+              placeholder="Startdatum"
+              ngbDatepicker
+              #d="ngbDatepicker"
+              [ngModel]="currentZiel().startedAt"
+              (ngModelChange)="changeZiel('startedAt', $event)" />
+            <button
+              class="btn btn-outline-secondary bi bi-calendar3"
+              (click)="d.toggle()"
+              type="button"></button>
+            <div class="invalid-feedback">Bitte ein Startdatum angeben</div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <div class="input-group">
+            <input
+              class="form-control"
+              [class.is-invalid]="zielErrors().finishBy || zielErrors().isAfter"
+              placeholder="Zieldatum"
+              ngbDatepicker
+              #d2="ngbDatepicker"
+              [ngModel]="currentZiel().finishBy"
+              (ngModelChange)="changeZiel('finishBy', $event)" />
+            <button
+              class="btn btn-outline-secondary bi bi-calendar3"
+              (click)="d2.toggle()"
+              type="button"></button>
+            @if (zielErrors().finishBy) {
+              <div class="invalid-feedback">Bitte ein Zieldatum angeben</div>
+            }
+            <div [class.is-invalid]="zielErrors().isAfter"></div>
+            @if (!zielErrors().finishBy) {
+              <div class="invalid-feedback">
+                Zieldatum muss nach dem Startdatum liegen
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <ng-select
+            [items]="status"
+            class="select"
+            [class.is-invalid]="zielErrors().status"
+            placeholder="Status"
+            [ngModel]="currentZiel().status"
+            (ngModelChange)="changeZiel('status', $event)">
+            <ng-template ng-option-tmp let-item="item">{{
+              zielBadgeText(item)
+            }}</ng-template>
+            <ng-template ng-label-tmp let-item="item">{{
+              zielBadgeText(item)
+            }}</ng-template>
+          </ng-select>
+          <div class="invalid-feedback">Bitte einen Status auswählen</div>
+        </div>
+
+        <div class="col-12">
+          <textarea
+            rows="3"
+            class="form-control form-control-sm"
+            [class.is-invalid]="zielErrors().description"
+            placeholder="Beschreibung"
+            [ngModel]="currentZiel().description"
+            (ngModelChange)="changeZiel('description', $event)"></textarea>
+          <div class="invalid-feedback">Bitte eine Beschreibung eingeben</div>
+        </div>
+
+        <div class="container"></div>
+
+        <div class="col-12 d-flex justify-content-between align-items-center">
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 text-muted"
+            (click)="cancelZielForm()">
+            Abbrechen
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            title="Speichern"
+            [disabled]="!currentZielValid()"
+            (click)="saveZiel()"
+          >
+            <span>Zielvereinbarung speichern</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

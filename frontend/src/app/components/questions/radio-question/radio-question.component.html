@@ -1,0 +1,24 @@
+<div class="radio-question">
+  <span class="form-label d-block">{{ question.text }}</span>
+
+  <div class="form-check" *ngFor="let opt of question.selectOptions">
+    <input
+      class="form-check-input"
+      type="radio"
+      [name]="'' + (question.id ?? question.text)"
+      [id]="'' + (question.id ?? question.text) + '-' + opt.text"
+      [value]="opt.text"
+      [(ngModel)]="selected"
+      (change)="onSelect(opt.id)"
+      [class.is-invalid]="!answerValid" />
+    <label
+      class="form-check-label"
+      [for]="'' + (question.id ?? question.text) + '-' + opt.text">
+      {{ opt.text }}
+    </label>
+  </div>
+
+  <div class="invalid-feedback d-block" *ngIf="!answerValid">
+    {{ reason }}
+  </div>
+</div>

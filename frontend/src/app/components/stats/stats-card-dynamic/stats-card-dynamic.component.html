@@ -1,0 +1,23 @@
+<div class="card shadow-sm stats-kpi-card stats-kpi-card--blue">
+  <div class="card-header d-flex align-items-center gap-2">
+    <i class="bi bi-list-task"></i>
+    <strong>Andere Formulare</strong>
+  </div>
+  <div class="card-body">
+    <ng-select
+      bindLabel="name"
+      [(ngModel)]="selectedForm"
+      [items]="forms() || []"></ng-select>
+    <ng-select
+      bindLabel="text"
+      [(ngModel)]="selectedQuestion"
+      [items]="questions() || []"
+      (change)="refreshValue()"></ng-select>
+    <div class="stats-kpi-row">
+      <span class="stats-kpi-label-muted">{{
+        selectedQuestion()?.text || "Wert"
+      }}</span>
+      <span class="stats-kpi-value-small">{{ value() }}</span>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,23 @@
+<label for="dateInput">{{ question.text }}</label>
+
+<div class="input-group">
+  <div class="input-group">
+    <input
+      id="dateInput"
+      [class]="`form-control ${answerValid ? '' : 'is-invalid'}`"
+      [placeholder]="question.text"
+      [(ngModel)]="model"
+      (dateSelect)="onDateSelect($event)"
+      navigation="select"
+      name="dp"
+      (click)="d.toggle()"
+      ngbDatepicker
+      #d="ngbDatepicker"
+      required />
+    <button
+      class="btn btn-outline-secondary bi bi-calendar3"
+      (click)="d.toggle()"
+      type="button"></button>
+    <div class="invalid-feedback">{{ reason }}</div>
+  </div>
+</div>

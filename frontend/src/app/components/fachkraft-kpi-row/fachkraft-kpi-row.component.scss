@@ -1,0 +1,75 @@
+:host {
+  display: block;
+}
+
+.fachkraft-kpi-row {
+  margin-bottom: 0.75rem;
+}
+
+.fachkraft-kpi-card {
+  border-radius: 16px;
+  overflow: hidden;
+  animation: fachkraftKpiIn 420ms ease both;
+}
+
+.fachkraft-kpi-card .card-body {
+  padding: 0.8rem 1rem;
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.fachkraft-kpi-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.fachkraft-kpi-topline i {
+  font-size: 1rem;
+  color: var(--bs-secondary-color, #6b7280);
+}
+
+.fachkraft-kpi-label {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bs-secondary-color, #6b7280);
+}
+
+.fachkraft-kpi-value {
+  font-size: 1.5rem;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.fachkraft-kpi-subline {
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--bs-secondary-color, #6b7280);
+}
+
+@keyframes fachkraftKpiIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 576px) {
+  .fachkraft-kpi-card .card-body {
+    min-height: 88px;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .fachkraft-kpi-value {
+    font-size: 1.3rem;
+  }
+}

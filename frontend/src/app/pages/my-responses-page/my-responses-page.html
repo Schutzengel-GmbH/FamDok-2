@@ -1,0 +1,9 @@
+<div class="card">
+  @for (response of responses; track $index) {
+    <button
+      class="btn btn-outline-primary"
+      (click)="nav(response.id, response.caseFormId!)">
+      {{ response.caseForm!.name }}, für Fall {{ response.case.id }}
+    </button>
+  }
+</div>

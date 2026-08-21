@@ -1,0 +1,52 @@
+<div class="dashboard-root container-fluid">
+  <app-fachkraft-kpi-row [cases]="myCases"></app-fachkraft-kpi-row>
+
+  <app-warnings-list
+    #warningsList
+    class="d-block"
+    [cases]="myCases"
+    (openZielvereinbarung)="onOpenZielvereinbarung($event)"></app-warnings-list>
+
+  <div class="card shadow-sm dashboard-card">
+    <div class="card-header d-flex align-items-center gap-2">
+      <i class="bi bi-speedometer2"></i>
+      <strong>Überblick</strong>
+      @if (dashboardCases.availableScopes().length > 1) {
+      <div class="btn-group btn-group-sm" role="group">
+        @for (scope of dashboardCases.availableScopes(); track scope) {
+        <button
+          type="button"
+          class="btn"
+          [class.btn-primary]="dashboardCases.scope() === scope"
+          [class.btn-outline-primary]="dashboardCases.scope() !== scope"
+          (click)="dashboardCases.setScope(scope)">
+          {{ scope === 'own' ? 'Eigene Fälle' : scope === 'org' ? 'Organisation' :
+          'Unterorganisation' }}
+        </button>
+        }
+      </div>
+      }
+      <div class="input-group width_">
+        <label class="input-group-text" for="search"
+          ><i class="bi bi-search"></i></label
+        ><input
+          class="form-control"
+          id="search"
+          type="text"
+          [(ngModel)]="search" />
+      </div>
+      <a
+        class="btn btn-outline-primary btn-sm ms-auto"
+        routerLink="/create-family">
+        <i class="bi bi-plus-lg me-1"></i>
+        Familie hinzufügen
+      </a>
+    </div>
+    <div class="card-body">
+      <app-dashboard-family-table
+        #familyTable
+        [filterTerm]="search()"
+        (detailsClosed)="onDetailsClosed()"></app-dashboard-family-table>
+    </div>
+  </div>
+</div>

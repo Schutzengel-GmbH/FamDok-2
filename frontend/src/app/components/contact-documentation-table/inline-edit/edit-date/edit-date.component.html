@@ -1,0 +1,15 @@
+<div class="input-group input-group-sm mb-3">
+  <ngb-datepicker
+    [ngModel]="value"
+    (ngModelChange)="change($event)"
+    navigation="select"
+  />
+  <button
+    class="btn btn-outline-secondary bi bi-floppy-fill"
+    (click)="apply()"
+  ></button>
+  <button
+    class="btn btn-outline-secondary bi bi-x-circle-fill"
+    (click)="cancel()"
+  ></button>
+</div>

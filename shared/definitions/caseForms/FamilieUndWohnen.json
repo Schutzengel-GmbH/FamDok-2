@@ -1,0 +1,45 @@
+{
+  "name": "Familie und Wohnen",
+  "type": "single",
+  "containsPersonalData": true,
+  "questions": [
+    {
+      "text": "Wohnverhältnisse",
+      "type": "Select",
+      "selectOptions": [
+        { "id": 0, "text": "Miete" },
+        { "id": 1, "text": "Eigentum" },
+        { "id": 2, "text": "Gemeinschaftsunterkunft" }
+      ]
+    },
+    {
+      "text": "Einkommen",
+      "type": "Select",
+      "selectOptions": [
+        { "id": 0, "text": "Erwerbseinkommen" },
+        { "id": 1, "text": "Bürgergeld" },
+        { "id": 2, "text": "Elterngeld" }
+      ]
+    },
+    {
+      "text": "Gesundheit Eltern",
+      "type": "Select",
+      "multiple": true,
+      "selectOptions": [
+        { "id": 0, "text": "Körperliche Einschränkung" },
+        { "id": 1, "text": "Psychische Belastungen" },
+        { "id": 2, "text": "Sucht" }
+      ]
+    },
+    {
+      "text": "Unterstützungsnetzwerk",
+      "type": "Select",
+      "selectOptions": [
+        { "id": 0, "text": "Ja" },
+        { "id": 1, "text": "Teilweise" },
+        { "id": 2, "text": "Nein" },
+        { "id": 3, "text": "Unbekannt" }
+      ]
+    }
+  ]
+}

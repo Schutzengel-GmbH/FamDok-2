@@ -1,0 +1,11 @@
+:host {
+  display: block;
+}
+
+.radio-question {
+  margin-bottom: 0.5rem;
+}
+
+.radio-question .form-check + .form-check {
+  margin-top: 0.25rem;
+}

@@ -1,0 +1,36 @@
+<nav class="sidebar">
+  <div class="sidebar-inner">
+    <!-- Oberer Bereich -->
+    <ul class="menu menu-top">
+      @for (link of topLinks(); track $index) {
+        <li>
+          <a
+            class="menu-link"
+            [routerLink]="link.link"
+            routerLinkActive="active"
+            ><i class="bi {{ link.icon }}"></i>{{ link.label }}</a
+          >
+        </li>
+      }
+    </ul>
+
+    <!-- Unterer Bereich -->
+    <ul class="menu menu-bottom">
+      @for (link of bottomLinks(); track $index) {
+        <li>
+          <a
+            class="menu-link"
+            [routerLink]="link.link"
+            routerLinkActive="active"
+            ><i class="bi {{ link.icon }}"></i>{{ link.label }}</a
+          >
+        </li>
+      }
+      <li>
+        <a class="menu-link" routerLinkActive="active" (click)="logout()"
+          ><i class="bi bi-box-arrow-right"></i>Logout</a
+        >
+      </li>
+    </ul>
+  </div>
+</nav>

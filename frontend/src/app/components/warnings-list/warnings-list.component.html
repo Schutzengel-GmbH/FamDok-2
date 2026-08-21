@@ -1,0 +1,67 @@
+<div class="card shadow-sm warnings-card">
+  <div
+    class="card-header d-flex align-items-center gap-2 warnings-card-header"
+    (click)="toggle()"
+    role="button"
+    [attr.aria-expanded]="expanded()">
+    <i class="bi bi-exclamation-triangle"></i>
+    <strong>Hinweise</strong>
+
+    @if (!isLoading()) {
+      <span
+        class="badge rounded-pill"
+        [class.text-bg-danger]="warnings().length > 0"
+        [class.text-bg-secondary]="warnings().length === 0">
+        {{ warnings().length }}
+      </span>
+    }
+
+    <button
+      type="button"
+      class="btn btn-sm btn-link text-decoration-none ms-auto p-0"
+      (click)="$event.stopPropagation(); toggle()">
+      <i
+        class="bi"
+        [class.bi-chevron-up]="expanded()"
+        [class.bi-chevron-down]="!expanded()"></i>
+    </button>
+  </div>
+
+  @if (expanded()) {
+    <div class="card-body warnings-card-body">
+      @if (isLoading()) {
+        <p class="mb-0 text-muted">Hinweise werden geladen...</p>
+      } @else if (warnings().length === 0) {
+        <p class="mb-0 text-muted">Keine offenen Hinweise.</p>
+      } @else {
+        <ul class="list-group list-group-flush">
+          @for (w of warnings(); track $index) {
+            <li class="list-group-item d-flex align-items-start gap-2">
+              <i
+                class="bi warnings-item-icon"
+                [ngClass]="icon(w)"
+                [class.text-danger]="w.level === WarningLevel.WARNING"
+                [class.text-primary]="w.level === WarningLevel.INFO"></i>
+
+              <div class="flex-grow-1">
+                @if (familyName(w); as name) {
+                  <div class="fw-semibold">{{ name }}</div>
+                }
+                <div class="warnings-item-message">{{ message(w) }}</div>
+              </div>
+
+              @if (hasAction(w)) {
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm text-nowrap"
+                  (click)="takeAction(w)">
+                  {{ actionLabel(w) }}
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</div>

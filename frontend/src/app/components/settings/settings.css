@@ -1,0 +1,11 @@
+.org-item-group {
+}
+
+.org-item {
+  background: lightgrey;
+  font-weight: bold;
+}
+
+.sub-org-item {
+  margin-left: 2rem;
+}

@@ -1,0 +1,191 @@
+@if (!initialCase()) {
+  <app-select-case
+    [case]="case()"
+    (caseChange)="onCaseChange($event)"></app-select-case>
+}
+@if (initialCase()) {
+  <h3>Fallkontaktdoukentation für Familie {{ initialCase()!.family.name }}</h3>
+}
+@if (case() || initialCase()) {
+  <ul class="nav nav-tabs mt-3">
+    <li class="nav-item">
+      <button
+        type="button"
+        class="nav-link"
+        [class.active]="activeTab() === 'daten'"
+        (click)="setActiveTab('daten')">
+        Daten
+      </button>
+    </li>
+    <li class="nav-item">
+      <button
+        type="button"
+        class="nav-link"
+        [class.active]="activeTab() === 'dokumentation'"
+        (click)="setActiveTab('dokumentation')">
+        Dokumentation
+      </button>
+    </li>
+  </ul>
+
+  <form class="mt-3" [formGroup]="form" (submit)="save()">
+    @if (activeTab() === "daten") {
+      <label for="dateInput">Datum der Beratung</label>
+      <div class="input-group mb-2">
+        <input
+          id="dateInput"
+          class="form-control"
+          [class.is-invalid]="form.controls['date'].invalid"
+          formControlName="date"
+          aria-label="Datum"
+          placeholder="Datum"
+          navigation="select"
+          name="dp"
+          (click)="d.toggle()"
+          ngbDatepicker
+          #d="ngbDatepicker"
+          required />
+        <button
+          class="btn btn-outline-secondary bi bi-calendar3"
+          (click)="d.toggle()"
+          type="button"></button>
+        <div class="invalid-feedback">Angabe ist nicht optional</div>
+      </div>
+
+      <div class="form-floating mb-2">
+        <input
+          type="number"
+          class="form-control"
+          [class.is-invalid]="form.controls['duration'].invalid"
+          id="duration"
+          formControlName="duration" />
+        <label for="duration">Dauer der Beratung (in Minuten)</label>
+        <div class="invalid-feedback">Angabe ist nicht optional</div>
+      </div>
+
+      <div class="mb-2">
+        <label for="artDerBetreuung">Art der Betreuung</label>
+        <ng-select
+          id="artDerBetreuung"
+          class="w-100"
+          [class.is-invalid]="form.controls['artDerBetreuung'].invalid"
+          ariaLabel="Art der Betreuung"
+          placeholder="Art der Betreuung"
+          bindValue="id"
+          clearAllText="Auswahl aufheben"
+          [items]="options['artDerBetreuung']"
+          groupBy="type"
+          formControlName="artDerBetreuung">
+          <ng-template ng-option-tmp let-item="item">
+            {{ item.text }}
+          </ng-template>
+          <ng-template ng-label-tmp let-item="item">
+            {{ item.text }}
+          </ng-template>
+        </ng-select>
+        <div class="invalid-feedback">Angabe ist nicht optional</div>
+      </div>
+
+      <div class="mb-2">
+        <label for="beratungsThemenEltern"
+          >Beratungsthemen mit Bezug auf die Eltern</label
+        >
+        <ng-select
+          id="beratungsThemenEltern"
+          class="w-100"
+          ariaLabel="Beratungsthemen mit Bezug auf die Eltern"
+          placeholder="Beratungsthemen mit Bezug auf die Eltern"
+          bindValue="id"
+          clearAllText="Auswahl aufheben"
+          [items]="options['beratungsThemenEltern']"
+          groupBy="type"
+          formControlName="beratungsThemenEltern"
+          multiple>
+          <ng-template ng-option-tmp let-item="item">
+            {{ item.text }}
+          </ng-template>
+          <ng-template ng-label-tmp let-item="item">
+            {{ item.text }}
+          </ng-template>
+        </ng-select>
+      </div>
+
+      <div class="mb-2">
+        <label for="beratungsThemenKinder"
+          >Beratungsthemen mit Bezug auf die Kinder</label
+        >
+        <ng-select
+          id="beratungsThemenKinder"
+          class="w-100"
+          ariaLabel="Beratungsthemen mit Bezug auf die Kinder"
+          placeholder="Beratungsthemen mit Bezug auf die Kinder"
+          bindValue="id"
+          clearAllText="Auswahl aufheben"
+          [items]="options['beratungsThemenKinder']"
+          groupBy="type"
+          formControlName="beratungsThemenKinder"
+          multiple>
+          <ng-template ng-option-tmp let-item="item">
+            {{ item.text }}
+          </ng-template>
+          <ng-template ng-label-tmp let-item="item">
+            {{ item.text }}
+          </ng-template>
+        </ng-select>
+      </div>
+
+      <div class="mb-2">
+        <label for="beratungsThemenAllgemein">Allgemeine Beratungsthemen</label>
+        <ng-select
+          id="beratungsThemenAllgemein"
+          class="w-100"
+          ariaLabel="Allgemeine Beratungsthemen"
+          placeholder="Allgemeine Beratungsthemen"
+          bindValue="id"
+          clearAllText="Auswahl aufheben"
+          [items]="options['beratungsThemenAllgemein']"
+          groupBy="type"
+          formControlName="beratungsThemenAllgemein"
+          multiple>
+          <ng-template ng-option-tmp let-item="item">
+            {{ item.text }}
+          </ng-template>
+          <ng-template ng-label-tmp let-item="item">
+            {{ item.text }}
+          </ng-template>
+        </ng-select>
+      </div>
+
+      <div class="form-floating mb-2">
+        <textarea
+          class="form-control"
+          [class.is-invalid]="form.controls['zusammenfassung'].invalid"
+          id="zusammenfassung"
+          formControlName="zusammenfassung"
+          rows="3"></textarea>
+        <label for="zusammenfassung">Zusammenfassung</label>
+        <div class="invalid-feedback">Angabe ist nicht optional</div>
+      </div>
+    }
+
+    @if (activeTab() === "dokumentation") {
+      <div class="d-flex flex-column mb-2" style="height: 69vh">
+        <textarea
+          class="form-control"
+          [class.is-invalid]="form.controls['dokumentation'].invalid"
+          id="dokumentation"
+          formControlName="dokumentation"
+          style="height: 100%"></textarea>
+        <div class="invalid-feedback">Angabe ist nicht optional</div>
+      </div>
+    }
+
+    @if (!readOnly()) {
+      <button type="submit" class="btn btn-outline-primary">Speichern</button>
+      {{ " " }}
+      <button type="button" (click)="delete()" class="btn btn-outline-danger">
+        Löschen
+      </button>
+    }
+  </form>
+}

@@ -1,0 +1,267 @@
+$brand-primary: #2563eb;
+$brand-primary-2: #1d4ed8;
+$brand-accent: #f59e0b;
+$brand-success: #10b981;
+$brand-danger: #ef4444;
+
+$surface-1-light: #ffffff;
+$surface-2-light: #f3f4f8;
+$ink-1-light: #020617;
+$ink-2-light: #4b5563;
+
+$surface-1-dark: #020617;
+$surface-2-dark: #020617;
+$ink-1-dark: #e5e7eb;
+$ink-2-dark: #9ca3af;
+
+:root {
+  --bs-primary: #{$brand-primary};
+  --bs-primary-rgb: 37, 99, 235;
+  --bs-secondary: #64748b;
+  --bs-success: #{$brand-success};
+  --bs-warning: #{$brand-accent};
+  --bs-danger: #{$brand-danger};
+
+  --bs-body-bg: #{$surface-2-light};
+  --bs-body-color: #{$ink-1-light};
+  --bs-secondary-bg: #e5e7f1;
+  --bs-secondary-color: #{$ink-2-light};
+  --bs-muted-color: #6b7280;
+  --bs-border-color: rgba(15, 23, 42, 0.12);
+  --bs-card-bg: #{$surface-1-light};
+  --bs-card-cap-bg: #{$surface-1-light};
+  --bs-link-color: #2563eb;
+  --bs-link-hover-color: #1d4ed8;
+
+  --app-radius: 14px;
+  --app-radius-sm: 10px;
+  --app-shadow-1: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --app-shadow-2: 0 18px 60px rgba(15, 23, 42, 0.12);
+
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.28);
+
+  --btn-hover-filter: brightness(0.98);
+  --btn-active-filter: brightness(0.96);
+
+  --field-color: #{$ink-1-light};
+  --field-placeholder: #9ca3af;
+
+  --table-row-strip: rgba(15, 23, 42, 0.02);
+}
+
+:root[data-bs-theme="dark"] {
+  --bs-body-bg: #{$surface-2-dark};
+  --bs-body-color: #{$ink-1-dark};
+  --bs-secondary-bg: #0b1120;
+  --bs-secondary-color: #{$ink-2-dark};
+  --bs-muted-color: #6b7280;
+  --bs-border-color: rgba(148, 163, 184, 0.28);
+  --bs-card-bg: #0b1120;
+  --bs-card-cap-bg: #020617;
+  --bs-link-color: #60a5fa;
+  --bs-link-hover-color: #93c5fd;
+
+  --app-shadow-1: 0 10px 30px rgba(0, 0, 0, 0.55);
+  --app-shadow-2: 0 24px 80px rgba(0, 0, 0, 0.75);
+  --focus-ring: 0 0 0 3px rgba(96, 165, 250, 0.45);
+
+  --field-bg: #020617;
+  --field-color: #e5e7eb;
+  --field-placeholder: #6b7280;
+
+  --table-row-strip: rgba(15, 23, 42, 0.7);
+}
+
+* {
+  outline: none;
+}
+
+:focus-visible {
+  box-shadow: var(--focus-ring) !important;
+  outline: none !important;
+  border-color: color-mix(
+    in hsl,
+    var(--bs-primary) 65%,
+    transparent
+  ) !important;
+}
+
+.card,
+.modal-content,
+.offcanvas,
+.dropdown-menu {
+  border-radius: var(--app-radius);
+  border: 1px solid var(--bs-border-color);
+  background-color: var(--bs-card-bg);
+  background-clip: padding-box;
+  box-shadow: var(--app-shadow-1);
+}
+
+.card-header,
+.modal-header,
+.offcanvas-header,
+.dropdown-header {
+  background-color: var(--bs-card-cap-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.btn {
+  border-radius: 10px;
+  transition:
+    filter 0.12s ease,
+    transform 0.04s ease;
+}
+
+.btn:hover {
+  filter: var(--btn-hover-filter);
+}
+
+.btn:active {
+  transform: translateY(1px);
+  filter: var(--btn-active-filter);
+}
+
+.btn-primary {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--bs-primary) 94%, white 6%),
+    var(--bs-primary)
+  );
+  border: none;
+}
+
+.btn-primary:disabled {
+  opacity: 0.65;
+}
+
+.badge-soft {
+  background: color-mix(in oklab, var(--bs-primary) 16%, transparent);
+  color: color-mix(in oklab, var(--bs-primary) 80%, var(--bs-body-color));
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.badge-soft--red {
+  background: color-mix(in oklab, var(--bs-danger) 16%, transparent);
+  color: color-mix(in oklab, var(--bs-danger) 80%, var(--bs-body-color));
+}
+
+.badge-soft--yellow {
+  background: color-mix(in oklab, var(--bs-warning) 16%, transparent);
+  color: color-mix(in oklab, var(--bs-warning) 80%, var(--bs-body-color));
+}
+
+.badge-soft--green {
+  background: color-mix(in oklab, var(--bs-success) 16%, transparent);
+  color: color-mix(in oklab, var(--bs-success) 80%, var(--bs-body-color));
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+  border-radius: 10px;
+  border-color: var(--bs-border-color);
+  background-color: var(--field-bg);
+  color: var(--field-color);
+  background-clip: padding-box;
+}
+
+.form-control::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
+
+.form-control:disabled,
+.form-control[readonly],
+.form-select:disabled {
+  opacity: 0.7;
+}
+
+.ng-select .ng-select-container {
+  border-radius: 10px;
+  border-color: var(--bs-border-color);
+  background-color: var(--field-bg);
+  color: var(--field-color);
+  background-clip: padding-box;
+}
+
+.ng-select.is-invalid .ng-select-container {
+  border-color: var(--bs-danger);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 2.5rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.ng-select.ng-select-opened .ng-select-container {
+  border-color: var(--bs-border-color);
+  background-color: var(--field-bg);
+}
+
+.ng-select.ng-select-multiple
+  .ng-select-container
+  .ng-value-container
+  .ng-value {
+  background-color: var(--bs-muted-color);
+  font-size: 1rem;
+}
+
+.ng-select.ng-select-multiple
+  .ng-select-container
+  .ng-value-container
+  .ng-value
+  .ng-value-icon.right {
+  border-left: 1px solid var(--bs-border-color);
+}
+
+.ng-select .ng-dropdown-panel {
+  border-color: var(--bs-border-color);
+}
+
+.ng-dropdown-panel .ng-dropdown-panel-items .ng-option {
+  background-color: var(--field-bg);
+  color: var(--field-color);
+  &.ng-option-marked {
+    background-color: var(--bs-muted-color);
+    color: var(--field-color);
+  }
+  &.ng-option-disabled {
+    color: var(--field-color);
+  }
+}
+
+.ng-select .ng-dropdown-panel {
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+
+.table {
+  border-color: var(--bs-border-color);
+  color: var(--bs-body-color);
+}
+
+.table thead th {
+  background: color-mix(in oklab, var(--bs-card-bg) 88%, var(--bs-primary) 12%);
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: var(--table-row-strip);
+}
+
+.table-hover > tbody > tr:hover > * {
+  background-color: color-mix(in oklab, var(--bs-primary) 10%, transparent);
+}
+
+.bi {
+  vertical-align: -0.125em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

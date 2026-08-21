@@ -1,0 +1,24 @@
+{
+  "name": "fh-digihub",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Root orchestration for local development (backend + frontend + dev infra)",
+  "scripts": {
+    "infra:up": "docker compose -f docker-compose-dev.yaml up -d --wait",
+    "infra:down": "docker compose -f docker-compose-dev.yaml down",
+    "wait:keycloak": "wait-on -t 60000 http-get://localhost:8090/realms/master",
+    "db:sync": "npm --prefix backend run db:dev",
+    "kc:sync": "npm run wait:keycloak && npm --prefix backend run generate:keycloak",
+    "seed:dev": "npm --prefix backend run seed:dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run start",
+    "dev": "npm run infra:up && npm run db:sync && concurrently --kill-others-on-fail -n backend,frontend -c blue,green \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "test:backend": "npm --prefix backend test",
+    "test:frontend": "npm --prefix frontend run test:ci",
+    "test": "npm run test:backend && npm run test:frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "wait-on": "^8.0.2"
+  }
+}

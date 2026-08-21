@@ -1,0 +1,12 @@
+<div class="card m-1 p-2">
+  <h6>{{ handover().date | date }}</h6>
+  @for (user of handover().added; track user.id) {
+    <p>+ {{ user | user }}</p>
+  }
+  @for (user of handover().removed; track user.id) {
+    <p>- {{ user | user }}</p>
+  }
+  @if (handover().notes) {
+    <p>Notizen: {{ handover().notes }}</p>
+  }
+</div>

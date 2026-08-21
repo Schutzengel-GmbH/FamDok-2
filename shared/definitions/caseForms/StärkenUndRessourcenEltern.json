@@ -1,0 +1,878 @@
+{
+  "name": "Stärken und Ressourcen Eltern",
+  "type": "multiple",
+  "containsPersonalData": true,
+  "questions": [
+    {
+      "text": "Datum",
+      "type": "Date",
+      "required": true
+    },
+    {
+      "text": "Verantwortung",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Konstante Bezugsperson",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Wahrnehmung emotionaler Bedürfnisse des Kindes",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Zuwendung",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Emotionale Verlässlichkeit",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Ansprache des Kindes",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Grenzen",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Sprachanregung",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Spielangebot",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Körperkontakt",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Außenaktivität mit Kind",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Freizeitverhalten",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Umgang mit Konflikten",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Partnerschaft",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Respekt vor seelischer/körperlicher Unversehrtheit",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Wohnsituation",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Finanzielle Situation",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Selbstfürsorge",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Soziales Umfeld",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Zugang zu Hilfsangeboten/Ämtern/etc.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Notizen/Besonderheiten",
+      "type": "Textarea",
+      "textAreaRows": 4,
+      "required": false
+    }
+  ]
+}

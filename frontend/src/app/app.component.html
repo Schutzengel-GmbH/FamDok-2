@@ -1,0 +1,16 @@
+<input type="checkbox" id="mobile-menu-toggle" class="mobile-menu-toggle" />
+
+<app-header></app-header>
+
+<div class="app-shell">
+  <app-menu class="app-sidebar"></app-menu>
+
+  <main class="app-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+<app-confirm-dialog-container />
+<app-toasts />
+
+<label for="mobile-menu-toggle" class="app-overlay"></label>

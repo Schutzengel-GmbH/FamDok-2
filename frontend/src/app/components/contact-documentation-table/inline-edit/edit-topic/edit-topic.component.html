@@ -1,0 +1,17 @@
+<div class="input-group input-group-sm mb-3">
+  <app-multi-select
+    [value]="_value() || []"
+    [maximum]="prop() === 'artDerBetreuung' ? 1 : undefined"
+    [items]="options()"
+    labelProp="text"
+    (selectChange)="change($event)"
+  />
+  <button
+    class="btn btn-outline-secondary bi bi-floppy-fill"
+    (click)="apply()"
+  ></button>
+  <button
+    class="btn btn-outline-secondary bi bi-x-circle-fill"
+    (click)="cancel()"
+  ></button>
+</div>

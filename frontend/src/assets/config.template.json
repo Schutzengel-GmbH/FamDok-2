@@ -1,0 +1,6 @@
+{
+  "apiUrl": "${API_BASE_URL}",
+  "keycloakUrl": "${KC_BASE_URL}",
+  "keycloakRealm": "${KC_REALM}",
+  "keycloakClient": "${KC_CLIENT}"
+}

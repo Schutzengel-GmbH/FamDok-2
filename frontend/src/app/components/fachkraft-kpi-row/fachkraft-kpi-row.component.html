@@ -1,0 +1,20 @@
+<div class="row g-3 fachkraft-kpi-row">
+  <div class="col-12 col-sm-6 col-xl-3" *ngFor="let card of cards; let i = index">
+    <div class="card shadow-sm fachkraft-kpi-card" [style.animationDelay.ms]="i * 90">
+      <div class="card-body">
+        <div class="fachkraft-kpi-topline">
+          <span class="fachkraft-kpi-label">{{ card.label }}</span>
+          <i class="bi" [ngClass]="card.icon"></i>
+        </div>
+
+        <div class="fachkraft-kpi-value">
+          {{ card.value }}
+        </div>
+
+        <div class="fachkraft-kpi-subline">
+          {{ card.subline }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

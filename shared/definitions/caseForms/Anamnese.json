@@ -1,0 +1,72 @@
+{
+  "name": "Anamnese",
+  "type": "single",
+  "containsPersonalData": true,
+  "questions": [
+    {
+      "text": "Datum",
+      "type": "Date",
+      "required": true
+    },
+    {
+      "text": "Wohnsituation",
+      "textAreaRows": 4,
+      "type": "Textarea",
+      "required": false
+    },
+    {
+      "text": "Schulischer und beruflicher Werdegang",
+      "textAreaRows": 4,
+      "type": "Textarea",
+      "required": false
+    },
+    {
+      "text": "Finanzielle Ausgangssituation (z.B. SGB II-Bezug, Kindergeld, Unterhalt etc.)",
+      "textAreaRows": 4,
+      "type": "Textarea",
+      "required": false
+    },
+    {
+      "text": "Haushaltsorganisation (z.B. Schulden)",
+      "textAreaRows": 4,
+      "type": "Textarea",
+      "required": false
+    },
+    {
+      "text": "Haushaltsorganisation (z.B. Schulden)",
+      "textAreaRows": 4,
+      "type": "Textarea",
+      "required": false
+    },
+    {
+      "text": "Soziales Umfeld",
+      "textAreaRows": 4,
+      "type": "Textarea",
+      "required": false
+    },
+    {
+      "text": "Gesundheit der Mutter/des Vaters",
+      "textAreaRows": 4,
+      "type": "Textarea",
+      "required": false
+    },
+    {
+      "text": "Kindesentwicklung/Gesundheit der Kinder",
+      "textAreaRows": 4,
+      "type": "Textarea",
+      "required": false
+    },
+    {
+      "text": "Erziehung/Bindung",
+      "textAreaRows": 4,
+      "type": "Textarea",
+      "required": false
+    },
+    {
+      "text": "Kinderbetreuung",
+      "textAreaRows": 4,
+      "type": "Textarea",
+      "required": false
+    }
+  ]
+}

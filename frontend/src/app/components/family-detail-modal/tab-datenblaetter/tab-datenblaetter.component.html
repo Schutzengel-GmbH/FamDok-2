@@ -1,0 +1,24 @@
+<div class="tab-section">
+  <h6 class="section-title">Alle Datenblätter</h6>
+  <div class="d-flex flex-column gap-2">
+    @for (form of forms$ | async; track form.id) {
+      <button
+        class="btn btn-outline-secondary d-flex align-items-center justify-content-between"
+        (click)="gotoForm(form.id)">
+        <span>
+          @if (readOnly()) {
+            <i class="bi bi-eye me-1"></i>
+          }
+          {{ form.name }}
+        </span>
+        @if (form.hasWarning) {
+          <span
+            class="badge rounded-pill text-bg-danger ms-2"
+            title="Dokumentation ist unvollständig.">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </span>
+        }
+      </button>
+    }
+  </div>
+</div>

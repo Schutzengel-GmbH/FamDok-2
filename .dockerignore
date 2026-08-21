@@ -1,0 +1,20 @@
+# Docker only reads .dockerignore from the build context root (docker-compose.yaml
+# sets context: ./ for both services), so this file governs both frontend and
+# backend builds. backend/.dockerignore and frontend/.dockerignore are not read.
+
+**/node_modules
+**/dist
+**/.angular
+**/.cache
+
+.git
+.gitignore
+
+**/Dockerfile*
+**/docker-compose*
+**/compose*
+**/.dockerignore
+
+*.log
+*.env
+!*.env.production

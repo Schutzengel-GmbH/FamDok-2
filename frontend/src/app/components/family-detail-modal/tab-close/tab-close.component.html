@@ -1,0 +1,43 @@
+<div class="tab-section">
+  @if (readOnly()) {
+    <p class="text-muted">
+      {{
+        selectedCase().closedAt
+          ? "Dieser Fall wurde abgeschlossen."
+          : "Dieser Fall ist noch aktiv."
+      }}
+    </p>
+  } @else if (!selectedCase().closedAt) {
+    <h6 class="section-title">Fallabschluss</h6>
+
+    <div class="input-group mb-2">
+      <label class="input-group-text">Abschluss zum: </label>
+      <input
+        type="date"
+        class="form-control form-control"
+        [value]="date().toISOString().slice(0, 10)"
+        (change)="onDateSelect($event)" />
+    </div>
+
+    <div class="d-flex flex-column gap-2">
+      <button class="btn btn-outline-secondary" (click)="close()">
+        Fall abschließen
+      </button>
+    </div>
+  } @else {
+    <div class="d-flex flex-column gap-2">
+      <button
+        class="btn btn-outline-secondary d-flex align-items-center justify-content-between"
+        (click)="close()">
+        <span>Abschlussdokumentation bearbeiten</span>
+        @if (closingDocWarningTooltip(); as tooltip) {
+          <span
+            class="badge rounded-pill text-bg-danger ms-2"
+            [title]="tooltip">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </span>
+        }
+      </button>
+    </div>
+  }
+</div>

@@ -1,0 +1,37 @@
+@for (dialog of dialogService.openDialogs(); track dialog.id) {
+  <div class="modal display-block modal-dialog-centered" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ dialog.title }}</h5>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Close"
+            (click)="dialog.cancelAction()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p>{{ dialog.text }}</p>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+            (click)="dialog.cancelAction()"
+          >
+            Abbrechen
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="dialog.confirmAction()"
+          >
+            Bestätigen
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

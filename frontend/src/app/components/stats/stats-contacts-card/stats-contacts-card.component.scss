@@ -1,0 +1,24 @@
+.stats-kpi-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.stats-kpi-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stats-kpi-item-label {
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+}
+
+.stats-kpi-item-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}

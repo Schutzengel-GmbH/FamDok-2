@@ -1,0 +1,105 @@
+<div class="detail-layout">
+  <section class="detail-info">
+    <h6 class="section-title">Stammdaten</h6>
+
+    <dl class="detail-list">
+      <div class="detail-row">
+        <dt>Adresse</dt>
+        <dd>{{ getAdressString(selectedCase.family.adress) }}</dd>
+      </div>
+
+      <div class="detail-row" *ngIf="selectedCase.family.children?.length">
+        <dt>Kinder</dt>
+        <dd>
+          {{ countChildrenPipe.transform(selectedCase.family.children) }}
+        </dd>
+      </div>
+
+      <div class="detail-row" *ngIf="selectedCase.familienstand">
+        <dt>Familienstand</dt>
+        <dd>
+          {{ selectedCase.familienstand | familienstand }}
+        </dd>
+      </div>
+
+      <div class="detail-row" *ngIf="selectedCase.migrationBackground !== null">
+        <dt>Migrationshintergrund</dt>
+        <dd>
+          {{
+            selectedCase.migrationBackground
+              ? "Ja" +
+                (selectedCase.specificMigrationBackground
+                  ? ", " + selectedCase.specificMigrationBackground
+                  : "")
+              : "Nein"
+          }}
+        </dd>
+      </div>
+
+      <div class="detail-row" *ngIf="selectedCase.partnerInvolved">
+        <dt>Beide Elternteile involviert</dt>
+        <dd>
+          {{ selectedCase.partnerInvolved ? "Ja" : "Nein" }}
+        </dd>
+      </div>
+
+      <div class="detail-row" *ngIf="selectedCase.bekanntJA">
+        <dt>Beim Jugendamt bekannt</dt>
+        <dd>
+          {{ selectedCase.bekanntJA ? "Ja" : "Nein" }}
+        </dd>
+      </div>
+
+      <div class="detail-row" *ngIf="selectedCase.responsibleUsers?.length">
+        <dt>Verantwortlich</dt>
+        <dd>
+          {{ userArrayPipe.transform(selectedCase.responsibleUsers) }}
+        </dd>
+      </div>
+
+      <div class="detail-row">
+        <dt>Letzter Kontakt</dt>
+        <dd>
+          {{
+            (selectedCase.contactDocumentation[0]?.date | date) ||
+              "Kein Kontakt"
+          }}
+        </dd>
+      </div>
+
+      <div class="detail-row" *ngIf="selectedCase.contactDocumentation[0]">
+        <dt>Zusammenfassung</dt>
+        <dd>
+          {{ selectedCase.contactDocumentation[0].zusammenfassung }}
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="detail-chart">
+    <div class="detail-chart-header">
+      <div>
+        <h6 class="section-title mb-1">Gewichtschart</h6>
+        <p class="section-subtitle">Verlauf für ein ausgewähltes Kind</p>
+      </div>
+
+      <div
+        class="child-select-wrapper"
+        *ngIf="selectedCase.family.children?.length">
+        <label class="form-label form-label-sm mb-1">Kind</label>
+        <select
+          class="form-select form-select-sm"
+          ariaLabel="Kind auswählen"
+          [(ngModel)]="selectedChildId">
+          @for (child of selectedCase.family.children; track $index) {
+            <option [value]="child.id">{{ child.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="detail-chart-body">
+      <app-weight-chart [child]="selectedChild()" />
+    </div>
+  </section>
+</div>

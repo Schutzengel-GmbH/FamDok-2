@@ -1,0 +1,38 @@
+@switch (question.type) {
+  @case ("Text") {
+    <app-text-question
+      [question]="question"
+      [answer]="answer()"
+      (answerChange)="answer.set($event)" />
+  }
+  @case ("Select") {
+    <app-select-question
+      [question]="question"
+      [answer]="answer()"
+      (answerChange)="answer.set($event)" />
+  }
+  @case ("Date") {
+    <app-date-question
+      [question]="question"
+      [answer]="answer()"
+      (answerChange)="answer.set($event)" />
+  }
+  @case ("Integer") {
+    <app-integer-question
+      [question]="question"
+      [answer]="answer()"
+      (answerChange)="answer.set($event)" />
+  }
+  @case ("Float") {
+    <app-float-question
+      [question]="question"
+      [answer]="answer()"
+      (answerChange)="answer.set($event)" />
+  }
+  @case ("Textarea") {
+    <app-text-area-question
+      [question]="question"
+      [answer]="answer()"
+      (answerChange)="answer.set($event)" />
+  }
+}

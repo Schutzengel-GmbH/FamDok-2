@@ -1,0 +1,40 @@
+{
+  "name": "Geburtshilfliche Erfahrungen",
+  "type": "single",
+  "containsPersonalData": true,
+  "questions": [
+    {
+      "text": "Datum",
+      "type": "Date",
+      "required": true
+    },
+    {
+      "text": "Gravida",
+      "type": "Integer",
+      "required": false
+    },
+    {
+      "text": "Para",
+      "type": "Integer",
+      "required": false
+    },
+    {
+      "text": "Frühere Schwangerschaften",
+      "type": "Textarea",
+      "textAreaRows": 6,
+      "required": false
+    },
+    {
+      "text": "Frühere Geburten",
+      "type": "Textarea",
+      "textAreaRows": 6,
+      "required": false
+    },
+    {
+      "text": "Wochenbett und Stillzeit nach früheren Geburten",
+      "type": "Textarea",
+      "textAreaRows": 6,
+      "required": false
+    }
+  ]
+}

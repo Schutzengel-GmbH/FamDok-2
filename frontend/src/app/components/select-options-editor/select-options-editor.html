@@ -1,0 +1,57 @@
+<div class="d-flex flex-column gap-2">
+  <label class="fw-semibold">Antwortoptionen</label>
+
+  @for (option of optionsArray.controls; track option; let i = $index) {
+    <div [formGroup]="option" class="d-flex align-items-center gap-2 border rounded p-2">
+      <input
+        type="text"
+        class="form-control"
+        formControlName="text"
+        placeholder="Optionstext"
+        [class.is-invalid]="
+          option.get('text')?.invalid && option.get('text')?.touched
+        " />
+
+      <label
+        class="form-check-label text-nowrap d-flex align-items-center gap-1 mb-0">
+        <input
+          type="radio"
+          class="form-check-input"
+          [name]="openOptionGroupName"
+          [checked]="option.get('isOpen')!.value"
+          (change)="setOpenOption(i)" />
+        Freitext ("Sonstiges")
+      </label>
+
+      <button
+        type="button"
+        class="btn btn-outline-danger btn-sm"
+        title="Option entfernen"
+        (click)="removeOption(i)">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  }
+
+  @if (optionsArray.length === 0) {
+    <div class="text-muted small">Noch keine Optionen hinzugefügt.</div>
+  }
+
+  <div class="d-flex align-items-center gap-2">
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm"
+      (click)="addOption()">
+      <i class="bi bi-plus-lg"></i> Option hinzufügen
+    </button>
+
+    @if (hasOpenOption()) {
+      <button
+        type="button"
+        class="btn btn-link btn-sm"
+        (click)="clearOpenOption()">
+        Freitextoption entfernen
+      </button>
+    }
+  </div>
+</div>

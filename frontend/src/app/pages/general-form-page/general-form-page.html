@@ -1,0 +1,34 @@
+@if (form) {
+  <div class="card">
+    <div class="card-header">
+      <i class="bi {{ form ? 'bi-ui-checks' : 'bi-exclamatimn-triangle' }}"></i>
+      {{ " " }}
+      <strong>{{ form ? form.name : "Kein Formular ausgewählt" }}</strong>
+    </div>
+    <div class="card-body" [class.pe-none]="readOnly" [class.opacity-75]="readOnly">
+      <ul class="list-group">
+        @for (q of form.questions; track q.id) {
+          <li class="list-group-item">
+            <app-question [question]="q" [(answer)]="answers[q.id]" />
+          </li>
+        }
+      </ul>
+    </div>
+    @if (!readOnly) {
+      <div class="card-footer d-flex flex-column align-items-end">
+        <button class="btn btn-primary" (click)="save()" [disabled]="!validate()">
+          Speichern
+        </button>
+        {{ " " }}
+        @if (response) {
+          <button
+            type="button"
+            (click)="delete()"
+            class="btn btn-outline-danger">
+            Löschen
+          </button>
+        }
+      </div>
+    }
+  </div>
+}

@@ -1,0 +1,726 @@
+{
+  "name": "Jetzige Schwangerschaft",
+  "type": "single",
+  "containsPersonalData": true,
+  "questions": [
+    {
+      "text": "Datum",
+      "type": "Date",
+      "required": true
+    },
+    {
+      "text": "SSW",
+      "type": "Integer",
+      "required": false
+    },
+    {
+      "text": "ET",
+      "type": "Date",
+      "required": false
+    },
+    {
+      "text": "Einling",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Ja",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Nein",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Schädellage",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Ja",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Nein",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Vaginale Geburt angestrebt",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Ja",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Nein",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Schwangerschaftsrisiken",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Ja",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Nein",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Wahrscheinliche Geburtsrisiken",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Ja",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Nein",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Besonderheiten beim Kind",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Ja",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Nein",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Anmerkungen/Handlungsbedarf",
+      "type": "Textarea",
+      "textAreaRows": 3,
+      "required": false
+    },
+    {
+      "text": "Erkrankungen/Beschwerden",
+      "type": "Textarea",
+      "textAreaRows": 3,
+      "required": false
+    },
+    {
+      "text": "Informationen aus dem Mutterpass",
+      "type": "Textarea",
+      "textAreaRows": 3,
+      "required": false
+    },
+    {
+      "text": "Vorbereitung/Planung von Geburt, Wochenbett und Stillzeit",
+      "type": "Textarea",
+      "textAreaRows": 3,
+      "required": false
+    },
+    {
+      "text": "Besondere Erfahrungen der schwangeren Frau",
+      "type": "Textarea",
+      "textAreaRows": 3,
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau hat sich von Beginn an über ihre Schwangerschaft gefreut.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau ist sich sicher, dass es ihrem Kind im Bauch gut geht.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau lebt mit allem zuvor geborenen Kindern im gleichen Haushalt.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau freut sich auf das Kind.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau hat ausreichendes Wissen über die Wirkung von Alkohol, Nikotin und Medikamenten/Drogen auf das Kind.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau kann sich in ihrer Umgebung sicher fühlen.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau fühlt sich psychisch stabil.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau erlebt die Schwangerschaft als gesunden Prozess.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau bewältigt die Phase der Anpassung ihres Körpers beschwerdefrei.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau schafft sich Freiräume in Beruf und Familie.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau geht zur Schwangerenvorsorgeuntersuchung.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau hat Kontat zu einer Hebame.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau erhält ausreichend soziale, psychische und medizinische Unterstützung.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau hat sich zur Teilnahme an einem Geburtsvorbereitungskurs positioniert.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau kennt unterschiedliche Geburtsorte.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau weiß, in welcher Schwangerschaftswoche sie welche Klinik aufsuchen sollte.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau hat ausreichend Wissen zu Hilfen bei der Geburt.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau kennt ihre Möglichkeiten, falls sie ein krankes Kind erwartet.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau kennt den Ablauf einer Geburt.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Die schwangere Frau hat ausreichend Wissen zu möglichen Herausforderungen im Wochenbett.",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Nicht relevant",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Trifft zu",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Trifft zum Teil zu",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "Trifft nicht zu",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Handlungsbedarf",
+      "type": "Textarea",
+      "textAreaRows": 6,
+      "required": false
+    }
+  ]
+}

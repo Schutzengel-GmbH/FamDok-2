@@ -1,0 +1,81 @@
+{
+  "name": "A name for the Survey",
+  "questions": [
+    {
+      "text": "A Text Question",
+      "type": "Text",
+      "required": true
+    },
+    {
+      "text": "An Integer Question",
+      "min": 0,
+      "max": 100,
+      "type": "Integer",
+      "required": false
+    },
+    {
+      "text": "A Float Question",
+      "min": 0.0,
+      "max": 3.14159265,
+      "type": "Float",
+      "required": false
+    },
+    {
+      "text": "A Date Question",
+      "type": "Date",
+      "required": false
+    },
+    {
+      "text": "A Select Single Question",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Option 1",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Option 2",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Sonstiges",
+          "isOpen": true
+        }
+      ],
+      "required": true
+    },
+    {
+      "text": "A Select Multiple Question",
+      "multiple": true,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Option 1",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Option 2",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Sonstiges",
+          "isOpen": true
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "A Textarea Question",
+      "textAreaRows": 5,
+      "type": "Textarea",
+      "required": false
+    }
+  ]
+}

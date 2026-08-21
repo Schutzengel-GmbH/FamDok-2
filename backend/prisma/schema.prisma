@@ -1,0 +1,440 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../../shared/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
+generator zod {
+  provider         = "prisma-zod-generator"
+  dateTimeStrategy = "coerce"
+  output           = "../../shared/generated/zod"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Setting {
+  name  String @id @unique
+  value String
+}
+
+model User {
+  id String @id @default(uuid())
+
+  kcId String @unique
+
+  email     String  @unique
+  firstName String?
+  lastName  String?
+  role      Role
+  jobTitle  String?
+
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+  organisationId String?
+
+  subOrganisations SubOrganisation[]
+
+  cases        Case[] @relation(name: "responsibleUsers")
+  casesCreated Case[] @relation(name: "caseCreatedBy")
+
+  caseformResponses     CaseFormResponse[]
+  zielvereinbarungs     Zielvereinbarung[]
+  GeneralFormResponse   GeneralFormResponse[]
+  contactDocumentation  ContactDocumentation[]
+  closingDocumentations ClosingDocumentation[]
+
+  uploadedDocuments       Document[]
+  uploadedCaseAttachments CaseAttachment[]
+}
+
+model Organisation {
+  id String @id @default(uuid())
+
+  name String
+
+  subOrganisations SubOrganisation[]
+  users            User[]
+  families         Family[]
+  cases            Case[]
+  caseForms        CaseForm[]
+  generalForms     GeneralForm[]
+}
+
+model SubOrganisation {
+  id String @id @default(uuid())
+
+  name String
+
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisationId String
+  users          User[]
+  cases          Case[]
+}
+
+model Case {
+  id String @id @default(uuid())
+
+  startedAt DateTime
+  createdBy User?    @relation(name: "caseCreatedBy", fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+  organisationId String
+
+  subOrganisation   SubOrganisation? @relation(fields: [subOrganisationId], references: [id])
+  subOrganisationId String?
+
+  responsibleUsers User[] @relation(name: "responsibleUsers")
+
+  zielvereinbarungen Zielvereinbarung[]
+
+  migrationBackground         Boolean?
+  specificMigrationBackground String?
+  familienstand               Familienstand?
+  partnerInvolved             Boolean?
+  bekanntJA                   Boolean?
+  city                        String?
+  plz                         String?
+
+  family               Family                 @relation(fields: [familyId], references: [id])
+  familyId             String                 @unique
+  caseformResponses    CaseFormResponse[]
+  contactDocumentation ContactDocumentation[]
+
+  closedAt DateTime?
+
+  handovers             Handover[]
+  closingDocumentations ClosingDocumentation[]
+
+  attachments CaseAttachment[]
+}
+
+model Zielvereinbarung {
+  id String @id @default(uuid())
+
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
+  startedAt   DateTime
+  finishBy    DateTime
+  status      Status   @default(inProgress)
+  topic       String
+  description String
+
+  case   Case?   @relation(fields: [caseId], references: [id])
+  caseId String?
+}
+
+model Handover {
+  id String @id @default(uuid())
+
+  createdById String
+
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId String
+
+  date       DateTime
+  addedIds   String[]
+  removedIds String[]
+  notes      String?
+}
+
+model Family {
+  id String @id @default(uuid())
+
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+  organisationId String?
+
+  name String
+  note String?
+
+  /// [Address]
+  adress           Json?
+  phone            String?
+  additionalPhones String[]
+
+  children  Child[]
+  caregiver Caregiver[]
+
+  case Case?
+}
+
+model Child {
+  id String @id @default(uuid())
+
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  familyId String
+
+  name     String
+  lastName String?
+
+  gender Gender @default(unspecified)
+
+  /// [HealthDataPointChild]
+  healthData Json[]
+
+  dateOfBirth      DateTime
+  CaseFormResponse CaseFormResponse[]
+}
+
+model Caregiver {
+  id String @id @default(uuid())
+
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  familyId String
+
+  name     String
+  lastName String?
+
+  relation Relation
+
+  gender Gender @default(unspecified)
+
+  dateOfBirth      DateTime
+  CaseFormResponse CaseFormResponse[]
+}
+
+model CaseForm {
+  id String @id @default(uuid())
+
+  name String
+
+  type                 CaseFormType
+  containsPersonalData Boolean      @default(true)
+  isPersonal           Boolean      @default(false)
+
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+  organisationId String?
+
+  questions         Question[]
+  caseFormResponses CaseFormResponse[]
+}
+
+model CaseFormResponse {
+  id        String  @id @default(uuid())
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
+  caseForm   CaseForm? @relation(fields: [caseFormId], references: [id])
+  caseFormId String?
+
+  case   Case   @relation(fields: [caseId], references: [id])
+  caseId String
+
+  child   Child?  @relation(fields: [childId], references: [id])
+  childId String?
+
+  caregiver   Caregiver? @relation(fields: [caregiverId], references: [id])
+  caregiverId String?
+
+  answers Answer[]
+}
+
+model ContactDocumentation {
+  id        String  @id @default(uuid())
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
+  date                     DateTime?
+  duration                 Int?
+  artDerBetreuung          Int?
+  beratungsThemenEltern    Int[]
+  beratungsThemenKinder    Int[]
+  beratungsThemenAllgemein Int[]
+  zusammenfassung          String?
+  dokumentation            String?
+
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId String
+}
+
+model ClosingDocumentation {
+  id        String  @id @default(uuid())
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
+  date DateTime
+
+  answers Answer[]
+
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId String
+}
+
+model GeneralForm {
+  id String @id @default(uuid())
+
+  name String
+
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+  organisationId String?
+
+  questions Question[]
+
+  responses GeneralFormResponse[]
+}
+
+model GeneralFormResponse {
+  id        String  @id @default(uuid())
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
+  form          GeneralForm @relation(fields: [generalFormId], references: [id])
+  generalFormId String
+
+  answers Answer[]
+}
+
+model Question {
+  id String @id @default(cuid())
+
+  type     QuestionType
+  required Boolean?
+
+  text  String
+  order Int
+
+  /// [SelectOption]
+  selectOptions Json[]
+  multiple      Boolean?
+
+  min          Float?
+  max          Float?
+  textAreaRows Int?
+
+  answers       Answer[]
+  caseForm      CaseForm?    @relation(fields: [caseFormId], references: [id])
+  caseFormId    String?
+  generalForm   GeneralForm? @relation(fields: [generalFormId], references: [id])
+  generalFormId String?
+}
+
+enum QuestionType {
+  Text
+  Integer
+  Float
+  Date
+  Select
+  Textarea
+}
+
+model Answer {
+  id String @id @default(cuid())
+
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String
+
+  answerBool     Boolean?
+  answerDate     DateTime?
+  answerInt      Int?
+  answerNum      Float?
+  answerSelectId Int[]
+  answerText     String?
+
+  caseFormResponse   CaseFormResponse? @relation(fields: [caseFormResponseId], references: [id])
+  caseFormResponseId String?
+
+  closingDocumentation   ClosingDocumentation? @relation(fields: [closingDocumentationId], references: [id])
+  closingDocumentationId String?
+
+  generalFormResponse   GeneralFormResponse? @relation(fields: [generalFormResponseId], references: [id])
+  generalFormResponseId String?
+}
+
+model Tag {
+  id   String @id @default(uuid())
+  name String @unique
+
+  documents Document[]
+}
+
+model Document {
+  id String @id @default(uuid())
+
+  title       String
+  description String?
+
+  filename   String
+  storageKey String
+  mimeType   String
+  size       Int
+
+  tags Tag[]
+
+  uploadedBy   User?   @relation(fields: [uploadedById], references: [id])
+  uploadedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CaseAttachment {
+  id String @id @default(uuid())
+
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId String
+
+  filename   String
+  storageKey String
+  mimeType   String
+  size       Int
+  note       String?
+
+  uploadedBy   User?   @relation(fields: [uploadedById], references: [id])
+  uploadedById String?
+
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  Admin
+  Controller
+  OrgController
+  OrgCoordinator
+  SubOrgCoordinator
+  User
+}
+
+enum Status {
+  inProgress
+  done
+  failed
+}
+
+enum Gender {
+  male
+  female
+  other
+  unspecified
+}
+
+enum Familienstand {
+  ledig
+  verheiratet
+  geschieden
+  unspecified
+}
+
+enum Relation {
+  mother
+  father
+  grandparent
+  partner
+  other
+}
+
+enum CaseFormType {
+  single
+  multiple
+}

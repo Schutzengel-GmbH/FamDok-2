@@ -1,0 +1,26 @@
+<div class="modal-header">
+  <h4 class="modal-title">{{ selectOption.text }} bearbeiten</h4>
+  <button
+    type="button"
+    class="btn-close"
+    aria-label="Close"
+    (click)="activeModal.dismiss('Cross click')"></button>
+</div>
+
+<div class="modal-body">
+  <label for="input">{{ selectOption.text }}</label>
+  <input
+    id="input"
+    class="form-control"
+    [value]="value()"
+    (change)="onChange($event)"
+    (keyup.enter)="save()" />
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-outline-secondary" (click)="save()">
+    Speichern
+  </button>
+  <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+    Abbrechen
+  </button>
+</div>

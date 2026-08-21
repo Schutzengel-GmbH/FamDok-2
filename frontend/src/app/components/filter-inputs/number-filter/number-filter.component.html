@@ -1,0 +1,41 @@
+<div class="card p-2">
+  <p>{{ name() }}</p>
+  <div class="d-flex gap-1">
+    <select
+      [value]="filter()?.filter"
+      (change)="changeFilter($event)"
+      class="form-select"
+    >
+      <option value="equals">Ist gleich</option>
+      <option value="gt">Ist größer als</option>
+      <option value="gte">Ist größer oder gleich</option>
+      <option value="lt">Ist kleiner als</option>
+      <option value="lte">Ist kleiner oder gleich</option>
+      <option value="range">Ist zwischen</option>
+    </select>
+    @if (filter()?.filter !== "range") {
+      <input
+        class="form-input"
+        type="number"
+        [value]="filter()?.value"
+        (change)="changeValue($event)"
+      />
+    } @else {
+      <input
+        class="form-input"
+        type="number"
+        [value]="startValue()"
+        (change)="changeStartValue($event)"
+      />
+      <input
+        class="form-input"
+        type="number"
+        [value]="endValue()"
+        (change)="changeEndValue($event)"
+      />
+    }
+    <button class="btn btn-sm btn-outline-secondary" (click)="resetFilter()">
+      <i class="bi bi-x"></i>
+    </button>
+  </div>
+</div>

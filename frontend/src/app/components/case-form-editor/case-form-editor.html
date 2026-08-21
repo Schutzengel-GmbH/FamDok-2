@@ -1,0 +1,121 @@
+<div class="card shadow-sm">
+  <div class="card-header d-flex align-items-center gap-2">
+    <i class="bi bi-journal-text"></i>
+    <strong>{{ formId ? "Formular bearbeiten" : "Neues Formular erstellen" }}</strong>
+  </div>
+
+  <div class="card-body">
+    @if (isLoading) {
+      <p>Formular wird geladen...</p>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="form-group mb-3">
+          <label for="name">Formularname</label>
+          <input
+            id="name"
+            type="text"
+            class="form-control"
+            formControlName="name"
+            [class.is-invalid]="
+              form.get('name')?.invalid && form.get('name')?.touched
+            " />
+          @if (form.get("name")?.invalid && form.get("name")?.touched) {
+            <div class="invalid-feedback">
+              Formularname ist erforderlich (mind. 2 Zeichen)
+            </div>
+          }
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="type">Häufigkeit</label>
+          <select id="type" class="form-select" formControlName="type">
+            <option [value]="CaseFormType.multiple">
+              Mehrfach pro Fall ausfüllbar
+            </option>
+            <option [value]="CaseFormType.single">
+              Nur einmal pro Fall ausfüllbar (Datenblatt)
+            </option>
+          </select>
+        </div>
+
+        <div class="d-flex flex-column gap-1 mb-3">
+          <label class="form-check-label d-flex align-items-center gap-1">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              formControlName="isPersonal" />
+            Formular bezieht sich auf eine einzelne Person (Kind oder
+            Bezugsperson) im Fall
+          </label>
+          <label class="form-check-label d-flex align-items-center gap-1">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              formControlName="containsPersonalData" />
+            Formular enthält personenbezogene Daten
+          </label>
+        </div>
+
+        <hr />
+
+        <div class="d-flex flex-column gap-3 mb-3">
+          @for (question of questions.controls; track question; let i = $index) {
+            <div class="card">
+              <div
+                class="card-header d-flex justify-content-between align-items-center">
+                <span>Frage {{ i + 1 }}</span>
+                <div class="btn-group btn-group-sm">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    title="Nach oben verschieben"
+                    [disabled]="i === 0"
+                    (click)="moveQuestion(i, -1)">
+                    <i class="bi bi-arrow-up"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    title="Nach unten verschieben"
+                    [disabled]="i === questions.length - 1"
+                    (click)="moveQuestion(i, 1)">
+                    <i class="bi bi-arrow-down"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger"
+                    title="Frage entfernen"
+                    (click)="removeQuestion(i)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <app-question-editor [questionGroup]="question" />
+              </div>
+            </div>
+          }
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-outline-secondary mb-3"
+          (click)="addQuestion()">
+          <i class="bi bi-plus-lg"></i> Frage hinzufügen
+        </button>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary" [disabled]="isSaving">
+            {{ isSaving ? "Speichert..." : "Speichern" }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="cancel()">
+            Abbrechen
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</div>

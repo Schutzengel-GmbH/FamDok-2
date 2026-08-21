@@ -1,0 +1,9 @@
+{
+  "organisationName": "Default Organisation",
+  "admin": {
+    "email": "admin@example.com",
+    "firstName": "Admin",
+    "lastName": "User"
+  },
+  "closingDocFormName": "Abschlussdokumentation"
+}

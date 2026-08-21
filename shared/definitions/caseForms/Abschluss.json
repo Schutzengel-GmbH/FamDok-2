@@ -1,0 +1,36 @@
+{
+  "name": "Abschlussdokumentation",
+  "type": "single",
+  "containsPersonalData": true,
+  "questions": [
+    {
+      "text": "Kann ich folgendem Satz zustimmen: „Die Familie kann in die eigene Verantwortung entlassen werden.“",
+      "type": "Select",
+      "multiple": false,
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "Ja",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "Nein",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "Fraglich",
+          "isOpen": false
+        }
+      ],
+      "required": true
+    },
+    {
+      "text": "Wenn nein oder fraglich, welche Maßnahmen wurden eingeleitet?",
+      "type": "Textarea",
+      "textAreaRows": 6,
+      "required": false
+    }
+  ]
+}

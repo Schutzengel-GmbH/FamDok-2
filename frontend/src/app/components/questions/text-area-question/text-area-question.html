@@ -1,0 +1,12 @@
+<label for="textInput">{{ question.text }}</label>
+<div class="input-group mb-3">
+  <textarea
+    id="textInput"
+    type="text"
+    [class]="`form-control ${answerValid() ? '' : 'is-invalid'}`"
+    [placeholder]="question.text"
+    [value]="answer()?.answerText || ''"
+    (input)="onChange($event)"
+    [rows]="question.textAreaRows || 5"></textarea>
+  <div class="invalid-feedback">{{ reason }}</div>
+</div>

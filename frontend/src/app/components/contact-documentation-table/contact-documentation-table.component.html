@@ -1,0 +1,272 @@
+<div class="d-flex justify-content-end mb-2 gap-2">
+  <button
+    type="button"
+    class="btn btn-outline-secondary btn-sm"
+    (click)="exportCsv()">
+    <i class="bi bi-download me-1"></i>
+    CSV exportieren
+  </button>
+  <button
+    type="button"
+    class="btn btn-outline-secondary btn-sm"
+    (click)="exportJson()">
+    <i class="bi bi-download me-1"></i>
+    JSON exportieren
+  </button>
+  <button
+    type="button"
+    class="btn btn-outline-secondary btn-sm"
+    (click)="exportXlsx()">
+    <i class="bi bi-download me-1"></i>
+    XLSX exportieren
+  </button>
+</div>
+
+<ngx-datatable
+  class="bootstrap fullscreen"
+  [columnMode]="ColumnMode.force"
+  [headerHeight]="50"
+  [footerHeight]="50"
+  rowHeight="auto"
+  [scrollbarH]="true"
+  [rows]="rows()"
+  (activate)="userEvent($event)">
+  <ngx-datatable-column prop="id" [sortable]="false" flexGrow="1">
+    <ng-template ngx-datatable-header-template>
+      <i class="bi bi-pencil"></i>
+    </ng-template>
+    <ng-template let-row="row" let-value="value" ngx-datatable-cell-template>
+      @if (canEditRow(row)) {
+        <button
+          class="btn btn-sm btn-outline-secondary"
+          (click)="edit(value, row)">
+          <i class="bi bi-pencil"></i>
+        </button>
+      } @else {
+        <button
+          class="btn btn-sm btn-outline-secondary"
+          (click)="inspect(value, row)">
+          <i class="bi bi-eye"></i>
+        </button>
+      }
+    </ng-template>
+  </ngx-datatable-column>
+  <ngx-datatable-column name="Fall" prop="case" [pipe]="caseIdentifierPipe">
+    <ng-template ngx-datatable-header-template>
+      Fall
+      <app-case-filter
+        [anon]="(user$ | async)?.role === 'Controller'"
+        (filterChanged)="caseFilterChange($event)" />
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column
+    [width]="columnEditable('date')"
+    name="Datum"
+    prop="date"
+    [pipe]="datePipe">
+    <ng-template ngx-datatable-header-template
+      ><span
+        ngbTooltip="Datum der Beratung"
+        container="body"
+        placement="bottom">
+        {{ "Datum der Beratung" | truncate: 6 }}</span
+      >
+      <app-date-filter-btn
+        name="Datum der Beratung"
+        (filterChanged)="dateFilterChanged($event)" />
+    </ng-template>
+    <ng-template ngx-datatable-cell-template let-row="row">
+      @if (editable[row.id]?.date) {
+        <app-inline-date
+          [value]="row.date"
+          (nochange)="editable[row.id].date = false"
+          (save)="saveDate(row, $event)" />
+      }
+      @if (!editable[row.id]?.date) {
+        {{ row.date | date }}
+      }
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column prop="response.duration">
+    <ng-template ngx-datatable-header-template
+      ><span
+        ngbTooltip="Dauer der Beratung"
+        container="body"
+        placement="bottom">
+        {{ "Dauer der Beratung" | truncate: 6 }}</span
+      >
+      <app-dauer-filter
+        name="Dauer der Beratung"
+        (filterChanged)="filterChanged('duration', $event)" />
+    </ng-template>
+    <ng-template ngx-datatable-cell-template let-row="row">
+      @if (editable[row.id]?.response?.duration) {
+        <app-inline-duration
+          [value]="row.duration"
+          (nochange)="editable[row.id].response.duration = false"
+          (save)="saveResponse(row, 'duration', $event)" />
+      }
+      @if (!editable[row.id]?.response?.duration) {
+        {{ row.duration }}
+      }
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column
+    name="Art der Beratung"
+    prop="response.artDerBetreuung"
+    [width]="columnEditable('artDerBetreuung')">
+    <ng-template ngx-datatable-header-template
+      ><span ngbTooltip="Art der Beratung" container="body" placement="bottom">
+        {{ "Art der Beratung" | truncate: 4 }}</span
+      >
+      <app-themen-filter
+        prop="artDerBetreuung"
+        (filterChanged)="filterChanged('artDerBetreuung', $event)" />
+    </ng-template>
+    <ng-template ngx-datatable-cell-template let-row="row">
+      @if (editable[row.id]?.response?.artDerBetreuung) {
+        <app-inline-topic
+          [value]="getSelectOption(row.artDerBetreuung)"
+          (nochange)="editable[row.id].response.artDerBetreuung = false"
+          (save)="saveResponse(row, 'artDerBetreuung', $event)"
+          prop="artDerBetreuung" />
+      }
+      @if (!editable[row.id]?.response?.artDerBetreuung) {
+        {{ getSelectValue(row, "artDerBetreuung") }}
+      }
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column
+    name="Beratungsthemen Eltern"
+    prop="response.beratungsThemenEltern"
+    [width]="columnEditable('beratungsThemenEltern')">
+    <ng-template ngx-datatable-header-template>
+      <span
+        ngbTooltip="Beratungsthemen mit Bezug auf die Eltern"
+        container="body"
+        placement="bottom"
+        >{{ "Ber. Eltern" | truncate: 12 }}</span
+      >
+      <app-themen-filter
+        prop="beratungsThemenEltern"
+        (filterChanged)="filterChanged('beratungsThemenEltern', $event)" />
+    </ng-template>
+    <ng-template ngx-datatable-cell-template let-row="row">
+      @if (editable[row.id]?.response?.beratungsThemenEltern) {
+        <app-inline-topic
+          [value]="
+            getSelectOptions('beratungsThemenEltern', row.beratungsThemenEltern)
+          "
+          (nochange)="editable[row.id].response.beratungsThemenEltern = false"
+          (save)="saveResponse(row, 'beratungsThemenEltern', $event)"
+          prop="beratungsThemenEltern" />
+      }
+      @if (!editable[row.id]?.response?.beratungsThemenEltern) {
+        {{ getSelectValue(row, "beratungsThemenEltern") }}
+      }
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column
+    name="Beratungsthemen Kinder"
+    prop="response.beratungsThemenKinder"
+    [width]="columnEditable('beratungsThemenKinder')">
+    <ng-template ngx-datatable-header-template>
+      <span
+        ngbTooltip="Beratungsthemen mit Bezug auf die Kinder"
+        container="body"
+        placement="bottom"
+        >{{ "Ber. Kinder" | truncate: 12 }}</span
+      >
+      <app-themen-filter
+        prop="beratungsThemenKinder"
+        (filterChanged)="filterChanged('beratungsThemenKinder', $event)" />
+    </ng-template>
+    <ng-template ngx-datatable-cell-template let-row="row">
+      @if (editable[row.id]?.response?.beratungsThemenKinder) {
+        <app-inline-topic
+          [value]="
+            getSelectOptions('beratungsThemenKinder', row.beratungsThemenKinder)
+          "
+          (nochange)="editable[row.id].response.beratungsThemenKinder = false"
+          (save)="saveResponse(row, 'beratungsThemenKinder', $event)"
+          prop="beratungsThemenKinder" />
+      }
+      @if (!editable[row.id]?.response?.beratungsThemenKinder) {
+        {{ getSelectValue(row, "beratungsThemenKinder") }}
+      }
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column
+    name="Beratungsthemen Allgemein"
+    prop="response.beratungsThemenAllgemein"
+    [width]="columnEditable('beratungsThemenAllgemein')">
+    <ng-template ngx-datatable-header-template>
+      <span
+        ngbTooltip="Allgemeine Beratungsthemen"
+        container="body"
+        placement="bottom"
+        >{{ "Allgemeine Beratungsthemen" | truncate: 12 }}</span
+      >
+      <app-themen-filter
+        prop="beratungsThemenAllgemein"
+        (filterChanged)="filterChanged('beratungsThemenAllgemein', $event)" />
+    </ng-template>
+    <ng-template ngx-datatable-cell-template let-row="row">
+      @if (editable[row.id]?.response?.beratungsThemenAllgemein) {
+        <app-inline-topic
+          [value]="
+            getSelectOptions(
+              'beratungsThemenAllgemein',
+              row.beratungsThemenAllgemein
+            )
+          "
+          (nochange)="
+            editable[row.id].response.beratungsThemenAllgemein = false
+          "
+          (save)="saveResponse(row, 'beratungsThemenAllgemein', $event)"
+          prop="beratungsThemenAllgemein" />
+      }
+      @if (!editable[row.id]?.response?.beratungsThemenAllgemein) {
+        {{ getSelectValue(row, "beratungsThemenAllgemein") }}
+      }
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column name="Zusammenfassung" prop="response.zusammenfassung">
+    <ng-template ngx-datatable-header-template>
+      <span ngbTooltip="Zusammenfassung" container="body" placement="bottom">{{
+        "Zusammenfassung" | truncate: 12
+      }}</span>
+      <app-zusammenfassung-filter
+        name="Zusammenfassung"
+        (filterChanged)="zusammenfassungFilterChanged($event)" />
+    </ng-template>
+    <ng-template ngx-datatable-cell-template let-row="row">
+      @if (editable[row.id]?.response?.zusammenfassung) {
+        <app-inline-text
+          [value]="row.zusammenfassung"
+          (nochange)="editable[row.id].response.zusammenfassung = false"
+          (save)="saveResponse(row, 'zusammenfassung', $event)" />
+      }
+      @if (!editable[row.id]?.response?.zusammenfassung) {
+        {{ getZusammenfassung(row) }}
+      }
+    </ng-template>
+  </ngx-datatable-column>
+
+  <ngx-datatable-column
+    name="Erstellt von"
+    prop="createdBy"
+    [pipe]="userWithOrgPipe">
+    <ng-template ngx-datatable-header-template>
+      Erstellt von
+      <app-created-by-org-filter (filterChanged)="createdByOrgFilterChanged($event)" />
+    </ng-template>
+  </ngx-datatable-column>
+</ngx-datatable>

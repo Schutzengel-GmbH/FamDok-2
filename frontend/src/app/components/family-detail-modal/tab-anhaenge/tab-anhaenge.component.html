@@ -1,0 +1,54 @@
+<div class="tab-section">
+  @if (canUpload) {
+    <div class="upload-form mb-3">
+      <input
+        type="text"
+        class="form-control mb-2"
+        placeholder="Notiz (optional)"
+        [(ngModel)]="note" />
+      <input
+        type="file"
+        class="form-control"
+        accept=".pdf,.jpg,.jpeg,.png,.docx"
+        (change)="filesChanged($event)" />
+    </div>
+  }
+
+  <h6 class="section-title">Anhänge</h6>
+  <ul class="list-group">
+    @for (attachment of attachments(); track attachment.id) {
+      <li
+        class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <div>{{ attachment.filename }}</div>
+          @if (attachment.note) {
+            <div class="text-muted small">{{ attachment.note }}</div>
+          }
+          <div class="text-muted small">
+            {{ attachment.uploadedBy?.firstName }}
+            {{ attachment.uploadedBy?.lastName }} &middot;
+            {{ attachment.createdAt | date: "dd.MM.yyyy" }}
+          </div>
+        </div>
+        <div class="btn-group btn-group-sm">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="download(attachment)">
+            <i class="bi bi-download"></i>
+          </button>
+          @if (canDelete(attachment)) {
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              (click)="deleteAttachment(attachment)">
+              <i class="bi bi-trash"></i>
+            </button>
+          }
+        </div>
+      </li>
+    } @empty {
+      <li class="list-group-item text-muted">Keine Anhänge vorhanden.</li>
+    }
+  </ul>
+</div>

@@ -1,0 +1,443 @@
+{
+  "name": "Stärken und Ressourcen Kind",
+  "type": "multiple",
+  "containsPersonalData": true,
+  "isPersonal": true,
+  "questions": [
+    {
+      "text": "Datum",
+      "type": "Date",
+      "required": true
+    },
+    {
+      "text": "Körperliche Entwicklung",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Motorische Entwicklung",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Sprachentwicklung",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Bindungsverhalten",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Ernährung",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Schlafen/Ruhe",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Soziales Umfeld",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Altersgemäßes Spielen",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Gesundheit",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    },
+    {
+      "text": "Zahnpflege",
+      "multiple": false,
+      "type": "Select",
+      "selectOptions": [
+        {
+          "id": 0,
+          "text": "+ + +",
+          "isOpen": false
+        },
+        {
+          "id": 1,
+          "text": "+ +",
+          "isOpen": false
+        },
+        {
+          "id": 2,
+          "text": "+",
+          "isOpen": false
+        },
+        {
+          "id": 3,
+          "text": "0",
+          "isOpen": false
+        },
+        {
+          "id": 4,
+          "text": "-",
+          "isOpen": false
+        },
+        {
+          "id": 5,
+          "text": "- -",
+          "isOpen": false
+        },
+        {
+          "id": 6,
+          "text": "- - -",
+          "isOpen": false
+        }
+      ],
+      "required": false
+    }
+  ]
+}

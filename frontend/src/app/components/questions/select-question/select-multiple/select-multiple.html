@@ -1,0 +1,46 @@
+<div class="input-group mb-3">
+  <label for="select">{{ question.text }}</label>
+  <ng-select
+    #select
+    class="w-100"
+    [class.is-invalid]="!isAnswerValid()"
+    [ariaLabel]="question.text"
+    [placeholder]="question.text"
+    [items]="question.selectOptions || []"
+    bindLabel="text"
+    [multiple]="question.multiple"
+    [(ngModel)]="model"
+    (change)="onChange($event)"
+    (add)="onAdd($event)"
+    [compareWith]="compareFn"
+    clearAllText="Auswahl aufheben">
+    <ng-template ng-label-tmp let-item="item" let-clear="clear">
+      @if (item.isOpen) {
+        <span class="ng-value-label">
+          {{ item.text }}: {{ answer()?.answerText ?? "---" }}
+        </span>
+        <span
+          class="ng-value-icon right"
+          (click)="clear(item)"
+          aria-hidden="true"
+          ><i class="bi bi-trash"></i
+        ></span>
+        <span
+          class="ng-value-icon right"
+          (click)="onHandleOpenOption(item)"
+          aria-hidden="true"
+          ><i class="bi bi-pencil"></i
+        ></span>
+      } @else {
+        <span class="ng-value-label"> {{ item.text }}</span>
+        <span
+          class="ng-value-icon right"
+          (click)="clear(item)"
+          aria-hidden="true"
+          ><i class="bi bi-trash"></i
+        ></span>
+      }
+    </ng-template>
+  </ng-select>
+  <div class="invalid-feedback">Die Antwort ist nicht optional</div>
+</div>
