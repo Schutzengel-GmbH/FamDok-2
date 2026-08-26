@@ -18,6 +18,11 @@ describe('WeightChartComponent', () => {
     component = fixture.componentInstance;
   });
 
+  // 'uses a white border color in dark theme' below toggles the real, unmocked ThemeService,
+  // which persists to the real localStorage - without this, that leaks into any other spec
+  // file relying on no theme being saved (e.g. theme.service.spec.ts).
+  afterEach(() => localStorage.removeItem('theme'));
+
   it('has no datasets when no child is selected', () => {
     fixture.detectChanges();
 
