@@ -107,12 +107,14 @@ model Case {
   city                        String?
   plz                         String?
 
-  family               Family                 @relation(fields: [familyId], references: [id])
-  familyId             String                 @unique
+  family               Family?                @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  familyId             String?                @unique
   caseformResponses    CaseFormResponse[]
   contactDocumentation ContactDocumentation[]
 
-  closedAt DateTime?
+  closedAt              DateTime?
+  personalDataDueAt     DateTime?
+  personalDataDeletedAt DateTime?
 
   handovers             Handover[]
   closingDocumentations ClosingDocumentation[]

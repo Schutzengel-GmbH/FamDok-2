@@ -10,7 +10,6 @@
         <i class="bi bi-gear"></i>{{ " " }}
         <strong>Non Admin Settings</strong>
       </li>
-      <li class="list-group-item">### NON ADMIN SETTINGS ###</li>
       <!--
         TODO: consider permissions - this section (and therefore the entry points to the
         form editors) is only shown to Admin, but the routes it links to
@@ -22,6 +21,29 @@
         check to match if that's the intended behavior.
       -->
       @if ((user$ | async)?.role === "Admin") {
+        <li class="list-group-item bg-secondary text-light">
+          <i class="bi bi-hourglass-split"></i>{{ " " }}
+          <strong>Datenlöschung</strong>
+        </li>
+        <li class="list-group-item d-flex align-items-center gap-2">
+          <label class="mb-0"
+            >Löschfrist (Tage nach Fallabschluss):</label
+          >
+          <input
+            type="number"
+            min="0"
+            class="form-control form-control-sm"
+            style="width: 100px"
+            [value]="retentionDays()"
+            (change)="setRetentionDaysInput($any($event.target).value)" />
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            (click)="saveRetentionDays()">
+            Speichern
+          </button>
+        </li>
+
         <li class="list-group-item bg-secondary text-light">
           <i class="bi bi-building"></i>{{ " " }}
           <strong>Organisationen</strong>

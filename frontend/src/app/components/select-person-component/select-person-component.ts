@@ -37,8 +37,8 @@ export class SelectPersonComponent {
 
   select(p: Person) {
     const person =
-      this.case()?.family.caregiver.find((c) => c.id === p?.id) ||
-      this.case()?.family.children.find((c) => c.id === p?.id);
+      this.case()?.family?.caregiver.find((c) => c.id === p?.id) ||
+      this.case()?.family?.children.find((c) => c.id === p?.id);
     this.person.set(person);
   }
 
@@ -46,14 +46,14 @@ export class SelectPersonComponent {
     if (!this.case) return [];
 
     const children: Person[] =
-      this.case()?.family.children.map((c) => ({
+      this.case()?.family?.children.map((c) => ({
         id: c.id,
         name: c.name + ' ' + c.lastName,
         type: 'Kind',
       })) || [];
 
     const caregivers: Person[] =
-      this.case()?.family.caregiver.map((c) => ({
+      this.case()?.family?.caregiver.map((c) => ({
         id: c.id,
         name: c.name + ' ' + c.lastName,
         type:

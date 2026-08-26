@@ -59,6 +59,8 @@ export function buildCase(overrides: Record<string, any> = {}) {
     familyId: nextId('family'),
     contactDocumentation: [],
     closedAt: null,
+    personalDataDueAt: null,
+    personalDataDeletedAt: null,
     closingDocId: null,
     createdBy: null,
     ...overrides,

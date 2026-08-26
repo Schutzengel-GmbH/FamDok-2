@@ -261,7 +261,7 @@ describe('Families', () => {
         { id: 'case-1', familyId: 'family-1', responsibleUsers: [{ id: 'other' }] },
       ]);
 
-      component.openDetailModal('family-1');
+      component.openDetailModal('case-1');
 
       expect(component['isDetailModalOpen']).toBeTrue();
       expect(component['selectedCase']).toEqual(
