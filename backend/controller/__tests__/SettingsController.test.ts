@@ -48,6 +48,25 @@ describe('SettingsController', () => {
       expect(prismaMock.setting.upsert).not.toHaveBeenCalled();
     });
 
+    it('upserts the personal_data_retention_days setting for an Admin', async () => {
+      const admin = buildUser({ role: Role.Admin });
+      const updated = buildSetting({ name: 'personal_data_retention_days', value: '30' });
+      prismaMock.setting.upsert.mockResolvedValue(updated);
+
+      const result = await SettingsController.updateSetting(
+        admin,
+        'personal_data_retention_days',
+        '30'
+      );
+
+      expect(result).toBe(updated);
+      expect(prismaMock.setting.upsert).toHaveBeenCalledWith({
+        where: { name: 'personal_data_retention_days' },
+        update: { value: '30' },
+        create: { name: 'personal_data_retention_days', value: '30' },
+      });
+    });
+
     it('throws BadRequestError for an unknown settings key', async () => {
       const admin = buildUser({ role: Role.Admin });
 

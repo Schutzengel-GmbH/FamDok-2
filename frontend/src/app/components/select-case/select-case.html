@@ -10,6 +10,6 @@
   appendTo="body"
 >
   <ng-template ng-label-tmp let-item="item">
-    {{ item.family.name }}
+    {{ item.family?.name ?? "Familie (Daten gelöscht)" }}
   </ng-template>
 </ng-select>

@@ -56,6 +56,7 @@ describe('Settings', () => {
     generalForms: any[] = [],
     caseForms: any[] = [],
     orgs: any[] = [],
+    settings: any[] = [],
   ) {
     httpMock
       .expectOne((r) => r.url.includes('/general-form/definitions'))
@@ -64,6 +65,7 @@ describe('Settings', () => {
       .expectOne((r) => r.url.includes('/case-form-definition'))
       .flush(caseForms);
     httpMock.expectOne((r) => r.url.includes('/org')).flush(orgs);
+    httpMock.expectOne((r) => r.url.includes('/settings')).flush(settings);
   }
 
   function flushCurrentUser(role: Role) {
@@ -92,6 +94,7 @@ describe('Settings', () => {
       null as any,
     );
     httpMock.expectOne((r) => r.url.includes('/org')).flush(null as any);
+    httpMock.expectOne((r) => r.url.includes('/settings')).flush([]);
 
     expect(component['generalForms']).toEqual([]);
     expect(component['caseForms']).toEqual([]);

@@ -101,27 +101,29 @@
 
         <ngx-datatable-column
           name="Bearbeiten/Details"
-          prop="family.id"
+          prop="id"
           [sortable]="false"
           [maxWidth]="120"
           [canAutoResize]="false">
           <ng-template let-value="value" let-row="row" ngx-datatable-cell-template>
-            @if (canEditCase(row)) {
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-primary action-button"
-                (click)="edit(value)"
-                aria-label="Familie bearbeiten">
-                <i class="bi bi-pencil-square"></i>
-              </button>
-            } @else {
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary action-button"
-                (click)="inspect(value)"
-                aria-label="Familie ansehen">
-                <i class="bi bi-eye"></i>
-              </button>
+            @if (row.family) {
+              @if (canEditCase(row)) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary action-button"
+                  (click)="edit(row.family.id)"
+                  aria-label="Familie bearbeiten">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary action-button"
+                  (click)="inspect(row.family.id)"
+                  aria-label="Familie ansehen">
+                  <i class="bi bi-eye"></i>
+                </button>
+              }
             }
             <button
               type="button"
@@ -138,7 +140,7 @@
             <div class="detail-panel">
               <div class="detail-panel__label">Adresse</div>
               <div class="detail-panel__value">
-                {{ getAdressString(row.family.adress) }}
+                {{ row.family ? getAdressString(row.family.adress) : "Keine Adresse hinterlegt" }}
               </div>
             </div>
           </ng-template>
@@ -231,27 +233,29 @@
 
           <ngx-datatable-column
             name="Bearbeiten/Details"
-            prop="family.id"
+            prop="id"
             [sortable]="false"
             [width]="120"
             [canAutoResize]="false">
             <ng-template let-value="value" let-row="row" ngx-datatable-cell-template>
-              @if (canEditCase(row)) {
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-primary action-button"
-                  (click)="edit(value)"
-                  aria-label="Familie bearbeiten">
-                  <i class="bi bi-pencil-square"></i>
-                </button>
-              } @else {
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary action-button"
-                  (click)="inspect(value)"
-                  aria-label="Familie ansehen">
-                  <i class="bi bi-eye"></i>
-                </button>
+              @if (row.family) {
+                @if (canEditCase(row)) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary action-button"
+                    (click)="edit(row.family.id)"
+                    aria-label="Familie bearbeiten">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary action-button"
+                    (click)="inspect(row.family.id)"
+                    aria-label="Familie ansehen">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                }
               }
               <button
                 type="button"
@@ -268,7 +272,7 @@
               <div class="detail-panel">
                 <div class="detail-panel__label">Adresse</div>
                 <div class="detail-panel__value">
-                  {{ getAdressString(row.family.adress) }}
+                  {{ row.family ? getAdressString(row.family.adress) : "Keine Adresse hinterlegt" }}
                 </div>
               </div>
             </ng-template>
