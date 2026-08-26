@@ -1,0 +1,122 @@
+publiccodeYmlVersion: "0.4"
+
+name: FamDok 2
+url: https://github.com/Schutzengel-GmbH/FamDok-2
+
+softwareVersion: "0.9.0-beta"
+releaseDate: "2026-08-21"
+
+platforms:
+  - web
+
+categories:
+  - data-collection
+  - contact-management
+  - survey
+  - data-analytics
+
+developmentStatus: beta
+
+softwareType: standalone/web
+
+localisation:
+  localisationReady: false
+  availableLanguages:
+    - de
+
+description:
+  de:
+    genericName: Fachanwendung Frühe Hilfen
+    shortDescription: >-
+      Digitale Fachanwendung zur Dokumentation von Fällen im Bereich
+      Frühe Hilfen.
+    longDescription: >
+      FamDok 2 ist eine digitale Fachanwendung zur Dokumentation von
+      Fällen im Bereich **Frühe Hilfen**, entwickelt durch die Schutzengel
+      GmbH. Die Anwendung ermöglicht Fachkräften die
+      strukturierte Erfassung und Verwaltung von Familienfällen,
+      Kontakten, Formularen und Zielvereinbarungen sowie eine
+      rollenbasierte Statistikübersicht.
+
+
+      Die Anwendung ist als Monorepo mit einem Angular-Frontend und einer
+      Express/TypeScript-REST-API aufgebaut. Persistiert werden die Daten
+      in PostgreSQL über Prisma als ORM; die Authentifizierung erfolgt
+      über Keycloak (OIDC / Bearer-Token). Frontend und Backend teilen
+      sich von Prisma generierte Typen, sodass Datenmodelle nicht doppelt
+      gepflegt werden müssen.
+
+
+      Kernfunktionen:
+
+
+      - Erfassung und Verwaltung von Familien, Kindern und Bezugspersonen
+
+      - Anlage und Bearbeitung von Betreuungsfällen inklusive
+        Zielvereinbarungen, Kontaktdokumentationen und Übergaben zwischen
+        Fachkräften
+
+      - Konfigurierbare, fallbezogene und allgemeine Formulare
+        (Formulardefinitionen und -antworten)
+
+      - Rollenbasierte Zugriffssteuerung (Admin, Controller,
+        OrgController, OrgCoordinator, SubOrgCoordinator, User)
+
+      - Anonymisierte, rollenabhängig gefilterte Statistikübersicht über
+        Organisationen und Unterorganisationen
+
+    features:
+      - Digitale Fallakte für Familien, Kinder und Bezugspersonen
+      - Konfigurierbare fallbezogene und allgemeine Formulare
+      - Kontaktdokumentation und Zielvereinbarungen je Fall
+      - Übergabe von Fällen zwischen Fachkräften
+      - Rollenbasierte Zugriffssteuerung
+      - Anonymisierte, rollenbasierte Statistikübersicht
+  en:
+    genericName: Early-intervention case doc.
+    shortDescription: >-
+      Digital case-management application for documenting Frühe Hilfen
+      (early childhood intervention) cases, built by Schutzengel GmbH.
+    longDescription: >
+      FamDok 2 is a digital case-management application for
+      documenting cases in the German "Frühe Hilfen" (early childhood
+      intervention) programme, built by Schutzengel GmbH in Flensburg.
+      It lets social workers structurally capture and manage family
+      cases, contacts, forms and goal agreements, plus a role-based
+      statistics overview.
+
+
+      The application is a monorepo with an Angular frontend and an
+      Express/TypeScript REST API, persisting data in PostgreSQL via
+      Prisma, with authentication handled by Keycloak (OIDC / bearer
+      token). Frontend and backend share Prisma-generated types.
+    features:
+      - Digital case files for families, children and caregivers
+      - Configurable case-related and general forms
+      - Contact documentation and goal agreements per case
+      - Handover of cases between social workers
+      - Role-based access control
+      - Anonymised, role-based statistics overview
+
+intendedAudience:
+  countries:
+    - de
+  scope:
+    - welfare
+    - local-authorities
+
+legal:
+  license: MIT
+  mainCopyrightOwner: Schutzengel GmbH
+  repoOwner: Schutzengel GmbH
+
+maintenance:
+  type: contract
+  contacts:
+    - name: "Schutzengel-Flensburg GmbH"
+      email: "info@schutzengel-flensburg.de"
+  contractors:
+    - name: Schutzengel-Flensburg GmbH
+      email: "info@schutzengel-flensburg.de"
+      website: https://www.schutzengel-flensburg.de
+      until: "2027-08-21"
