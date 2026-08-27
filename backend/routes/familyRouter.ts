@@ -114,16 +114,24 @@ FamilyRouter.get('/my', async (req, res) => {
 });
 
 FamilyRouter.get('/stats', async (req, res) => {
-  const families = await FamilyController.getStats();
-  res.send(families);
+  try {
+    const families = await FamilyController.getStats();
+    res.send(families);
+  } catch (e) {
+    handleError(e, res);
+  }
 });
 
 FamilyRouter.get('/stats/my', async (req, res) => {
-  const families = await FamilyController.getStats({
-    case: { responsibleUsers: { some: { id: req.user!.id } } },
-  });
+  try {
+    const families = await FamilyController.getStats({
+      case: { responsibleUsers: { some: { id: req.user!.id } } },
+    });
 
-  res.send(families);
+    res.send(families);
+  } catch (e) {
+    handleError(e, res);
+  }
 });
 
 export default FamilyRouter;
