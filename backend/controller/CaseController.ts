@@ -277,6 +277,7 @@ export class CaseController {
     const d = await prisma.contactDocumentation.findUnique({
       where: { id },
       ...contactDocumentationQueryArgsFor(user),
+      include: CONTACT_DOCUMENTATION_DEFAULT_INCLUDE,
     });
     if (!d) throw new NotFoundError();
     const c = await prisma.case.findUniqueOrThrow({

@@ -205,10 +205,9 @@ CaseRouter.get('/i/:id/documentation/i/:docId/download', async (req, res) => {
     const doc = await CaseController.getContactDocumentationPDF(
       req.user!,
       docId
-    ).then((b) => {
-      res.contentType('application/pdf');
-      res.send(b);
-    });
+    );
+
+    res.contentType('application/pdf');
     res.send(doc);
   } catch (e) {
     handleError(e, res);
