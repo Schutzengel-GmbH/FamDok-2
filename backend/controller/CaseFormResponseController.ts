@@ -94,16 +94,20 @@ export class CaseFormResponseController {
     // make sure there is always a "answer" to all questions, so we never run into the issue
     // of having to "upsertMany" which doesn't exist in prisma
 
+    // this shouldn't really happen, but just in case, make sure we're not getting any undefined errors
+    if (data.answers?.createMany?.data == undefined)
+      data.answers = { createMany: { data: [] } };
+
     data = {
       ...data,
       answers: {
         createMany: {
-          data: definition!.questions.map<AnswerCreateManyCaseFormResponseInput>(
+          data: definition.questions.map<AnswerCreateManyCaseFormResponseInput>(
             (q) => ({
               questionId: q.id,
               ...(
-                data.answers?.createMany
-                  ?.data as AnswerCreateManyCaseFormResponseInput[]
+                data.answers!.createMany!
+                  .data as AnswerCreateManyCaseFormResponseInput[]
               ).find((a) => a.questionId === q.id),
             })
           ),
@@ -122,6 +126,13 @@ export class CaseFormResponseController {
     id: string,
     data: Prisma.CaseFormResponseUpdateInput
   ) {
+    // certain fields should never be changed by a user via an update.
+    // TODO: consider providing administration ways around this, especially for createdBy?
+    if (data.caseForm || data.createdBy || data.id)
+      throw new BadRequestError(
+        'request contains fields that should not be updated'
+      );
+
     const existing = await prisma.caseFormResponse.findUnique({
       where: { id },
       include: CASEFORMRESPONSE_DEFAULT_INCLUDE,
