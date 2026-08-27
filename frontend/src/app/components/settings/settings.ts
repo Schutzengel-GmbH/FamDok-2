@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { MeService } from 'src/app/services/me.service';
@@ -7,6 +7,7 @@ import { GeneralFormService } from 'src/app/services/general-form.service';
 import { CaseFormService } from 'src/app/services/case-form.service';
 import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
 import { ToastService } from 'src/app/services/toast.service';
+import { SettingsService } from 'src/app/services/settings.service';
 import {
   FullCaseForm,
   FullGeneralForm,
@@ -34,17 +35,66 @@ export class Settings {
   private dialogService = inject(ConfirmDialogService);
   private toast = inject(ToastService);
   private modalService = inject(NgbModal);
+  private settingsService = inject(SettingsService);
 
   user$ = inject(MeService).getMe();
 
   protected generalForms: FullGeneralForm[] = [];
   protected caseForms: FullCaseForm[] = [];
   protected orgs: FullOrganisation[] = [];
+  protected retentionDays = signal<string>('');
 
   constructor() {
     this.loadGeneralForms();
     this.loadCaseForms();
     this.loadOrgs();
+    this.settingsService
+      .getSettings()
+      .subscribe((s) =>
+        this.retentionDays.set(s.personal_data_retention_days ?? ''),
+      );
+  }
+
+  setRetentionDaysInput(value: string) {
+    this.retentionDays.set(value);
+  }
+
+  saveRetentionDays() {
+    const days = this.retentionDays();
+    if (!/^\d+$/.test(days)) {
+      this.toast.show({
+        title: 'Fehler',
+        text: 'Bitte eine gültige Anzahl an Tagen angeben.',
+        severity: 'danger',
+      });
+      return;
+    }
+    this.dialogService.open({
+      title: 'Löschfrist ändern?',
+      text:
+        `Die Frist bis zur Löschung personenbezogener Daten nach Fallabschluss wird auf ${days} ` +
+        'Tage gesetzt. Bereits abgeschlossene Fälle behalten ihren zuvor berechneten Löschzeitpunkt ' +
+        '- die neue Frist gilt erst ab dem nächsten Abschluss bzw. einer Datumsänderung.',
+      style: 'warning',
+      confirmAction: () => {
+        this.settingsService
+          .updateSetting('personal_data_retention_days', days)
+          .subscribe({
+            next: () =>
+              this.toast.show({
+                title: 'Gespeichert',
+                text: `Löschfrist auf ${days} Tage gesetzt.`,
+                severity: 'success',
+              }),
+            error: () =>
+              this.toast.show({
+                title: 'Fehler',
+                text: 'Beim Speichern ist ein Fehler aufgetreten.',
+                severity: 'danger',
+              }),
+          });
+      },
+    });
   }
 
   private loadGeneralForms() {

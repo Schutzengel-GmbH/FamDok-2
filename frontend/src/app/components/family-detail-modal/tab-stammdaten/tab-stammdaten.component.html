@@ -5,13 +5,13 @@
     <dl class="detail-list">
       <div class="detail-row">
         <dt>Adresse</dt>
-        <dd>{{ getAdressString(selectedCase.family.adress) }}</dd>
+        <dd>{{ getAdressString(selectedCase.family?.adress) }}</dd>
       </div>
 
-      <div class="detail-row" *ngIf="selectedCase.family.children?.length">
+      <div class="detail-row" *ngIf="selectedCase.family?.children?.length">
         <dt>Kinder</dt>
         <dd>
-          {{ countChildrenPipe.transform(selectedCase.family.children) }}
+          {{ countChildrenPipe.transform(selectedCase.family?.children) }}
         </dd>
       </div>
 
@@ -85,13 +85,13 @@
 
       <div
         class="child-select-wrapper"
-        *ngIf="selectedCase.family.children?.length">
+        *ngIf="selectedCase.family?.children?.length">
         <label class="form-label form-label-sm mb-1">Kind</label>
         <select
           class="form-select form-select-sm"
           ariaLabel="Kind auswählen"
           [(ngModel)]="selectedChildId">
-          @for (child of selectedCase.family.children; track $index) {
+          @for (child of selectedCase.family?.children; track $index) {
             <option [value]="child.id">{{ child.name }}</option>
           }
         </select>

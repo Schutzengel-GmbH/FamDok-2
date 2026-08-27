@@ -19,10 +19,11 @@ beforeEach(() => {
   jest.resetAllMocks();
 });
 
-// case.findMany is called up to twice per run: 1st = the user's assigned cases, 2nd = closed
-// cases missing a closing doc (only reached if a `closing_doc` setting is configured). Leaving
-// setting.findUnique unmocked (resolves undefined) short-circuits before that 2nd call, so a
-// single case.findMany stub covers every scenario below except the CLOSED_WITHOUT_DOC one.
+// case.findMany is called up to 3 times per run: 1st = the user's assigned cases, 2nd = closed
+// cases missing a closing doc (only reached if a `closing_doc` setting is configured), 3rd =
+// cases with a pending/overdue personal-data deletion (always reached). Leaving
+// setting.findUnique unmocked (resolves undefined) skips the 2nd call, so a single persistent
+// case.findMany stub covers every scenario below except the CLOSED_WITHOUT_DOC one.
 function stubEmptyBaseline() {
   prismaMock.case.findMany.mockResolvedValue([]);
   prismaMock.zielvereinbarung.findMany.mockResolvedValue([]);
@@ -65,7 +66,7 @@ describe('WarningsController.getWarnings', () => {
 
   it('warns CASE_NO_CONTACT when a case has no contact documentation at all', async () => {
     const userCase = buildCase();
-    prismaMock.case.findMany.mockResolvedValue([userCase]);
+    prismaMock.case.findMany.mockResolvedValueOnce([userCase]).mockResolvedValue([]);
     prismaMock.zielvereinbarung.findMany.mockResolvedValue([]);
     prismaMock.contactDocumentation.findFirst.mockResolvedValue(null);
     prismaMock.contactDocumentation.findMany.mockResolvedValue([]);
@@ -84,7 +85,7 @@ describe('WarningsController.getWarnings', () => {
 
   it('warns CASE_NO_CONTACT when the last contact is older than 2 months', async () => {
     const userCase = buildCase();
-    prismaMock.case.findMany.mockResolvedValue([userCase]);
+    prismaMock.case.findMany.mockResolvedValueOnce([userCase]).mockResolvedValue([]);
     prismaMock.zielvereinbarung.findMany.mockResolvedValue([]);
     const oldContact = buildContactDocumentation({ date: new Date(Date.now() - 90 * DAY) });
     prismaMock.contactDocumentation.findFirst.mockResolvedValue(oldContact);
@@ -104,7 +105,7 @@ describe('WarningsController.getWarnings', () => {
 
   it('does not warn when the last contact is recent', async () => {
     const userCase = buildCase();
-    prismaMock.case.findMany.mockResolvedValue([userCase]);
+    prismaMock.case.findMany.mockResolvedValueOnce([userCase]).mockResolvedValue([]);
     prismaMock.zielvereinbarung.findMany.mockResolvedValue([]);
     const recentContact = buildContactDocumentation({ date: new Date(Date.now() - 7 * DAY) });
     prismaMock.contactDocumentation.findFirst.mockResolvedValue(recentContact);
@@ -152,7 +153,10 @@ describe('WarningsController.getWarnings', () => {
   it('warns CLOSED_WITHOUT_DOC for a closed case missing a closing document', async () => {
     const closedAt = new Date('2026-01-15');
     const closedCase = buildCase({ closedAt, closingDocId: null });
-    prismaMock.case.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([closedCase]);
+    prismaMock.case.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([closedCase])
+      .mockResolvedValue([]);
     prismaMock.zielvereinbarung.findMany.mockResolvedValue([]);
     prismaMock.contactDocumentation.findMany.mockResolvedValue([]);
     prismaMock.caseFormResponse.findMany.mockResolvedValue([]);
@@ -167,6 +171,23 @@ describe('WarningsController.getWarnings', () => {
         level: WarningLevel.WARNING,
         type: WarningType.CLOSED_WITHOUT_DOC,
         data: { caseId: closedCase.id, closedAt },
+      },
+    ]);
+  });
+
+  it('warns PENDING_PERSONAL_DATA_DELETION for a case with an overdue personalDataDueAt', async () => {
+    const personalDataDueAt = new Date(Date.now() - 5 * DAY);
+    const dueCase = buildCase({ personalDataDueAt });
+    stubEmptyBaseline();
+    prismaMock.case.findMany.mockResolvedValueOnce([]).mockResolvedValue([dueCase]);
+
+    const warnings = await WarningsController.getWarnings('user-1');
+
+    expect(warnings).toEqual([
+      {
+        level: WarningLevel.WARNING,
+        type: WarningType.PENDING_PERSONAL_DATA_DELETION,
+        data: { caseId: dueCase.id, personalDataDueAt },
       },
     ]);
   });

@@ -12,8 +12,12 @@ import { createPrismaMock } from '../../testUtils/prismaMock';
 import {
   buildCase,
   buildCaseAttachment,
+  buildCaseForm,
+  buildCaseFormResponse,
   buildContactDocumentation,
+  buildFamily,
   buildHandover,
+  buildSetting,
   buildUser,
   buildZielvereinbarung,
 } from '../../testUtils/fixtures';
@@ -716,11 +720,12 @@ describe('CaseController', () => {
   });
 
   describe('closeCase', () => {
-    it('sets the closedAt date', async () => {
+    it('sets the closedAt date and leaves personalDataDueAt null when no retention setting is configured', async () => {
       const user = buildUser({ role: Role.Admin });
       const closedAt = new Date('2026-03-01');
       const c = caseFor(user);
       prismaMock.case.findUnique.mockResolvedValue(c);
+      prismaMock.setting.findUnique.mockResolvedValue(null);
       const updated = buildCase({ closedAt });
       prismaMock.case.update.mockResolvedValue(updated);
 
@@ -730,9 +735,109 @@ describe('CaseController', () => {
       expect(prismaMock.case.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: c.id },
-          data: { closedAt },
+          data: { closedAt, personalDataDueAt: null },
         })
       );
+    });
+
+    it('computes personalDataDueAt from now() + retention days, not from closedAt', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-08-26T00:00:00.000Z'));
+      const user = buildUser({ role: Role.Admin });
+      // a backdated closedAt - the due date must NOT be derived from this
+      const closedAt = new Date('2026-08-01T00:00:00.000Z');
+      const c = caseFor(user);
+      prismaMock.case.findUnique.mockResolvedValue(c);
+      prismaMock.setting.findUnique.mockResolvedValue(
+        buildSetting({ name: 'personal_data_retention_days', value: '30' })
+      );
+      prismaMock.case.update.mockResolvedValue(buildCase({ closedAt }));
+
+      await CaseController.closeCase(user, c.id, closedAt);
+
+      expect(prismaMock.case.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { closedAt, personalDataDueAt: new Date('2026-09-25T00:00:00.000Z') },
+        })
+      );
+      jest.useRealTimers();
+    });
+  });
+
+  describe('reopenCase', () => {
+    it('clears closedAt/personalDataDueAt and deletes the existing closing-doc response', async () => {
+      const user = buildUser({ role: Role.Admin });
+      const c = caseFor(user, { closedAt: new Date('2026-01-01') });
+      prismaMock.case.findUnique.mockResolvedValue(c);
+      prismaMock.setting.findUnique.mockResolvedValue(
+        buildSetting({ name: 'closing_doc', value: 'closing-form-id' })
+      );
+      const closingResponse = buildCaseFormResponse({
+        caseId: c.id,
+        caseFormId: 'closing-form-id',
+      });
+      prismaMock.caseFormResponse.findFirst.mockResolvedValue(closingResponse);
+      const updated = buildCase({ closedAt: null });
+      prismaMock.case.update.mockResolvedValue(updated);
+
+      const result = await CaseController.reopenCase(user, c.id);
+
+      expect(result).toBe(updated);
+      expect(prismaMock.answer.deleteMany).toHaveBeenCalledWith({
+        where: { caseFormResponseId: closingResponse.id },
+      });
+      expect(prismaMock.caseFormResponse.delete).toHaveBeenCalledWith({
+        where: { id: closingResponse.id },
+      });
+      expect(prismaMock.case.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: c.id },
+          data: { closedAt: null, personalDataDueAt: null },
+        })
+      );
+    });
+
+    it('throws ForbiddenError for a user not responsible for the case', async () => {
+      const user = buildUser({ role: Role.User });
+      const c = buildCase({ responsibleUsers: [{ id: 'someone-else' }] });
+      prismaMock.case.findUnique.mockResolvedValue(c);
+
+      await expect(CaseController.reopenCase(user, c.id)).rejects.toThrow(ForbiddenError);
+    });
+  });
+
+  describe('purgeFamily', () => {
+    it('purges the family and returns the updated case for a privileged user', async () => {
+      const user = buildUser({ role: Role.Admin });
+      const family = buildFamily();
+      const c = buildCase({ family, familyId: family.id, responsibleUsers: [] });
+      prismaMock.case.findUnique.mockResolvedValue(c);
+      prismaMock.caseFormResponse.findMany.mockResolvedValue([]);
+      prismaMock.family.delete.mockResolvedValue(family);
+      const finalCase = buildCase({ familyId: null });
+      prismaMock.case.findUniqueOrThrow.mockResolvedValueOnce(c).mockResolvedValue(finalCase);
+
+      const result = await CaseController.purgeFamily(user, c.id);
+
+      expect(prismaMock.family.delete).toHaveBeenCalledWith({ where: { id: family.id } });
+      expect(result).toBe(finalCase);
+    });
+
+    it('throws ForbiddenError for a non-privileged user', async () => {
+      const user = buildUser({ role: Role.User });
+      const family = buildFamily();
+      const c = buildCase({ family, familyId: family.id, responsibleUsers: [{ id: user.id }] });
+      prismaMock.case.findUnique.mockResolvedValue(c);
+
+      await expect(CaseController.purgeFamily(user, c.id)).rejects.toThrow(ForbiddenError);
+      expect(prismaMock.family.delete).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundError when the family was already purged', async () => {
+      const user = buildUser({ role: Role.Admin });
+      const c = buildCase({ family: null, familyId: null });
+      prismaMock.case.findUnique.mockResolvedValue(c);
+
+      await expect(CaseController.purgeFamily(user, c.id)).rejects.toThrow(NotFoundError);
     });
   });
 

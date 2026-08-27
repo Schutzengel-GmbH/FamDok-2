@@ -42,10 +42,10 @@ export class DashboardFamilyTableComponent implements OnInit {
   protected rows = linkedSignal(() =>
     this.dashboardCases.cases().filter((c) =>
       this.filterTerm()
-        ? c.family.name
+        ? c.family?.name
             .toLowerCase()
             .includes(this.filterTerm()!.toLowerCase()) ||
-          c.family.note
+          c.family?.note
             ?.toLowerCase()
             .includes(this.filterTerm()!.toLowerCase())
         : true,

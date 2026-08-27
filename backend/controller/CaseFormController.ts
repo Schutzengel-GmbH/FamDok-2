@@ -57,6 +57,7 @@ export class CaseFormController {
 
     // OrgController can't move a form to another org or make it global - only Admin/Controller
     // (who bypass this check above) may change organisationId.
+    // TODO: should this fail silently or throw an Error?
     if (user.role === Role.OrgController) delete data.organisation;
 
     return prisma.caseForm.update({
