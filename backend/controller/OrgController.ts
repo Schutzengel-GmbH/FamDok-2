@@ -5,11 +5,16 @@ import {
 import { FullUser } from '../../shared/types';
 import { prisma } from '../db';
 import { Prisma } from '../../shared/generated/prisma/client';
-import { ForbiddenError, NotFoundError } from '../util/authUtils';
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} from '../util/authUtils';
 import {
   canAccessAllOrgs,
   canAccessOrg,
   canEditOrgs,
+  canEditSubOrgs,
 } from './authFns/OrgAuthFns';
 
 export class OrgController {
@@ -97,7 +102,11 @@ export class OrgController {
     user: FullUser,
     data: Prisma.SubOrganisationCreateInput
   ) {
-    if (!canEditOrgs(user)) throw new ForbiddenError();
+    if (!data.organisation.connect?.id)
+      throw new BadRequestError('no org id provided');
+
+    if (!canEditSubOrgs(user, data.organisation.connect.id))
+      throw new ForbiddenError();
 
     return prisma.subOrganisation.create({
       data,
@@ -110,21 +119,35 @@ export class OrgController {
     id: string,
     data: Prisma.SubOrganisationUpdateInput
   ) {
-    if (!canEditOrgs(user)) throw new ForbiddenError();
+    return prisma.$transaction(async (tx) => {
+      const subOrg = await tx.subOrganisation.findUnique({ where: { id } });
 
-    return prisma.subOrganisation.update({
-      where: { id },
-      data,
-      include: SUBORGANISATION_DEFAULT_INCLUDE,
+      if (!subOrg) throw new NotFoundError();
+
+      if (!canEditSubOrgs(user, subOrg.organisationId))
+        throw new ForbiddenError();
+
+      return tx.subOrganisation.update({
+        where: { id },
+        data,
+        include: SUBORGANISATION_DEFAULT_INCLUDE,
+      });
     });
   }
 
   static async deleteSubOrg(user: FullUser, id: string) {
-    if (!canEditOrgs(user)) throw new ForbiddenError();
+    return prisma.$transaction(async (tx) => {
+      const subOrg = await tx.subOrganisation.findUnique({ where: { id } });
 
-    return prisma.subOrganisation.delete({
-      where: { id },
-      include: SUBORGANISATION_DEFAULT_INCLUDE,
+      if (!subOrg) throw new NotFoundError();
+
+      if (!canEditSubOrgs(user, subOrg.organisationId))
+        throw new ForbiddenError();
+
+      return prisma.subOrganisation.delete({
+        where: { id },
+        include: SUBORGANISATION_DEFAULT_INCLUDE,
+      });
     });
   }
 }

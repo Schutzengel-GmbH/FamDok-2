@@ -17,8 +17,8 @@ export function canEditOrgs(user: FullUser) {
   return CAN_ACCESS_ALL_ORGS.includes(user.role);
 }
 
-export function canEditSubOrgs(user: FullUser, org: FullOrganisation) {
+export function canEditSubOrgs(user: FullUser, orgId: string) {
   if (CAN_ACCESS_ALL_ORGS.includes(user.role)) return true;
 
-  return user.role === Role.OrgController && user.organisationId === org.id;
+  return user.role === Role.OrgController && user.organisationId === orgId;
 }
