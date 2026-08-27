@@ -73,8 +73,7 @@ export const userWithOrgPipe: PipeTransform = {
 };
 
 export const familyNamePipe: PipeTransform = {
-  transform(family: FullFamily | null | undefined) {
-    if (!family) return 'Familie (Daten gelöscht)';
+  transform(family: FullFamily) {
     return `Familie ${family.name}`;
   },
 };
@@ -90,8 +89,8 @@ export const userArrayPipe: PipeTransform = {
 };
 
 export const countChildrenPipe: PipeTransform = {
-  transform(children: Child[] | undefined) {
-    return children?.length ?? 0;
+  transform(children: Child[]) {
+    return children.length;
   },
 };
 

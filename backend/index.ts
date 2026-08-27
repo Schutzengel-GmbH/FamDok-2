@@ -17,7 +17,6 @@ import { StatsRouter } from './routes/statsRouter';
 import { SettingsRouter } from './routes/settingsRouter';
 import { WarningsRouter } from './routes/warningsRouter';
 import DocumentRouter from './routes/documentRouter';
-import { startPersonalDataRetentionJob } from './util/personalDataRetentionJob';
 
 const app = express();
 const PORT = 3000;
@@ -85,8 +84,6 @@ app.use(
   passport.authenticate('bearer', { session: false }),
   DocumentRouter
 );
-
-startPersonalDataRetentionJob();
 
 app.listen(PORT, () => {
   console.log(`✅ Server läuft auf http://localhost:${PORT}`);

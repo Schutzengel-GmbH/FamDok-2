@@ -99,7 +99,7 @@ export class FamilyDetailModalComponent {
       return undefined;
     }
 
-    return c.family?.children.find((x) => x.id === id);
+    return c.family.children.find((x) => x.id === id);
   });
 
   protected zielList = signal<ZielItem[]>([]);
@@ -150,7 +150,7 @@ export class FamilyDetailModalComponent {
     return `${y}-${m}-${day}`;
   }
 
-  formatDateDisplay(d?: Date | null): string {
+  formatDateDisplay(d?: Date): string {
     if (!d) {
       return '';
     }
@@ -273,7 +273,7 @@ export class FamilyDetailModalComponent {
 
         if (
           this.activeTab() === 'stammdaten' &&
-          updatedCase.family?.children?.length &&
+          updatedCase.family.children?.length &&
           !this.selectedChildId()
         ) {
           this.selectedChildId.set(updatedCase.family.children[0].id);

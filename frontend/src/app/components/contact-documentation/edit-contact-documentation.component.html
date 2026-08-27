@@ -4,7 +4,7 @@
     (caseChange)="onCaseChange($event)"></app-select-case>
 }
 @if (initialCase()) {
-  <h3>Fallkontaktdoukentation für Familie {{ initialCase()!.family?.name ?? "(Daten gelöscht)" }}</h3>
+  <h3>Fallkontaktdoukentation für Familie {{ initialCase()!.family.name }}</h3>
 }
 @if (case() || initialCase()) {
   <ul class="nav nav-tabs mt-3">

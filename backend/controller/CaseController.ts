@@ -1,11 +1,9 @@
 import { Primitive } from 'zod/v3';
 import { Response } from 'express';
-import { add } from 'date-fns';
 import { prisma } from '../db';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../util/authUtils';
 import { PDFService } from '../util/pdfService';
 import { deleteStoredFile, streamFile } from '../util/fileStorage';
-import { purgeFamilyPersonalData } from '../util/personalDataPurge';
 import {
   canCreate,
   canEditCase,
@@ -19,7 +17,6 @@ import {
   MyCasesScope,
   myCasesScopeFilter,
 } from './authFns/CaseAuthFns';
-import { canPurgeFamily } from './authFns/FamilyAuthFn';
 import {
   canDeleteCaseAttachment,
   canSeeCaseAttachments,
@@ -474,13 +471,6 @@ export class CaseController {
     return update;
   }
 
-  /**
-   * Closes a case (or changes its closing date if already closed). `personalDataDueAt` is
-   * (re)computed as `now() + retention days` every time this runs - deliberately anchored to the
-   * actual moment of this call, not to `date` (which is a free-form, possibly-backdated business
-   * date the user chooses), so a backdated closure doesn't cause immediate/premature deletion
-   * eligibility. Left `null` if no retention period is configured yet.
-   */
   static async closeCase(user: FullUser, id: string, date: Date) {
     const c = await prisma.case.findUnique({
       where: { id },
@@ -490,77 +480,9 @@ export class CaseController {
     if (!canEditCase(user, c))
       throw new ForbiddenError("User can't close this case");
 
-    const retentionSetting = await prisma.setting.findUnique({
-      where: { name: 'personal_data_retention_days' },
-    });
-    const retentionDays = retentionSetting
-      ? parseInt(retentionSetting.value, 10)
-      : NaN;
-    const personalDataDueAt = Number.isFinite(retentionDays)
-      ? add(new Date(), { days: retentionDays })
-      : null;
-
     return prisma.case.update({
       where: { id },
-      data: { closedAt: date, personalDataDueAt },
-      include: caseIncludeFor(user),
-    });
-  }
-
-  /**
-   * Reverts a case's closure - clears closedAt/personalDataDueAt and deletes the existing
-   * "Abschlussdokumentation" response (if any), per requirement that reopening discards it.
-   */
-  static async reopenCase(user: FullUser, id: string) {
-    const c = await prisma.case.findUnique({
-      where: { id },
-      include: CASE_DEFAULT_INCLUDE,
-    });
-    if (!c) throw new NotFoundError();
-    if (!canEditCase(user, c))
-      throw new ForbiddenError("User can't reopen this case");
-
-    const closingDocSetting = await prisma.setting.findUnique({
-      where: { name: 'closing_doc' },
-    });
-    if (closingDocSetting) {
-      const closingResponse = await prisma.caseFormResponse.findFirst({
-        where: { caseId: id, caseFormId: closingDocSetting.value },
-      });
-      if (closingResponse) {
-        await prisma.$transaction([
-          prisma.answer.deleteMany({
-            where: { caseFormResponseId: closingResponse.id },
-          }),
-          prisma.caseFormResponse.delete({ where: { id: closingResponse.id } }),
-        ]);
-      }
-    }
-
-    return prisma.case.update({
-      where: { id },
-      data: { closedAt: null, personalDataDueAt: null },
-      include: caseIncludeFor(user),
-    });
-  }
-
-  /**
-   * Manually purges a case's family's personal data right now, regardless of personalDataDueAt -
-   * this is the Admin/OrgCoordinator/SubOrgCoordinator "skip the waiting period" override.
-   */
-  static async purgeFamily(user: FullUser, id: string) {
-    const c = await prisma.case.findUnique({
-      where: { id },
-      include: CASE_DEFAULT_INCLUDE,
-    });
-    if (!c) throw new NotFoundError();
-    if (!c.family) throw new NotFoundError('Family already purged');
-    if (!canPurgeFamily(user, c.family))
-      throw new ForbiddenError("User can't purge this family");
-
-    await purgeFamilyPersonalData(id);
-    return prisma.case.findUniqueOrThrow({
-      where: { id },
+      data: { closedAt: date },
       include: caseIncludeFor(user),
     });
   }
