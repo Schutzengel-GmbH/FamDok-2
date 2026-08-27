@@ -2,7 +2,11 @@ import { Primitive } from 'zod/v3';
 import { Response } from 'express';
 import { add } from 'date-fns';
 import { prisma } from '../db';
-import { BadRequestError, ForbiddenError, NotFoundError } from '../util/authUtils';
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} from '../util/authUtils';
 import { PDFService } from '../util/pdfService';
 import { deleteStoredFile, streamFile } from '../util/fileStorage';
 import { purgeFamilyPersonalData } from '../util/personalDataPurge';
@@ -76,7 +80,8 @@ export class CaseController {
     include?: Prisma.CaseInclude
   ) {
     const scopeFilter = myCasesScopeFilter(user, scope);
-    if (!scopeFilter) throw new ForbiddenError(`Scope "${scope}" not permitted`);
+    if (!scopeFilter)
+      throw new ForbiddenError(`Scope "${scope}" not permitted`);
 
     return this.getAll(user, { ...where, ...scopeFilter }, include);
   }
@@ -360,12 +365,13 @@ export class CaseController {
       include: CONTACT_DOCUMENTATION_DEFAULT_INCLUDE,
     });
 
+    if (!d) throw new NotFoundError();
+
     const c = await prisma.case.findUniqueOrThrow({
       where: { id: d?.caseId },
       include: CASE_DEFAULT_INCLUDE,
     });
 
-    if (!d) throw new NotFoundError();
     if (!canEditCase(user, c))
       throw new ForbiddenError("User can't edit this case");
 
@@ -382,12 +388,13 @@ export class CaseController {
       include: CONTACT_DOCUMENTATION_DEFAULT_INCLUDE,
     });
 
+    if (!d) throw new NotFoundError();
+
     const c = await prisma.case.findUniqueOrThrow({
       where: { id: d?.caseId },
       include: CASE_DEFAULT_INCLUDE,
     });
 
-    if (!d) throw new NotFoundError();
     if (!canEditCase(user, c))
       throw new ForbiddenError("User can't edit this case");
 
