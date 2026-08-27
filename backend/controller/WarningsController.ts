@@ -136,46 +136,24 @@ export class WarningsController {
     const closingDocSetting = await prisma.setting.findUnique({
       where: { name: 'closing_doc' },
     });
-    // if there is no closing doc set, this check makes no sense, so skip it - but still fall
-    // through to the personal-data-deletion check below, which is unrelated to that setting.
-    if (closingDocSetting) {
-      // check closed cases
-      const closedWithNoDoc = await prisma.case.findMany({
-        where: {
-          responsibleUsers: { some: { id: userId } },
-          closedAt: { not: null },
-          caseformResponses: { none: { caseFormId: closingDocSetting.value } },
-        },
-      });
-      for (const c of closedWithNoDoc) {
-        warnings.push({
-          level: WarningLevel.WARNING,
-          type: WarningType.CLOSED_WITHOUT_DOC,
-          data: {
-            caseId: c.id,
-            closedAt: c.closedAt!,
-          },
-        });
-      }
-    }
+    // if there is no closing doc set, this check makes no sense, so return early
+    if (!closingDocSetting) return warnings;
 
-    // check cases with a pending personal-data deletion due date within the next 30 days
-    const pendingDeletion = await prisma.case.findMany({
+    // check closed cases
+    const closedWithNoDoc = await prisma.case.findMany({
       where: {
         responsibleUsers: { some: { id: userId } },
-        personalDataDueAt: { lte: add(now, { days: 30 }) },
-        familyId: { not: null },
+        closedAt: { not: null },
+        caseformResponses: { none: { caseFormId: closingDocSetting.value } },
       },
     });
-    for (const c of pendingDeletion) {
+    for (const c of closedWithNoDoc) {
       warnings.push({
-        level: isBefore(c.personalDataDueAt!, now)
-          ? WarningLevel.WARNING
-          : WarningLevel.INFO,
-        type: WarningType.PENDING_PERSONAL_DATA_DELETION,
+        level: WarningLevel.WARNING,
+        type: WarningType.CLOSED_WITHOUT_DOC,
         data: {
           caseId: c.id,
-          personalDataDueAt: c.personalDataDueAt!,
+          closedAt: c.closedAt!,
         },
       });
     }

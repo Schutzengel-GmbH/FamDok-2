@@ -76,8 +76,7 @@ export class Families implements OnInit {
   protected totalPages = 1;
 
   protected familyNamePipe = {
-    transform(family: FullFamily | null | undefined) {
-      if (!family) return 'Familie (Daten gelöscht)';
+    transform(family: FullFamily) {
       return `Familie ${family.name}`;
     },
   };
@@ -94,8 +93,8 @@ export class Families implements OnInit {
   };
 
   protected countChildrenPipe = {
-    transform(children: Child[] | undefined) {
-      return children?.length ?? 0;
+    transform(children: Child[]) {
+      return children.length;
     },
   };
 
@@ -245,8 +244,8 @@ export class Families implements OnInit {
   selectedCase: FullCase | undefined = undefined;
   modalReadOnly = false;
 
-  openDetailModal(caseId: string) {
-    const c = this.allCases.find((c) => c.id === caseId);
+  openDetailModal(cId: string) {
+    const c = this.allCases.find((c) => c.familyId === cId);
     this.isDetailModalOpen = true;
     this.selectedCase = c;
     this.modalReadOnly = !this.canEditCase(c);

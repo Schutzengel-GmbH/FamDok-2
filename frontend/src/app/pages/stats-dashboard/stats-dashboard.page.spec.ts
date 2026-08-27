@@ -29,9 +29,6 @@ describe('StatsDashboardPage', () => {
     httpMock
       .match((r) => r.url.includes('/general-form/definitions'))
       .forEach((r) => r.flush([]));
-    // The nested app-org-select also fetches the org list in its constructor, independent
-    // of detectChanges().
-    httpMock.expectOne(`${environment.apiUrl}/org`).flush([]);
   });
 
   afterEach(() => {
