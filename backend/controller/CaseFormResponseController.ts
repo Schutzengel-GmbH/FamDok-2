@@ -18,6 +18,7 @@ import {
   CASEFORMRESPONSE_DEFAULT_INCLUDE,
 } from '../../shared/consts';
 import { AnswerCreateManyCaseFormResponseInput } from '../../shared/generated/prisma/models';
+import { caseFormWhereRestrictions } from './authFns/CaseFormDefinitionAuthFns';
 
 export class CaseFormResponseController {
   static async getAll(user: FullUser) {
@@ -56,18 +57,27 @@ export class CaseFormResponseController {
     user: FullUser,
     data: Prisma.CaseFormResponseCreateInput
   ) {
-    if (!(await canCreateCaseFormResponse(user, data))) throw new ForbiddenError();
+    if (!(await canCreateCaseFormResponse(user, data)))
+      throw new ForbiddenError();
 
     if (!data.caseForm?.connect?.id)
       throw new BadRequestError('no definition id');
     if (!data.case.connect?.id) throw new BadRequestError('no case id');
 
     const definition = await prisma.caseForm.findUnique({
-      where: { id: data.caseForm.connect.id },
+      where: {
+        id: data.caseForm.connect.id,
+        ...caseFormWhereRestrictions(user),
+      },
       include: CASEFORM_DEFAULT_INCLUDE,
     });
 
-    if (definition?.type === 'single') {
+    if (!definition)
+      throw new BadRequestError(
+        'case form not found (do you have all required permissions?)'
+      );
+
+    if (definition.type === 'single') {
       const count = await prisma.caseFormResponse.count({
         where: {
           caseFormId: definition.id,
