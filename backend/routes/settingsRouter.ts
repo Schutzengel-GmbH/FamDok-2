@@ -6,8 +6,12 @@ import { Settings } from '../../shared/types';
 export const SettingsRouter = Router();
 
 SettingsRouter.get('/', async (req, res) => {
-  const settings = await SettingsController.getSettings();
-  res.send(settings);
+  try {
+    const settings = await SettingsController.getSettings();
+    res.send(settings);
+  } catch (e) {
+    handleError(e, res);
+  }
 });
 
 SettingsRouter.put('/:name', async (req, res) => {
