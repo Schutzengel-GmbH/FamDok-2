@@ -422,7 +422,7 @@ export class CaseController {
     const handovers = await prisma.handover.findMany({
       where: { caseId },
       orderBy: { date: 'desc' },
-      take: n || 3,
+      take: n ?? 3,
     });
 
     const allUserIds = handovers
