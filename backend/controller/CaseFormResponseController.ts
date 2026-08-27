@@ -37,6 +37,7 @@ export class CaseFormResponseController {
       where,
       include: CASEFORMRESPONSE_DEFAULT_INCLUDE,
     });
+    // TODO: this is very restrictive, consider filtering out bad responses, rather than denying outright
     if (!canSeeCaseFormResponses(user, responses)) throw new ForbiddenError();
 
     return responses;
