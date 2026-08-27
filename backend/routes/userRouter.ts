@@ -76,15 +76,4 @@ UserRouter.delete('/i/:id', async (req, res) => {
   }
 });
 
-UserRouter.get('/org/:orgId/', async (req, res) => {
-  try {
-    const { orgId } = req.params;
-
-    const users = await UserController.getOrgUsers(req.user!, orgId);
-    res.send(users);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
 export default UserRouter;
