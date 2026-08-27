@@ -80,3 +80,6 @@ Thumbs.db
 # generated prisma client and types
 /shared/generated
 /backend/prisma/generated
+
+# local issues files
+ISSUES.md
