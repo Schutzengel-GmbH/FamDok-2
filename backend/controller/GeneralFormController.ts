@@ -17,10 +17,7 @@ import {
 import { AnswerCreateManyGeneralFormResponseInput } from '../../shared/generated/prisma/models';
 
 export class GeneralFormController {
-  static getDefinitions(
-    user: FullUser,
-    where?: Prisma.GeneralFormWhereInput
-  ) {
+  static getDefinitions(user: FullUser, where?: Prisma.GeneralFormWhereInput) {
     return prisma.generalForm.findMany({
       where: { AND: [{ ...where }, ...generalFormWhereRestrictions(user)] },
       orderBy: { name: 'asc' },
@@ -116,6 +113,10 @@ export class GeneralFormController {
     // make sure there is always a "answer" to all questions, so we never run into the issue
     // of having to "upsertMany" which doesn't exist in prisma
 
+    // this shouldn't really happen, but just in case, make sure we're not getting any undefined errors
+    if (data.answers?.createMany?.data == undefined)
+      data.answers = { createMany: { data: [] } };
+
     data = {
       ...data,
       answers: {
@@ -124,8 +125,8 @@ export class GeneralFormController {
             (q) => ({
               questionId: q.id,
               ...(
-                data.answers?.createMany
-                  ?.data as AnswerCreateManyGeneralFormResponseInput[]
+                data.answers!.createMany!
+                  .data as AnswerCreateManyGeneralFormResponseInput[]
               ).find((a) => a.questionId === q.id),
             })
           ),
