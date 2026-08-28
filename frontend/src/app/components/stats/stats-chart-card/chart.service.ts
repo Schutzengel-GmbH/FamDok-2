@@ -67,13 +67,14 @@ export class ChartsService {
           this.statsService.getCities(),
           this.statsService.getAnonCases(filter, range),
         ).subscribe(([cities, cases]) => {
-          let data: number[] = new Array(cities.length).fill(0);
+          let data: number[] = new Array(cities.length + 1).fill(0);
           cases.forEach((c) => {
             const cIndex = cities.findIndex((city) => c.city === city);
+            if (cIndex < 0) data[data.length - 1] += 1;
             data[cIndex] += 1;
           });
           this.data.next(data);
-          this.labels.next(cities);
+          this.labels.next([...cities, 'Kein Ort']);
         });
         break;
     }
