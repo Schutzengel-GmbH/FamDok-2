@@ -75,7 +75,7 @@ export class EditCaseFormSingleResponse implements OnInit {
       .subscribe((res) => {
         this.toastService.show({
           title: 'Gespeichert',
-          text: `Antwort für Familie ${res.case.family?.name ?? ''} gespeichert.`,
+          text: `Antwort für Familie ${res.case.family.name} gespeichert.`,
           severity: 'success',
         });
         this.router.navigate(['/']);

@@ -3,10 +3,7 @@
  */
 import z from "zod";
 
-export const SettingsKeys = z.literal([
-  "closing_doc",
-  "personal_data_retention_days",
-]);
+export const SettingsKeys = z.literal(["closing_doc"]);
 
 export const Settings = z.partialRecord(SettingsKeys, z.string());
 

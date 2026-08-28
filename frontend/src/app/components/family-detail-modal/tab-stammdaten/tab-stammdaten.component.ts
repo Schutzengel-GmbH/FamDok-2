@@ -40,7 +40,7 @@ export class TabStammdatenComponent implements OnChanges {
   protected selectedChild = computed(() => {
     const id = this.selectedChildId();
     if (!id) return undefined;
-    return this.selectedCase.family?.children?.find((x) => x.id === id);
+    return this.selectedCase.family.children?.find((x) => x.id === id);
   });
 
   getAdressString(adress: PrismaJson.Address | null | undefined) {

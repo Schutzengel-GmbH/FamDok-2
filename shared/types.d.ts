@@ -151,11 +151,6 @@ type Warning =
       level: WarningLevel;
       type: WarningType.CLOSED_WITHOUT_DOC;
       data: { caseId: string; closedAt: Date };
-    }
-  | {
-      level: WarningLevel;
-      type: WarningType.PENDING_PERSONAL_DATA_DELETION;
-      data: { caseId: string; personalDataDueAt: Date };
     };
 
 type KeyOfType<T, V> = keyof {

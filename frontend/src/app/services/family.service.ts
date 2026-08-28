@@ -366,25 +366,6 @@ export class FamilyService {
     });
   }
 
-  /** Reverts a case's closure. This deletes the case's existing Abschlussdokumentation, if any.
-   * @param {string} caseId UUID of the case
-   * @returns {Observable<FullCase>} reopened Case
-   */
-  reopenCase(caseId: string): Observable<FullCase> {
-    return this.http.post<FullCase>(this.caseApiUrl + '/reopen/' + caseId, {});
-  }
-
-  /** Immediately purges a case's family's personal data, skipping any waiting period.
-   * @param {string} caseId UUID of the case
-   * @returns {Observable<FullCase>} updated Case
-   */
-  purgeFamily(caseId: string): Observable<FullCase> {
-    return this.http.post<FullCase>(
-      this.caseApiUrl + '/i/' + caseId + '/purge',
-      {},
-    );
-  }
-
   /**
    * Get the list of handovers for a case.
    * @param {string} caseId UUID of the case

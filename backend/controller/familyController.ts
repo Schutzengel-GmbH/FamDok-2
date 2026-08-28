@@ -8,7 +8,6 @@ import {
   canSeeFamilies,
   canSeeFamily,
   canCreateFamily,
-  canEditFamily,
 } from './authFns/FamilyAuthFn';
 
 export class FamilyController {
@@ -124,7 +123,7 @@ export class FamilyController {
     });
 
     if (!family) throw new NotFoundError();
-    if (!canEditFamily(user, family)) throw new ForbiddenError();
+    if (!canSeeFamily(user, family)) throw new ForbiddenError();
 
     const adress = data.adress as PrismaJson.Address | undefined;
     if (adress?.city || adress?.plz) {
@@ -148,7 +147,7 @@ export class FamilyController {
     });
 
     if (!family) throw new NotFoundError();
-    if (!canEditFamily(user, family)) throw new ForbiddenError();
+    if (!canSeeFamily(user, family)) throw new ForbiddenError();
 
     return prisma.family.delete({
       where: { id },
