@@ -195,7 +195,13 @@ export class AllDataComponent {
       case 'Select':
         return answer.answerSelectId
           .map((id) => {
-            const option = question.selectOptions.find((so) => so.id === id)!;
+            const option = question.selectOptions.find((so) => so.id === id);
+
+            if (!option) {
+              console.error(`option ${id} not found, was it deleted?`);
+              return 'Fehler: Antwort-Option nicht gefunden';
+            }
+
             if (!option.isOpen) return option.text;
             else return answer.answerText || '';
           })
@@ -222,7 +228,10 @@ export class AllDataComponent {
       },
     ];
 
-    downloadCsv(csvFilename(this.form().name), toCsv(this.rows() ?? [], columns));
+    downloadCsv(
+      csvFilename(this.form().name),
+      toCsv(this.rows() ?? [], columns),
+    );
   }
 
   protected exportJson(): void {
@@ -244,9 +253,7 @@ export class AllDataComponent {
     if (question.type === 'Date') {
       return {
         value: (row) => {
-          const answer = row.answers.find(
-            (a) => a.questionId === question.id,
-          );
+          const answer = row.answers.find((a) => a.questionId === question.id);
           return answer?.answerDate ? new Date(answer.answerDate) : undefined;
         },
         type: Date,
