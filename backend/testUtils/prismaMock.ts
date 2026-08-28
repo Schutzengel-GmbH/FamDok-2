@@ -23,7 +23,7 @@ function createModelMock() {
 }
 
 export function createPrismaMock() {
-  return {
+  const mock = {
     setting: createModelMock(),
     user: createModelMock(),
     organisation: createModelMock(),
@@ -46,11 +46,17 @@ export function createPrismaMock() {
     document: createModelMock(),
     caseAttachment: createModelMock(),
     $queryRaw: jest.fn(),
-    // Controllers only ever call $transaction with an array of operations (never the
-    // callback form), so resolving them like Promise.all mirrors real Prisma closely
-    // enough for tests, without every test needing to stub the transaction result itself.
-    $transaction: jest.fn((operations: unknown[]) => Promise.all(operations)),
+    // Real Prisma $transaction has two overloads: an array of operations, and a callback
+    // that receives a transaction-scoped client. Support both; the callback gets the same
+    // mock so per-model mockResolvedValue(...) set in a test also applies inside the
+    // transaction, without every test needing to stub the transaction result itself.
+    $transaction: jest.fn((arg: unknown) =>
+      typeof arg === 'function'
+        ? (arg as (tx: typeof mock) => unknown)(mock)
+        : Promise.all(arg as unknown[])
+    ),
   };
+  return mock;
 }
 
 export type PrismaMock = ReturnType<typeof createPrismaMock>;
