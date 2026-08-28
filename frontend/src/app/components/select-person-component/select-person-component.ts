@@ -43,7 +43,7 @@ export class SelectPersonComponent {
   }
 
   linkPersons(): Person[] {
-    if (!this.case) return [];
+    if (!this.case()) return [];
 
     const children: Person[] =
       this.case()?.family?.children.map((c) => ({
