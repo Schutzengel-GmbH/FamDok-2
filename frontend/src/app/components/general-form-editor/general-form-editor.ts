@@ -55,13 +55,23 @@ export class GeneralFormEditorComponent implements OnInit {
 
     if (this.formId) {
       this.isLoading = true;
-      this.formService.getDefinition(this.formId).subscribe((form) => {
-        this.form.patchValue({ name: form.name });
-        this.questionFormService.populateQuestions(
-          this.questions,
-          form.questions,
-        );
-        this.isLoading = false;
+      this.formService.getDefinition(this.formId).subscribe({
+        next: (form) => {
+          this.form.patchValue({ name: form.name });
+          this.questionFormService.populateQuestions(
+            this.questions,
+            form.questions,
+          );
+          this.isLoading = false;
+        },
+        error: (err) => {
+          console.error(err);
+          this.toast.show({
+            title: 'Fehler',
+            text: `Beim Laden der Familie ist ein Fehler aufgetreten: ${err.message ? err.message : err}`,
+            severity: 'danger',
+          });
+        },
       });
     } else {
       this.questionFormService.addQuestion(this.questions);
@@ -99,7 +109,11 @@ export class GeneralFormEditorComponent implements OnInit {
       this.questions,
     );
     if (questionError) {
-      this.toast.show({ title: 'Fehler', text: questionError, severity: 'danger' });
+      this.toast.show({
+        title: 'Fehler',
+        text: questionError,
+        severity: 'danger',
+      });
       return;
     }
 

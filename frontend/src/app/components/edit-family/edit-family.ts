@@ -103,8 +103,18 @@ export class EditFamilyComponent implements OnInit {
   });
 
   ngOnInit() {
-    this.familyService.getFamily(this.familyId).subscribe((f) => {
-      this.init(f);
+    this.familyService.getFamily(this.familyId).subscribe({
+      next: (f) => {
+        this.init(f);
+      },
+      error: (err) => {
+        console.error(err);
+        this.toast.show({
+          title: 'Fehler',
+          text: `Beim Laden der Familie ist ein Fehler aufgetreten: ${err.message ? err.message : err}`,
+          severity: 'danger',
+        });
+      },
     });
   }
 
