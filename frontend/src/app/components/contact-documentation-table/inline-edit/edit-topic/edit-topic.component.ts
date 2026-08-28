@@ -45,4 +45,8 @@ export class EditTopic {
   cancel() {
     this.nochange.emit();
   }
+
+  compareFn(a: PrismaJson.SelectOption, b: PrismaJson.SelectOption) {
+    return a.id === b.id;
+  }
 }
