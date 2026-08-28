@@ -7,7 +7,6 @@ import {
   ViewChild,
   inject,
 } from '@angular/core';
-import { FamilyService } from 'src/app/services/family.service';
 import { FullCase, FullFamily, FullUser } from '../../../../../shared/types';
 import {
   ColumnMode,
@@ -29,6 +28,7 @@ import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import { Role } from '../../../../../shared/generated/prisma/enums';
 import { ChildModel as Child } from '../../../../../shared/generated/prisma/models';
 import { CaseService } from 'src/app/services/case.service';
+import { sortCasesByFamilyName } from 'src/app/util/generalUtils';
 
 @Component({
   imports: [
@@ -103,6 +103,10 @@ export class Families implements OnInit {
     this.pageSize = this.small ? 5 : 10;
     this.updateMobileTableMode();
 
+    this.fetchData();
+  }
+
+  fetchData() {
     this.meService.getMe().subscribe((user) => {
       this.currentUser = user;
 
@@ -126,7 +130,7 @@ export class Families implements OnInit {
               : this.caseService.getCasesForUser(this.meService.getKCId()!);
 
       source$.subscribe((cases) => {
-        this.allCases = cases ?? [];
+        this.allCases = cases.sort(sortCasesByFamilyName) ?? [];
         this.totalCount = this.allCases.length;
         this.currentPage = 1;
         this.updatePagedCases();
@@ -254,5 +258,6 @@ export class Families implements OnInit {
 
   closeDetails() {
     this.isDetailModalOpen = false;
+    this.fetchData();
   }
 }

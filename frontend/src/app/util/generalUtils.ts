@@ -1,3 +1,6 @@
+import { Case } from '../../../../shared/generated/prisma/client';
+import { FullCase } from '../../../../shared/types';
+
 type Primitive = string | number | symbol | bigint | boolean | null | undefined;
 
 export function sortByNumProperty<
@@ -14,6 +17,11 @@ export function sortByStringProperty<
   N extends string,
 >(key: K) {
   return (a: T, b: T) => a[key].localeCompare(b[key]);
+}
+
+export function sortCasesByFamilyName(a: FullCase, b: FullCase) {
+  if (!a.family?.name || !b.family?.name) return 0;
+  return a.family?.name.localeCompare(b.family?.name);
 }
 
 export function isEmptyObject(test: unknown) {
