@@ -22,16 +22,14 @@ describe('TextQuestionFilter', () => {
     fixture.detectChanges();
   });
 
-  it('apply always emits the built text filter (even with an undefined value)', () => {
+  it('apply emits an empty filter when the value is undefined', () => {
     let emitted: unknown;
     component.filterChanged.subscribe((f) => (emitted = f));
 
     component.apply();
 
     expect(component.active()).toBeTrue();
-    expect(emitted).toEqual(
-      jasmine.objectContaining({ answerText: { contains: undefined, mode: 'insensitive' } }),
-    );
+    expect(emitted).toEqual({});
   });
 
   it('apply emits the given text value', () => {
