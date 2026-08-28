@@ -3,7 +3,10 @@ import {
   AnswerModelSchema,
   QuestionModelSchema,
 } from '../../../../shared/generated/zod/schemas';
-import { AnswerModel as Answer, QuestionModel as Question } from '../../../../shared/generated/prisma/models';
+import {
+  AnswerModel as Answer,
+  QuestionModel as Question,
+} from '../../../../shared/generated/prisma/models';
 
 /**
  * Zod schemas for various types.
@@ -44,13 +47,13 @@ export function validateAnswer(question: Question, answer?: Answer): boolean {
   }
 
   if (question.type === 'Integer') {
-    if (question.max && answer?.answerInt! > question.max) return false;
-    if (question.min && answer?.answerInt! < question.min) return false;
+    if (question.max != null && answer?.answerInt! > question.max) return false;
+    if (question.min != null && answer?.answerInt! < question.min) return false;
   }
 
   if (question.type === 'Float') {
-    if (question.max && answer?.answerNum! > question.max) return false;
-    if (question.min && answer?.answerNum! < question.min) return false;
+    if (question.max != null && answer?.answerNum! > question.max) return false;
+    if (question.min != null && answer?.answerNum! < question.min) return false;
   }
 
   return true;
