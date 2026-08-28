@@ -14,6 +14,25 @@ import {
   NgbDropdownButtonItem,
 } from '@ng-bootstrap/ng-bootstrap';
 
+/** Default identity check: strict equality, falling back to `id` match when both operands
+ *  are objects carrying an `id` (the common case - all current callers pass DB entities or
+ *  select options that come from separate fetches than `items`). Primitive items and objects
+ *  without `id` keep pure reference equality. */
+function defaultCompare<T>(a: T, b: T): boolean {
+  if (a === b) return true;
+  if (
+    a != null &&
+    b != null &&
+    typeof a === 'object' &&
+    typeof b === 'object' &&
+    'id' in a &&
+    'id' in b
+  ) {
+    return (a as { id: unknown }).id === (b as { id: unknown }).id;
+  }
+  return false;
+}
+
 @Component({
   selector: 'app-multi-select',
   templateUrl: './multi-select.component.html',
@@ -48,9 +67,10 @@ export class MultiSelect<TItem> {
    */
   selectChange = output<TItem[]>();
 
-  /** [Optional] Function to check identity of objects. Defaults to strict equality a === b.
+  /** [Optional] Function to check identity of objects. Defaults to strict equality, falling
+   * back to `a.id === b.id` when both items are objects with an `id`.
    */
-  compareFn = input<(a: TItem, b: TItem) => boolean>((a, b) => a === b);
+  compareFn = input<(a: TItem, b: TItem) => boolean>(defaultCompare);
 
   /** [Optional] Maximum number of allowed elements selected
    */
