@@ -49,7 +49,10 @@ export class ChildModalComponent implements OnInit {
       ],
       lastName: [this.child?.lastName ?? ''],
       gender: [this.child?.gender ?? ('unspecified' as Gender)],
-      dateOfBirth: [new Date(this.child?.dateOfBirth!) ?? undefined],
+      dateOfBirth: [
+        this.child?.dateOfBirth ? new Date(this.child.dateOfBirth) : '',
+        [Validators.required],
+      ],
     });
   }
 

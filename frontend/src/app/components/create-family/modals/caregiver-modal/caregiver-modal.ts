@@ -57,7 +57,10 @@ export class CaregiverModalComponent implements OnInit {
         Validators.required,
       ],
       gender: [this.caregiver?.gender ?? ('unspecified' as Gender)],
-      dateOfBirth: [new Date(this.caregiver?.dateOfBirth!) ?? ''],
+      dateOfBirth: [
+        this.caregiver?.dateOfBirth ? new Date(this.caregiver.dateOfBirth) : '',
+        [Validators.required],
+      ],
     });
   }
 
