@@ -58,14 +58,13 @@ export class SelectOneComponent {
         questionId: this.question.id,
         answerSelectId: [],
       }));
-    } else if (!option.isOpen) {
+    } else {
       this.answer.update((a) => ({
         ...a,
         questionId: this.question.id,
         answerSelectId: [option.id],
       }));
-    } else {
-      this.onHandleOpenOption(option);
+      if (option.isOpen) this.onHandleOpenOption(option);
     }
   }
 
