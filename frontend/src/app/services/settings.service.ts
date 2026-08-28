@@ -2,7 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Settings } from '../../../../shared/types';
 import { environment } from 'src/environments/environment';
-import { catchError, map, Observable, shareReplay, throwError } from 'rxjs';
+import {
+  catchError,
+  map,
+  Observable,
+  shareReplay,
+  tap,
+  throwError,
+} from 'rxjs';
 
 const CACHE_SIZE = 1;
 
@@ -23,6 +30,9 @@ export class SettingsService {
           map((result) => ({
             closing_doc:
               result.find((s) => s.name === 'closing_doc')?.value || '',
+            personal_data_retention_days:
+              result.find((s) => s.name === 'personal_data_retention_days')
+                ?.value || '',
           })),
           catchError((err) => {
             this.settingsCache$ = undefined;
@@ -31,5 +41,18 @@ export class SettingsService {
         )
         .pipe(shareReplay(CACHE_SIZE));
     return this.settingsCache$;
+  }
+
+  /** Admin-only: sets a setting and invalidates the cache so subsequent getSettings() re-fetches. */
+  updateSetting(
+    name: keyof Settings,
+    value: string,
+  ): Observable<{ name: string; value: string }> {
+    return this.http
+      .put<{ name: string; value: string }>(
+        `${this.settingsApiUrl}/${name}`,
+        { value },
+      )
+      .pipe(tap(() => (this.settingsCache$ = undefined)));
   }
 }

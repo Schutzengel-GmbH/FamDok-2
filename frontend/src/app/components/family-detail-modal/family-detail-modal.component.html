@@ -103,7 +103,17 @@
           @switch (activeTab()) {
             @case ("stammdaten") {
               <ng-container>
-                <app-tab-stammdaten [selectedCase]="selectedCase()!" />
+                @if (selectedCase()!.family) {
+                  <app-tab-stammdaten [selectedCase]="selectedCase()!" />
+                } @else {
+                  <div class="tab-section">
+                    <p class="text-muted">
+                      Personenbezogene Daten dieser Familie wurden am
+                      {{ formatDateDisplay(selectedCase()!.personalDataDeletedAt) }}
+                      gelöscht.
+                    </p>
+                  </div>
+                }
               </ng-container>
             }
             @case ("zielvereinbarungen") {
@@ -154,7 +164,8 @@
               <ng-container>
                 <app-tab-close
                   [selectedCase]="selectedCase()!"
-                  [readOnly]="readOnly()" />
+                  [readOnly]="readOnly()"
+                  (changed)="refreshCaseFromBackend('close')" />
               </ng-container>
             }
           }

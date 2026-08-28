@@ -11,8 +11,12 @@ import { Router } from '@angular/router';
 import { FamilyService } from 'src/app/services/family.service';
 import { FullCase, Warning } from '../../../../../../shared/types';
 import { FormType, WarningType } from '../../../../../../shared/consts';
+import { Role } from '../../../../../../shared/generated/prisma/enums';
 import { SettingsService } from 'src/app/services/settings.service';
 import { WarningsService } from 'src/app/services/warnings.service';
+import { MeService } from 'src/app/services/me.service';
+import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
+import { ToastService } from 'src/app/services/toast.service';
 import { zip } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { NgbDatepickerModule, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
@@ -27,16 +31,21 @@ export class TabClose {
   selectedCase = input.required<FullCase>();
   readOnly = input(false);
   date = model<Date>(new Date());
+  changed = output<void>();
 
   private router = inject(Router);
   private settingsService = inject(SettingsService);
   private familyService = inject(FamilyService);
   private warningsService = inject(WarningsService);
+  private meService = inject(MeService);
+  private dialogService = inject(ConfirmDialogService);
+  private toast = inject(ToastService);
 
   private warnings = toSignal(this.warningsService.getWarnings(), {
     initialValue: [] as Warning[],
   });
   private settings = toSignal(this.settingsService.getSettings());
+  private currentUser = toSignal(this.meService.getMe());
 
   protected closingDocWarningTooltip = computed(() => {
     const caseId = this.selectedCase().id;
@@ -86,6 +95,10 @@ export class TabClose {
 
   private formatDate(d: Date): string {
     return new Date(d).toLocaleDateString('de-DE');
+  }
+
+  protected formatDateDisplay(d: Date | null | undefined): string {
+    return d ? this.formatDate(d) : '';
   }
 
   onDateSelect(e: Event) {

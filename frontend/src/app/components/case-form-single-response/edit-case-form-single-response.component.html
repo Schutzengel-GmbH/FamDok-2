@@ -13,7 +13,7 @@
     <div class="card-body" [class.pe-none]="readOnly()" [class.opacity-75]="readOnly()">
       <ul class="list-group">
         <li class="list-group-item">
-          <h3>{{ caseForm().name + " für Familie " + case().family.name }}</h3>
+          <h3>{{ caseForm().name + " für Familie " + (case().family?.name ?? "(Daten gelöscht)") }}</h3>
         </li>
         @if (caseForm().isPersonal) {
           <li class="list-group-item">

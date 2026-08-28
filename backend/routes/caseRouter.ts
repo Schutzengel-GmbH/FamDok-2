@@ -375,4 +375,26 @@ CaseRouter.post('/close/:caseId', async (req, res) => {
   }
 });
 
+CaseRouter.post('/reopen/:caseId', async (req, res) => {
+  const { caseId: id } = req.params;
+
+  try {
+    const result = await CaseController.reopenCase(req.user!, id);
+    res.send(result);
+  } catch (e) {
+    handleError(e, res);
+  }
+});
+
+CaseRouter.post('/i/:id/purge', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await CaseController.purgeFamily(req.user!, id);
+    res.send(result);
+  } catch (e) {
+    handleError(e, res);
+  }
+});
+
 export default CaseRouter;
