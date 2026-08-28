@@ -3,15 +3,13 @@
     [value]="_value() || []"
     [maximum]="prop() === 'artDerBetreuung' ? 1 : undefined"
     [items]="options()"
+    [compareFn]="compareFn"
     labelProp="text"
-    (selectChange)="change($event)"
-  />
+    (selectChange)="change($event)" />
   <button
     class="btn btn-outline-secondary bi bi-floppy-fill"
-    (click)="apply()"
-  ></button>
+    (click)="apply()"></button>
   <button
     class="btn btn-outline-secondary bi bi-x-circle-fill"
-    (click)="cancel()"
-  ></button>
+    (click)="cancel()"></button>
 </div>

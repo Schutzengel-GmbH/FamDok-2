@@ -205,10 +205,9 @@ CaseRouter.get('/i/:id/documentation/i/:docId/download', async (req, res) => {
     const doc = await CaseController.getContactDocumentationPDF(
       req.user!,
       docId
-    ).then((b) => {
-      res.contentType('application/pdf');
-      res.send(b);
-    });
+    );
+
+    res.contentType('application/pdf');
     res.send(doc);
   } catch (e) {
     handleError(e, res);
@@ -370,6 +369,28 @@ CaseRouter.post('/close/:caseId', async (req, res) => {
 
   try {
     const result = await CaseController.closeCase(req.user!, id, date);
+    res.send(result);
+  } catch (e) {
+    handleError(e, res);
+  }
+});
+
+CaseRouter.post('/reopen/:caseId', async (req, res) => {
+  const { caseId: id } = req.params;
+
+  try {
+    const result = await CaseController.reopenCase(req.user!, id);
+    res.send(result);
+  } catch (e) {
+    handleError(e, res);
+  }
+});
+
+CaseRouter.post('/i/:id/purge', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await CaseController.purgeFamily(req.user!, id);
     res.send(result);
   } catch (e) {
     handleError(e, res);

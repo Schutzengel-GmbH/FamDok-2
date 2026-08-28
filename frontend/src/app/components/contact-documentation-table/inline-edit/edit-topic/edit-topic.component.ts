@@ -4,6 +4,7 @@ import {
   input,
   linkedSignal,
   output,
+  untracked,
 } from '@angular/core';
 import { ContactDocumentationOptions } from '../../../../../../../shared/sharedGlobals';
 import { MultiSelect } from 'src/app/components/multi-select/multi-select.component';
@@ -24,12 +25,29 @@ export class EditTopic {
 
   options = computed(() => ContactDocumentationOptions[this.prop()]);
 
-  protected _value = linkedSignal(() => {
-    if (this.prop() === 'artDerBetreuung') {
-      const single = this.value() as PrismaJson.SelectOption | undefined;
-      return single ? [single] : [];
-    }
-    return this.value() as PrismaJson.SelectOption[];
+  /** Incoming selection normalised to an array (single- and multi-value props). */
+  private incomingSelection = computed<PrismaJson.SelectOption[]>(() => {
+    const v = this.value();
+    if (v == null) return [];
+    return Array.isArray(v) ? v : [v];
+  });
+
+  /** Local, editable copy of the selection.
+   *
+   * Sourced from a stable id-key rather than the input array's identity: the parent rebuilds
+   * the `value` array on every change-detection pass, and a plain `linkedSignal(() =>
+   * this.value())` would be re-seeded by that churn, dropping a click before it renders.
+   * Returning `previous.value` while the id-key is unchanged keeps the in-progress edit; a
+   * real change to the saved ids still re-seeds. */
+  protected _value = linkedSignal<string, PrismaJson.SelectOption[]>({
+    source: () =>
+      this.incomingSelection()
+        .map((o) => o.id)
+        .join(','),
+    computation: (key, previous) =>
+      previous && previous.source === key
+        ? previous.value
+        : untracked(() => this.incomingSelection()),
   });
 
   change(options: PrismaJson.SelectOption[]) {
@@ -44,5 +62,9 @@ export class EditTopic {
 
   cancel() {
     this.nochange.emit();
+  }
+
+  compareFn(a: PrismaJson.SelectOption, b: PrismaJson.SelectOption) {
+    return a.id === b.id;
   }
 }

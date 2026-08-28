@@ -63,12 +63,28 @@ describe('MultiSelect', () => {
   });
 
   describe('selected', () => {
-    it('uses strict equality by default, so an equal-but-distinct object is not selected', () => {
+    it('matches by id by default, so an equal-but-distinct object with the same id is selected', () => {
       component.value.set([items[0]]);
 
       expect(component['selected'](items[0])).toBeTrue();
       expect(component['selected'](items[1])).toBeFalse();
-      expect(component['selected']({ ...items[0] })).toBeFalse();
+      expect(component['selected']({ ...items[0] })).toBeTrue();
+    });
+
+    it('falls back to reference equality for items without an id', () => {
+      const noId = component as unknown as MultiSelect<{ label: string }>;
+      noId.value.set([{ label: 'a' }]);
+
+      expect(noId['selected']({ label: 'a' })).toBeFalse();
+      expect(noId['selected'](noId.value()[0])).toBeTrue();
+    });
+
+    it('matches primitive items by value', () => {
+      const strings = component as unknown as MultiSelect<string>;
+      strings.value.set(['x']);
+
+      expect(strings['selected']('x')).toBeTrue();
+      expect(strings['selected']('y')).toBeFalse();
     });
 
     it('uses a custom compareFn when provided', () => {

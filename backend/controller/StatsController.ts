@@ -243,6 +243,8 @@ export class StatsController {
     user: FullUser,
     filter: Prisma.ContactDocumentationWhereInput
   ): Promise<number> {
+    AnonContactDocumentationWhereInputSchema.parse(filter);
+
     const scope = requireCaseScope(user);
     return await prisma.contactDocumentation.count({
       where: {
@@ -265,6 +267,8 @@ export class StatsController {
     user: FullUser,
     filter: Prisma.CaseFormResponseWhereInput
   ): Promise<number> {
+    AnonCaseWhereInputSchema.parse(filter);
+
     const scope = requireCaseScope(user);
 
     const form = await prisma.caseForm.findUniqueOrThrow({

@@ -7,7 +7,6 @@ import {
   ViewChild,
   inject,
 } from '@angular/core';
-import { FamilyService } from 'src/app/services/family.service';
 import { FullCase, FullFamily, FullUser } from '../../../../../shared/types';
 import {
   ColumnMode,
@@ -29,6 +28,7 @@ import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import { Role } from '../../../../../shared/generated/prisma/enums';
 import { ChildModel as Child } from '../../../../../shared/generated/prisma/models';
 import { CaseService } from 'src/app/services/case.service';
+import { sortCasesByFamilyName } from 'src/app/util/generalUtils';
 
 @Component({
   imports: [
@@ -76,7 +76,8 @@ export class Families implements OnInit {
   protected totalPages = 1;
 
   protected familyNamePipe = {
-    transform(family: FullFamily) {
+    transform(family: FullFamily | null | undefined) {
+      if (!family) return 'Familie (Daten gelöscht)';
       return `Familie ${family.name}`;
     },
   };
@@ -93,8 +94,8 @@ export class Families implements OnInit {
   };
 
   protected countChildrenPipe = {
-    transform(children: Child[]) {
-      return children.length;
+    transform(children: Child[] | undefined) {
+      return children?.length ?? 0;
     },
   };
 
@@ -102,6 +103,10 @@ export class Families implements OnInit {
     this.pageSize = this.small ? 5 : 10;
     this.updateMobileTableMode();
 
+    this.fetchData();
+  }
+
+  fetchData() {
     this.meService.getMe().subscribe((user) => {
       this.currentUser = user;
 
@@ -125,7 +130,7 @@ export class Families implements OnInit {
               : this.caseService.getCasesForUser(this.meService.getKCId()!);
 
       source$.subscribe((cases) => {
-        this.allCases = cases ?? [];
+        this.allCases = cases.sort(sortCasesByFamilyName) ?? [];
         this.totalCount = this.allCases.length;
         this.currentPage = 1;
         this.updatePagedCases();
@@ -244,8 +249,8 @@ export class Families implements OnInit {
   selectedCase: FullCase | undefined = undefined;
   modalReadOnly = false;
 
-  openDetailModal(cId: string) {
-    const c = this.allCases.find((c) => c.familyId === cId);
+  openDetailModal(caseId: string) {
+    const c = this.allCases.find((c) => c.id === caseId);
     this.isDetailModalOpen = true;
     this.selectedCase = c;
     this.modalReadOnly = !this.canEditCase(c);
@@ -253,5 +258,6 @@ export class Families implements OnInit {
 
   closeDetails() {
     this.isDetailModalOpen = false;
+    this.fetchData();
   }
 }

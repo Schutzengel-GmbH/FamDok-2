@@ -45,6 +45,7 @@ import {
   toCsv,
 } from 'src/app/util/csvExport';
 import { downloadJson, jsonFilename, toJson } from 'src/app/util/jsonExport';
+import { isEmptyObject } from 'src/app/util/generalUtils';
 import {
   downloadXlsx,
   toXlsxBlob,
@@ -162,18 +163,29 @@ export class AllDataComponent {
   }
 
   questionFilterChange(questionId: string, filter: AnswerWhereInput) {
-    this.questionFilters.set(questionId, filter);
+    // A cleared filter comes in as `{}` (modal Reset/dismiss) - drop it entirely instead of
+    // storing an empty `answers.some` clause, which would wrongly require every response to
+    // have at least one answer and hide cases with none.
+    if (isEmptyObject(filter)) {
+      this.questionFilters.delete(questionId);
+    } else {
+      this.questionFilters.set(questionId, filter);
+    }
 
     // Each question's filter must match *some* answer independently - a single answer can
     // only ever belong to one question, so combining them inside a single `answers.some.AND`
     // would require one answer to satisfy every question's filter at once, which can never
     // happen. AND-ing separate `some` clauses at the top level is what actually intersects them.
-    this.filter.update((f) => ({
-      ...f,
-      AND: [...this.questionFilters.values()].map((qf) => ({
-        answers: { some: qf },
-      })),
-    }));
+    this.filter.update((f) => {
+      const next = { ...f };
+      delete next.AND;
+      if (this.questionFilters.size > 0) {
+        next.AND = [...this.questionFilters.values()].map((qf) => ({
+          answers: { some: qf },
+        }));
+      }
+      return next;
+    });
   }
 
   getValue(row: FullCaseFormResponse, question: Question) {
@@ -195,7 +207,13 @@ export class AllDataComponent {
       case 'Select':
         return answer.answerSelectId
           .map((id) => {
-            const option = question.selectOptions.find((so) => so.id === id)!;
+            const option = question.selectOptions.find((so) => so.id === id);
+
+            if (!option) {
+              console.error(`option ${id} not found, was it deleted?`);
+              return 'Fehler: Antwort-Option nicht gefunden';
+            }
+
             if (!option.isOpen) return option.text;
             else return answer.answerText || '';
           })
@@ -222,7 +240,10 @@ export class AllDataComponent {
       },
     ];
 
-    downloadCsv(csvFilename(this.form().name), toCsv(this.rows() ?? [], columns));
+    downloadCsv(
+      csvFilename(this.form().name),
+      toCsv(this.rows() ?? [], columns),
+    );
   }
 
   protected exportJson(): void {
@@ -244,9 +265,7 @@ export class AllDataComponent {
     if (question.type === 'Date') {
       return {
         value: (row) => {
-          const answer = row.answers.find(
-            (a) => a.questionId === question.id,
-          );
+          const answer = row.answers.find((a) => a.questionId === question.id);
           return answer?.answerDate ? new Date(answer.answerDate) : undefined;
         },
         type: Date,

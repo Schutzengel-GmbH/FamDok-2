@@ -51,9 +51,8 @@ export const KC_ADMIN_PASSWORD: string =
  * Is Production Environment, default false
  */
 export const PRODUCTION: boolean =
-  (process.env['PRODUCTION']?.toLowerCase() === 'true' ||
-    process.env['PRODUCTION'] === '1') ??
-  false;
+  process.env['PRODUCTION']?.toLowerCase() === 'true' ||
+  process.env['PRODUCTION'] === '1';
 
 /**
  * Directory where uploaded files (document library + case attachments) are stored on disk,

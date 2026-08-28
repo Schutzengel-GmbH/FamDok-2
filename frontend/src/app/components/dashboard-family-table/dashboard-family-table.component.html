@@ -12,7 +12,7 @@
       <div class="family-worklist-meta">
         <span>{{ getChildrenCount(row) }} Kinder</span>
         <span>Letzter Kontakt: {{ getLatestContactText(row) }}</span>
-        <span>Notiz: {{ row.family.note }}</span>
+        <span>Notiz: {{ row.family?.note }}</span>
         <span
           >Verantwortlich:
           {{ userArrayPipe.transform(row.responsibleUsers) }}</span

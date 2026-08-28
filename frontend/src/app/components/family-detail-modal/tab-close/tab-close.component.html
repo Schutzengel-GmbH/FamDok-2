@@ -1,5 +1,10 @@
 <div class="tab-section">
-  @if (readOnly()) {
+  @if (selectedCase().personalDataDeletedAt) {
+    <p class="text-muted">
+      Personenbezogene Daten dieser Familie wurden am
+      {{ formatDateDisplay(selectedCase().personalDataDeletedAt) }} gelöscht.
+    </p>
+  } @else if (readOnly()) {
     <p class="text-muted">
       {{
         selectedCase().closedAt
@@ -7,7 +12,7 @@
           : "Dieser Fall ist noch aktiv."
       }}
     </p>
-  } @else if (!selectedCase().closedAt) {
+  } @else {
     <h6 class="section-title">Fallabschluss</h6>
 
     <div class="input-group mb-2">
@@ -20,24 +25,45 @@
     </div>
 
     <div class="d-flex flex-column gap-2">
-      <button class="btn btn-outline-secondary" (click)="close()">
-        Fall abschließen
-      </button>
-    </div>
-  } @else {
-    <div class="d-flex flex-column gap-2">
-      <button
-        class="btn btn-outline-secondary d-flex align-items-center justify-content-between"
-        (click)="close()">
-        <span>Abschlussdokumentation bearbeiten</span>
-        @if (closingDocWarningTooltip(); as tooltip) {
-          <span
-            class="badge rounded-pill text-bg-danger ms-2"
-            [title]="tooltip">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-          </span>
+      @if (!selectedCase().closedAt) {
+        <button class="btn btn-outline-secondary" (click)="close()">
+          Fall abschließen
+        </button>
+      } @else {
+        <button class="btn btn-outline-secondary" (click)="close()">
+          Datum ändern
+        </button>
+
+        <button
+          class="btn btn-outline-secondary d-flex align-items-center justify-content-between"
+          (click)="editClosingDoc()">
+          <span>Abschlussdokumentation bearbeiten</span>
+          @if (closingDocWarningTooltip(); as tooltip) {
+            <span
+              class="badge rounded-pill text-bg-danger ms-2"
+              [title]="tooltip">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+            </span>
+          }
+        </button>
+
+        @if (selectedCase().personalDataDueAt) {
+          <p class="text-muted mb-0">
+            Löschung personenbezogener Daten geplant für
+            {{ formatDateDisplay(selectedCase().personalDataDueAt) }}.
+          </p>
         }
-      </button>
+
+        <button class="btn btn-outline-warning" (click)="reopen()">
+          Abschluss zurücknehmen
+        </button>
+      }
+
+      @if (canPurge()) {
+        <button class="btn btn-outline-danger" (click)="purge()">
+          Familie löschen
+        </button>
+      }
     </div>
   }
 </div>

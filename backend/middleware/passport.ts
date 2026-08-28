@@ -4,7 +4,7 @@ import { KC_BASE_URL, KC_CLIENT, KC_REALM, PRODUCTION } from '../config';
 import { UserController } from '../controller/UserController';
 import { FullUser } from '../../shared/types';
 import { Role } from '../../shared/generated/prisma/client';
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { isAfter } from 'date-fns';
 
 declare global {
@@ -19,7 +19,13 @@ export const bearerStrategy = new Strategy(async (token, done) => {
     KC_BASE_URL
   );
 
-  const tokenDecoded = jwtDecode(token);
+  let tokenDecoded: JwtPayload;
+
+  try {
+    tokenDecoded = jwtDecode(token);
+  } catch (e) {
+    return done(e);
+  }
 
   if (!tokenDecoded.sub || !tokenDecoded.exp) return done('invalid token');
   const expiresAt = new Date(tokenDecoded.exp! * 1000 || 0);

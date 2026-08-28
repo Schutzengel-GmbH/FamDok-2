@@ -40,12 +40,14 @@ export class TextQuestionFilter {
 
   apply() {
     this.active.set(true);
-    this.filterChanged.emit(
-      makeTextQuestionFilter({
-        question: this.question(),
-        value: this.filterInput,
-      }),
-    );
+    if (!this.filterInput) this.filterChanged.emit({});
+    else
+      this.filterChanged.emit(
+        makeTextQuestionFilter({
+          question: this.question(),
+          value: this.filterInput,
+        }),
+      );
   }
 
   cancel() {

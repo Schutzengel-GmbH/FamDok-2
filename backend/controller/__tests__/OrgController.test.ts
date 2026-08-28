@@ -178,7 +178,10 @@ describe('OrgController', () => {
       const created = buildSubOrganisation();
       prismaMock.subOrganisation.create.mockResolvedValue(created);
 
-      const result = await OrgController.createSubOrg(admin, { name: 'Sub' } as any);
+      const result = await OrgController.createSubOrg(admin, {
+        name: 'Sub',
+        organisation: { connect: { id: created.organisationId } },
+      } as any);
 
       expect(result).toBe(created);
     });
@@ -186,9 +189,12 @@ describe('OrgController', () => {
     it('createSubOrg throws for unprivileged users', async () => {
       const user = buildUser({ role: Role.User });
 
-      await expect(OrgController.createSubOrg(user, { name: 'Sub' } as any)).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        OrgController.createSubOrg(user, {
+          name: 'Sub',
+          organisation: { connect: { id: 'org-1' } },
+        } as any)
+      ).rejects.toThrow(ForbiddenError);
     });
 
     it('updateSubOrg succeeds for privileged users', async () => {

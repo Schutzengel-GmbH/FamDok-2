@@ -45,6 +45,22 @@ export function canEditFamily(user: FullUser, family: FullFamily) {
   );
 }
 
+/**
+ * Whether `user` may purge a family's personal data outright - Admin any family;
+ * OrgCoordinator/SubOrgCoordinator only within their own org/suborg. Deliberately excludes the
+ * "responsible user" branch that canSeeFamily/canEditFamily have - an ordinary case worker must
+ * not get an unconditional personal-data-delete button just by being responsible for the case.
+ */
+export function canPurgeFamily(user: FullUser, family: FullFamily) {
+  if (isBlocked(user)) return false;
+  if (CAN_OVERRIDE.includes(user.role)) return true;
+  if (user.role === Role.OrgCoordinator)
+    return isSameOrg(user, family.organisationId);
+  if (user.role === Role.SubOrgCoordinator)
+    return isSameSubOrg(user, family.case?.subOrganisationId);
+  return false;
+}
+
 export function canCreateFamily(
   user: FullUser,
   data: Prisma.FamilyCreateInput

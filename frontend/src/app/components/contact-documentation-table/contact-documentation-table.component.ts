@@ -31,6 +31,7 @@ import { EditDuration } from './inline-edit/edit-duration/edit-duration.componen
 import { Router } from '@angular/router';
 import {
   CaseWhereInput,
+  ContactDocumentationUpdateInput,
   ContactDocumentationWhereInput,
   UserWhereInput,
 } from '../../../../../shared/generated/prisma/models';
@@ -218,7 +219,7 @@ export class ContactDocumentationTable {
     field: keyof Editables['response'] | 'date',
     value: any,
   ) {
-    let response: ContactDocumentation | undefined = this.rows()?.find(
+    let response: FullContactDocumentation | undefined = this.rows()?.find(
       (r) => r.id === doc.id,
     );
 
@@ -240,8 +241,20 @@ export class ContactDocumentationTable {
     // This roundabout update is necessary to provide instant view change
     response[field] = storedValue;
 
+    // we're using the actual response values as the update input, so remove the non-existant properties
+    const update: ContactDocumentationUpdateInput = {
+      artDerBetreuung: response.artDerBetreuung,
+      beratungsThemenAllgemein: response.beratungsThemenAllgemein,
+      beratungsThemenEltern: response.beratungsThemenEltern,
+      beratungsThemenKinder: response.beratungsThemenKinder,
+      duration: response.duration,
+      zusammenfassung: response.zusammenfassung,
+      dokumentation: response.dokumentation,
+      date: response.date,
+    };
+
     this.documentationService
-      .updateDocumentation(doc.caseId, doc.id, response)
+      .updateDocumentation(doc.caseId, doc.id, update)
       .subscribe({
         next: () => {
           this.toggleEdit(doc.id, field);
@@ -271,18 +284,27 @@ export class ContactDocumentationTable {
   }
 
   dateFilterChanged(filter?: DateFieldFilter) {
-    this.filter.update((f) => ({
-      ...f,
-      date: filter ? { [filter.filter]: filter.value } : undefined,
-    }));
+    if (filter?.filter === 'range') {
+      const value = filter.value as Date[];
+      this.filter.update((f) => ({
+        ...f,
+        date: { lte: value[1], gte: value[0] },
+      }));
+    } else
+      this.filter.update((f) => ({
+        ...f,
+        date: filter ? { [filter.filter]: filter.value } : undefined,
+      }));
   }
 
   zusammenfassungFilterChanged(filter?: string) {
-    if (!filter) return;
-    this.filter.update((f) => ({
-      ...f,
-      zusammenfassung: { contains: filter, mode: 'insensitive' },
-    }));
+    if (!filter)
+      this.filter.update((f) => ({ ...f, zusammenfassung: undefined }));
+    else
+      this.filter.update((f) => ({
+        ...f,
+        zusammenfassung: { contains: filter, mode: 'insensitive' },
+      }));
   }
 
   filterChanged: (

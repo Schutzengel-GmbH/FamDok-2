@@ -126,6 +126,7 @@ export enum WarningType {
   UNFINISHED_CLOSE,
   CLOSED_WITHOUT_DOC,
   ZV_EXPIRED,
+  PENDING_PERSONAL_DATA_DELETION,
 }
 
 export enum FormType {
