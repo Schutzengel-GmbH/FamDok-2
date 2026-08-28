@@ -65,6 +65,35 @@ describe('EditTopic', () => {
     expect(saved).toEqual(value as any);
   });
 
+  it('keeps an in-progress selection when the parent re-supplies an equal value array', () => {
+    setup('beratungsThemenAllgemein', [{ id: 0, text: 'A' }]);
+
+    component.change([
+      { id: 0, text: 'A' },
+      { id: 1, text: 'B' },
+    ]);
+    expect(component['_value']().map((o) => o.id)).toEqual([0, 1]);
+
+    // the parent's template rebuilds the value array on every change-detection pass
+    fixture.componentRef.setInput('value', [{ id: 0, text: 'A' }]);
+    fixture.detectChanges();
+
+    expect(component['_value']().map((o) => o.id)).toEqual([0, 1]);
+  });
+
+  it('re-seeds from the input when the saved ids change', () => {
+    setup('beratungsThemenAllgemein', [{ id: 0, text: 'A' }]);
+    component.change([
+      { id: 0, text: 'A' },
+      { id: 1, text: 'B' },
+    ]);
+
+    fixture.componentRef.setInput('value', [{ id: 2, text: 'C' }]);
+    fixture.detectChanges();
+
+    expect(component['_value']().map((o) => o.id)).toEqual([2]);
+  });
+
   it('cancel emits nochange', () => {
     setup('artDerBetreuung', undefined);
     let cancelled = false;
