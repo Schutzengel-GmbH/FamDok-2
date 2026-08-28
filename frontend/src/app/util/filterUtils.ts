@@ -168,8 +168,12 @@ export function makeDateQuestionFilter(input: {
   filter: DateFieldFilter;
 }): AnswerWhereInput {
   const { question, filter } = input;
+
   return {
     questionId: question.id,
-    answerDate: { [filter.filter]: filter.value },
+    answerDate:
+      filter.filter === 'range'
+        ? { lte: (filter.value as Date[])[1], gte: (filter.value as Date[])[0] }
+        : { [filter.filter]: filter.value },
   };
 }

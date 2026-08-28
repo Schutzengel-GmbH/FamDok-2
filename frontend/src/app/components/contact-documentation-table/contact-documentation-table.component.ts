@@ -284,10 +284,17 @@ export class ContactDocumentationTable {
   }
 
   dateFilterChanged(filter?: DateFieldFilter) {
-    this.filter.update((f) => ({
-      ...f,
-      date: filter ? { [filter.filter]: filter.value } : undefined,
-    }));
+    if (filter?.filter === 'range') {
+      const value = filter.value as Date[];
+      this.filter.update((f) => ({
+        ...f,
+        date: { lte: value[1], gte: value[0] },
+      }));
+    } else
+      this.filter.update((f) => ({
+        ...f,
+        date: filter ? { [filter.filter]: filter.value } : undefined,
+      }));
   }
 
   zusammenfassungFilterChanged(filter?: string) {

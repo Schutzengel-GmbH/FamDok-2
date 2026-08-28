@@ -4,8 +4,7 @@
     <select
       [value]="filter()?.filter"
       (change)="changeFilter($event)"
-      class="form-select"
-    >
+      class="form-select">
       <option value="equals">Ist gleich</option>
       <option value="gt">Ist nach</option>
       <option value="gte">Ist nach oder am</option>
@@ -21,13 +20,11 @@
           ngbDatepicker
           #d="ngbDatepicker"
           [ngModel]="filter()?.value"
-          (ngModelChange)="changeValue($event)"
-        />
+          (ngModelChange)="changeValue($event)" />
         <button
           class="btn btn-outline-secondary bi bi-calendar3"
           (click)="d.toggle()"
-          type="button"
-        ></button>
+          type="button"></button>
       </div>
     } @else {
       <div class="input-group">
@@ -36,14 +33,12 @@
           placeholder="Startdatum"
           ngbDatepicker
           #ds="ngbDatepicker"
-          [ngModel]="startDate"
-          (ngModelChange)="changeStartValue($event)"
-        />
+          [ngModel]="startDate()"
+          (ngModelChange)="changeStartValue($event)" />
         <button
           class="btn btn-outline-secondary bi bi-calendar3"
           (click)="ds.toggle()"
-          type="button"
-        ></button>
+          type="button"></button>
       </div>
       <div class="input-group">
         <input
@@ -51,14 +46,12 @@
           placeholder="Enddatum"
           ngbDatepicker
           #de="ngbDatepicker"
-          [ngModel]="endDate"
-          (ngModelChange)="changeEndValue($event)"
-        />
+          [ngModel]="endDate()"
+          (ngModelChange)="changeEndValue($event)" />
         <button
           class="btn btn-outline-secondary bi bi-calendar3"
           (click)="de.toggle()"
-          type="button"
-        ></button>
+          type="button"></button>
       </div>
     }
     <button class="btn btn-sm btn-outline-secondary" (click)="resetFilter()">
