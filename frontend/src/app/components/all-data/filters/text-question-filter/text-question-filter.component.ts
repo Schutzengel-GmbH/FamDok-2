@@ -40,6 +40,7 @@ export class TextQuestionFilter {
 
   apply() {
     this.active.set(true);
+    if (!this.filterInput) this.filterChanged.emit({});
     this.filterChanged.emit(
       makeTextQuestionFilter({
         question: this.question(),
