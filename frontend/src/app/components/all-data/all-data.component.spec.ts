@@ -202,6 +202,30 @@ describe('AllDataComponent', () => {
         { answers: { some: { answerText: { contains: 'b' } } } },
       ] as any);
     });
+
+    it('questionFilterChange drops a filter that was cleared to {} and keeps the rest', () => {
+      setup();
+      httpMock.expectOne((r) => r.url.includes('/case-form-response')).flush([]);
+
+      component.questionFilterChange('q1', { answerText: { contains: 'a' } });
+      component.questionFilterChange('q2', { answerInt: { gte: 5 } });
+      component.questionFilterChange('q1', {});
+
+      expect(component.filter().AND).toEqual([
+        { answers: { some: { answerInt: { gte: 5 } } } },
+      ] as any);
+    });
+
+    it('questionFilterChange removes the AND clause entirely once the last filter is cleared', () => {
+      setup();
+      httpMock.expectOne((r) => r.url.includes('/case-form-response')).flush([]);
+
+      component.questionFilterChange('q1', { answerText: { contains: 'a' } });
+      component.questionFilterChange('q1', {});
+
+      expect(component.filter().AND).toBeUndefined();
+      expect('AND' in component.filter()).toBeFalse();
+    });
   });
 
   describe('getValue', () => {

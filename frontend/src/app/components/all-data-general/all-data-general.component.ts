@@ -24,6 +24,7 @@ import {
   UserWhereInput,
 } from '../../../../../shared/generated/prisma/models';
 import { combineWhereFilters } from 'src/app/util/filterUtils';
+import { isEmptyObject } from 'src/app/util/generalUtils';
 import { Role } from '../../../../../shared/generated/prisma/enums';
 import { QuestionModel as Question } from '../../../../../shared/generated/prisma/models';
 import {
@@ -139,18 +140,29 @@ export class AllDataGeneralComponent {
   }
 
   questionFilterChange(questionId: string, filter: AnswerWhereInput) {
-    this.questionFilters.set(questionId, filter);
+    // A cleared filter comes in as `{}` (modal Reset/dismiss) - drop it entirely instead of
+    // storing an empty `answers.some` clause, which would wrongly require every response to
+    // have at least one answer and hide responses with none.
+    if (isEmptyObject(filter)) {
+      this.questionFilters.delete(questionId);
+    } else {
+      this.questionFilters.set(questionId, filter);
+    }
 
     // Each question's filter must match *some* answer independently - a single answer can
     // only ever belong to one question, so combining them inside a single `answers.some.AND`
     // would require one answer to satisfy every question's filter at once, which can never
     // happen. AND-ing separate `some` clauses at the top level is what actually intersects them.
-    this.filter.update((f) => ({
-      ...f,
-      AND: [...this.questionFilters.values()].map((qf) => ({
-        answers: { some: qf },
-      })),
-    }));
+    this.filter.update((f) => {
+      const next = { ...f };
+      delete next.AND;
+      if (this.questionFilters.size > 0) {
+        next.AND = [...this.questionFilters.values()].map((qf) => ({
+          answers: { some: qf },
+        }));
+      }
+      return next;
+    });
   }
 
   getValue(row: FullGeneralFormResponse, question: Question) {
