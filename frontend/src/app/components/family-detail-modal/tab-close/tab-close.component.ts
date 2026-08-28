@@ -1,4 +1,11 @@
-import { Component, computed, inject, input, model, output } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  model,
+  output,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { FamilyService } from 'src/app/services/family.service';
@@ -74,10 +81,14 @@ export class TabClose {
     if (!user || !family) return false;
     if (user.role === Role.Admin) return true;
     if (user.role === Role.OrgCoordinator)
-      return !!family.organisationId && user.organisationId === family.organisationId;
+      return (
+        !!family.organisationId && user.organisationId === family.organisationId
+      );
     if (user.role === Role.SubOrgCoordinator) {
       const subOrgId = this.selectedCase().subOrganisationId;
-      return !!subOrgId && user.subOrganisations.some((so) => so.id === subOrgId);
+      return (
+        !!subOrgId && user.subOrganisations.some((so) => so.id === subOrgId)
+      );
     }
     return false;
   });
@@ -102,23 +113,33 @@ export class TabClose {
     zip([
       this.settingsService.getSettings(),
       this.familyService.closeCase(this.selectedCase().id, this.date()),
-    ]).subscribe(([settings, c]) => {
-      const dueAt = c.personalDataDueAt;
-      this.toast.show({
-        title: isFirstClose ? 'Fall abgeschlossen' : 'Datum geändert',
-        text: dueAt
-          ? `Personenbezogene Daten dieser Familie werden am ${this.formatDate(dueAt)} automatisch gelöscht.`
-          : 'Es ist noch keine Löschfrist konfiguriert - personenbezogene Daten werden vorerst nicht automatisch gelöscht.',
-        severity: 'info',
-      });
-
-      if (isFirstClose) {
-        this.router.navigate(['responses', settings.closing_doc], {
-          queryParams: { caseId: c.id },
+    ]).subscribe({
+      next: ([settings, c]) => {
+        const dueAt = c.personalDataDueAt;
+        this.toast.show({
+          title: isFirstClose ? 'Fall abgeschlossen' : 'Datum geändert',
+          text: dueAt
+            ? `Personenbezogene Daten dieser Familie werden am ${this.formatDate(dueAt)} automatisch gelöscht.`
+            : 'Es ist noch keine Löschfrist konfiguriert - personenbezogene Daten werden vorerst nicht automatisch gelöscht.',
+          severity: 'info',
         });
-      } else {
-        this.changed.emit();
-      }
+
+        if (isFirstClose) {
+          this.router.navigate(['responses', settings.closing_doc], {
+            queryParams: { caseId: c.id },
+          });
+        } else {
+          this.changed.emit();
+        }
+      },
+      error: (err) => {
+        console.error(err);
+        this.toast.show({
+          title: 'Fehler',
+          text: `Beim Abschließen ist ein Fehler aufgetreten: ${err.message ? err.message : err}`,
+          severity: 'danger',
+        });
+      },
     });
   }
 
