@@ -40,31 +40,36 @@ export class ImportSurveyDefinitionComponent {
   importGeneralForm = signal<boolean>(false);
 
   constructor() {
-    this.fileReader.onload = (e) => {
-      if (this.importGeneralForm()) {
-        try {
-          this.input = parseGeneralForm(this.fileReader.result as string);
-          this.fileValid.set(true);
-          this.classNames.set('bi bi-check-square text-success');
-        } catch (e) {
-          this.fileValid.set(false);
-          this.classNames.set('bi bi-x-square text-danger');
-        }
-      } else {
-        try {
-          this.input = parseCaseForm(this.fileReader.result as string);
-          this.fileValid.set(true);
-          this.classNames.set('bi bi-check-square text-success');
-        } catch (e) {
-          this.fileValid.set(false);
-          this.classNames.set('bi bi-x-square text-danger');
-        }
-      }
+    this.fileReader.onload = (_e) => {
+      this.validate();
     };
+  }
+
+  validate() {
+    if (this.importGeneralForm()) {
+      try {
+        this.input = parseGeneralForm(this.fileReader.result as string);
+        this.fileValid.set(true);
+        this.classNames.set('bi bi-check-square text-success');
+      } catch (e) {
+        this.fileValid.set(false);
+        this.classNames.set('bi bi-x-square text-danger');
+      }
+    } else {
+      try {
+        this.input = parseCaseForm(this.fileReader.result as string);
+        this.fileValid.set(true);
+        this.classNames.set('bi bi-check-square text-success');
+      } catch (e) {
+        this.fileValid.set(false);
+        this.classNames.set('bi bi-x-square text-danger');
+      }
+    }
   }
 
   changeType() {
     this.importGeneralForm.set(!this.importGeneralForm());
+    this.validate();
   }
 
   filesChanged(e: any) {
