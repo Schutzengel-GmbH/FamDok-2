@@ -278,11 +278,13 @@ export class ContactDocumentationTable {
   }
 
   zusammenfassungFilterChanged(filter?: string) {
-    if (!filter) return;
-    this.filter.update((f) => ({
-      ...f,
-      zusammenfassung: { contains: filter, mode: 'insensitive' },
-    }));
+    if (!filter)
+      this.filter.update((f) => ({ ...f, zusammenfassung: undefined }));
+    else
+      this.filter.update((f) => ({
+        ...f,
+        zusammenfassung: { contains: filter, mode: 'insensitive' },
+      }));
   }
 
   filterChanged: (
