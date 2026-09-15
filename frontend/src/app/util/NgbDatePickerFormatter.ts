@@ -9,11 +9,20 @@ export class NgbDateDeParserFormatter extends NgbDateParserFormatter {
   override parse(value: string): NgbDateStruct | null {
     const parts = value.split('.');
     if (parts.length !== 3) return null;
-    return {
+    const dateStruct = {
       year: parseInt(parts[2]),
       month: parseInt(parts[1]),
       day: parseInt(parts[0]),
     };
+
+    if (
+      Number.isNaN(dateStruct.day) ||
+      Number.isNaN(dateStruct.month) ||
+      Number.isNaN(dateStruct.year)
+    )
+      throw new Error('error parsing date');
+
+    return dateStruct;
   }
   override format(date: NgbDateStruct | null): string {
     if (!date) return '';
