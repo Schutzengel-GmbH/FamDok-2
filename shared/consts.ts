@@ -87,11 +87,11 @@ export const CASE_DEFAULT_INCLUDE = {
 
 export const CASE_ANON_INCLUDE = {
   zielvereinbarungen: {
-    omit: { description: true },
+    omit: { description: true, userId: true },
   },
   family: { select: { organisationId: true, id: true } },
   contactDocumentation: {
-    omit: { zusammenfassung: true, dokumentation: true },
+    omit: { zusammenfassung: true, dokumentation: true, userId: true },
   },
   caseformResponses: false,
   createdBy: false,
