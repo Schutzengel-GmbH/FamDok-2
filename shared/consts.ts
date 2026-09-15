@@ -221,3 +221,38 @@ export const P_03_GIRLS = [
   7.8, 8, 8.2, 8.3, 8.5, 8.7, 8.8, 9, 9.2, 9.3, 9.5, 9.6, 9.8, 10, 10.1, 10.3,
   10.4, 10.5, 10.7, 10.8,
 ];
+
+/**
+ * PLACEHOLDER DATA — DO NOT SHIP TO REAL USERS UNTIL REPLACED.
+ *
+ * WHO length/height-for-age percentiles for boys and girls aged 0-3 years
+ * (36 monthly values each, same shape as the weight percentile arrays above).
+ * These are currently filled with 0 as an obvious sentinel so a missing
+ * replacement is visually unmistakable on the chart rather than silently
+ * plotting plausible-looking but wrong curves. Replace with the verified
+ * WHO Child Growth Standards length/height-for-age tables before this
+ * feature is used with real client data.
+ */
+const HEIGHT_PLACEHOLDER = new Array(36).fill(0);
+
+/** PLACEHOLDER — WHO 97th percentile height boys */
+export const P_97_HEIGHT_BOYS = HEIGHT_PLACEHOLDER;
+/** PLACEHOLDER — WHO 85th percentile height boys */
+export const P_85_HEIGHT_BOYS = HEIGHT_PLACEHOLDER;
+/** PLACEHOLDER — WHO 50th percentile height boys */
+export const P_50_HEIGHT_BOYS = HEIGHT_PLACEHOLDER;
+/** PLACEHOLDER — WHO 15th percentile height boys */
+export const P_15_HEIGHT_BOYS = HEIGHT_PLACEHOLDER;
+/** PLACEHOLDER — WHO 3rd percentile height boys */
+export const P_03_HEIGHT_BOYS = HEIGHT_PLACEHOLDER;
+
+/** PLACEHOLDER — WHO 97th percentile height girls */
+export const P_97_HEIGHT_GIRLS = HEIGHT_PLACEHOLDER;
+/** PLACEHOLDER — WHO 85th percentile height girls */
+export const P_85_HEIGHT_GIRLS = HEIGHT_PLACEHOLDER;
+/** PLACEHOLDER — WHO 50th percentile height girls */
+export const P_50_HEIGHT_GIRLS = HEIGHT_PLACEHOLDER;
+/** PLACEHOLDER — WHO 15th percentile height girls */
+export const P_15_HEIGHT_GIRLS = HEIGHT_PLACEHOLDER;
+/** PLACEHOLDER — WHO 3rd percentile height girls */
+export const P_03_HEIGHT_GIRLS = HEIGHT_PLACEHOLDER;

@@ -104,7 +104,9 @@
             @case ("stammdaten") {
               <ng-container>
                 @if (selectedCase()!.family) {
-                  <app-tab-stammdaten [selectedCase]="selectedCase()!" />
+                  <app-tab-stammdaten
+                    [selectedCase]="selectedCase()!"
+                    [readOnly]="readOnly()" />
                 } @else {
                   <div class="tab-section">
                     <p class="text-muted">

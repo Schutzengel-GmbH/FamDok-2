@@ -1,9 +1,18 @@
-import { Component, inject, linkedSignal, model, signal } from '@angular/core';
+import {
+  Component,
+  inject,
+  input,
+  linkedSignal,
+  model,
+  signal,
+} from '@angular/core';
 import { ChartData, ChartOptions } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import {
   getPercentileDatasets,
+  getSizeForMonth,
   getWeightForMonth,
+  GrowthMetric,
 } from 'src/app/util/healthDataUtils';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -11,25 +20,34 @@ import { ThemeService } from 'src/app/services/theme.service';
 import { ChildModel as Child } from '../../../../../shared/generated/prisma/models';
 
 @Component({
-  selector: 'app-weight-chart',
+  selector: 'app-growth-chart',
   imports: [FormsModule, BaseChartDirective],
   standalone: true,
-  templateUrl: './weight-chart.component.html',
-  styleUrl: './weight-chart.component.css',
+  templateUrl: './growth-chart.component.html',
+  styleUrl: './growth-chart.component.css',
 })
-export class WeightChartComponent {
+export class GrowthChartComponent {
   private themeService = inject(ThemeService);
   private theme = toSignal(this.themeService.theme, { requireSync: true });
 
   child = model<Child | undefined>(undefined);
+  metric = input<GrowthMetric>('weight');
   ageRange = signal<0 | 1 | 2>(0);
 
+  // unique per instance so the age-range <select>/<label> pair stays valid
+  // when two charts (weight + height) render on the same page
+  protected ageRangeId = `ageRange-${Math.random().toString(36).slice(2)}`;
+
   data = linkedSignal<
-    { child: Child | undefined; ageRange: 0 | 1 | 2 },
+    { child: Child | undefined; ageRange: 0 | 1 | 2; metric: GrowthMetric },
     ChartData
   >({
-    source: () => ({ child: this.child(), ageRange: this.ageRange() }),
-    computation: ({ child, ageRange }) => {
+    source: () => ({
+      child: this.child(),
+      ageRange: this.ageRange(),
+      metric: this.metric(),
+    }),
+    computation: ({ child, ageRange, metric }) => {
       if (!child) return { datasets: [] };
       else
         return {
@@ -37,12 +55,12 @@ export class WeightChartComponent {
           datasets: [
             {
               label: child.name,
-              borderColor: this.theme() === 'light' ? 'rbga(0,0,0,1)' : 'white',
+              borderColor: this.theme() === 'light' ? 'rgba(0,0,0,1)' : 'white',
               spanGaps: true,
 
               data: this.getChildData(),
             },
-            ...getPercentileDatasets(child.gender, ageRange),
+            ...getPercentileDatasets(child.gender, ageRange, metric),
           ],
         };
     },
@@ -54,8 +72,10 @@ export class WeightChartComponent {
     if (!this.child()) return [];
     const monthArray = this.getMonthArray();
     const healthData = this.child()!.healthData;
+    const getForMonth =
+      this.metric() === 'height' ? getSizeForMonth : getWeightForMonth;
     return monthArray.map((m) => {
-      return getWeightForMonth(
+      return getForMonth(
         healthData || [],
         new Date(this.child()!.dateOfBirth),
         m,
