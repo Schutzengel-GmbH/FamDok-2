@@ -1,6 +1,7 @@
 <ng-select
   [items]="users()"
   bindLabel="email"
+  [compareWith]="compareUsers"
   placeholder="Bitte auswählen"
   (change)="selectUser.emit($event)"
 >

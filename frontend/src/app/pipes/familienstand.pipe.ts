@@ -1,5 +1,4 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { FullUser } from '../../../../shared/types';
 import { Familienstand } from '../../../../shared/generated/prisma/enums';
 
 @Pipe({
@@ -15,6 +14,8 @@ export class FamilienstandPipe implements PipeTransform {
         return 'Verheiratet';
       case 'geschieden':
         return 'Geschieden';
+      case 'verwitwet':
+        return 'Verwitwet';
       case 'unspecified':
         return 'Keine Angabe';
     }

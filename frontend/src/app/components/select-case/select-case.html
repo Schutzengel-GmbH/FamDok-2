@@ -4,6 +4,7 @@
   [items]="cases || []"
   [multiple]="false"
   bindLabel="family.name"
+  [compareWith]="compareCases"
   (change)="handleChange($event)"
   [(ngModel)]="case"
   clearAllText="Auswahl aufheben"

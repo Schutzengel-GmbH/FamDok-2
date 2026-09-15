@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
-import { WeightChartComponent } from './weight-chart.component';
+import { GrowthChartComponent } from './growth-chart.component';
 import { ThemeService } from 'src/app/services/theme.service';
 
-describe('WeightChartComponent', () => {
-  let component: WeightChartComponent;
-  let fixture: ComponentFixture<WeightChartComponent>;
+describe('GrowthChartComponent', () => {
+  let component: GrowthChartComponent;
+  let fixture: ComponentFixture<GrowthChartComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [WeightChartComponent],
+      imports: [GrowthChartComponent],
       providers: [provideCharts(withDefaultRegisterables())],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(WeightChartComponent);
+    fixture = TestBed.createComponent(GrowthChartComponent);
     component = fixture.componentInstance;
   });
 

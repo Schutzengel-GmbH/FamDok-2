@@ -10,7 +10,7 @@ import { ErrorPage } from './pages/error-page/error-page';
 import { CaseFormResponsePage } from './pages/response/case-form-response';
 import { MyResponsesPage } from './pages/my-responses-page/my-responses-page';
 import { GeneralFormPage } from './pages/general-form-page/general-form-page';
-import { HealthDataInputComponent } from './components/health-data-input/health-data-input.component';
+import { HealthDataPage } from './pages/health-data/health-data.page';
 import { StatsDashboardPage } from './pages/stats-dashboard/stats-dashboard.page';
 import { UserAdminComponent } from './components/user-admin/user-admin.component';
 import { ContactDocumentation } from './pages/contact-documentation/contact-documentation.page';
@@ -72,8 +72,8 @@ export const routes: Routes = [
     ])],
   },
   {
-    path: 'gesundheits-daten',
-    component: HealthDataInputComponent,
+    path: 'gesundheit',
+    component: HealthDataPage,
     canActivate: [roleGuard([
       Role.User,
       Role.Admin,
@@ -82,8 +82,18 @@ export const routes: Routes = [
     ])],
   },
   {
-    path: 'gesundheits-daten/:caseId',
-    component: HealthDataInputComponent,
+    path: 'gesundheit/:caseId',
+    component: HealthDataPage,
+    canActivate: [roleGuard([
+      Role.User,
+      Role.Admin,
+      Role.OrgCoordinator,
+      Role.SubOrgCoordinator,
+    ])],
+  },
+  {
+    path: 'gesundheit/:caseId/:childId',
+    component: HealthDataPage,
     canActivate: [roleGuard([
       Role.User,
       Role.Admin,

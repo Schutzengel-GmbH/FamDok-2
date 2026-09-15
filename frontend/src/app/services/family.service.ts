@@ -95,6 +95,28 @@ export class FamilyService {
   }
 
   /**
+   * Replaces a child's full healthData array.
+   * @param {string} familyId UUID of the family
+   * @param {string} childId UUID of the child
+   * @param {PrismaJson.HealthDataPointChild[]} healthData The new full healthData array
+   * @returns {Observable<FullFamily>} Observable emitting the updated family
+   */
+  updateHealthData(
+    familyId: string,
+    childId: string,
+    healthData: PrismaJson.HealthDataPointChild[],
+  ): Observable<FullFamily> {
+    return this.updateFamily(familyId, {
+      children: {
+        update: {
+          where: { id: childId },
+          data: { healthData },
+        },
+      },
+    });
+  }
+
+  /**
    * Deletes a family by ID.
    * @param {string} id UUID of the family
    * @returns {Observable<FullFamily>} Observable emitting the deleted family or deletion result
