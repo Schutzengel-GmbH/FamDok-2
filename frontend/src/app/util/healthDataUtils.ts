@@ -93,12 +93,13 @@ export function getWeightForMonth(
   ageInMonths: number,
 ): number | null {
   const date = addMonths(birthday, ageInMonths);
-  const dataPoints = healthData.filter((d) =>
+  let dataPoints = healthData.filter((d) =>
     isSameMonth(date, new Date(d.date)),
   );
 
   if (dataPoints.length === 0) return null;
   if (dataPoints.length === 1) return dataPoints[0].weightKg || null;
+  dataPoints = dataPoints.filter((d) => d.weightKg != null);
   const sum = dataPoints.reduce((prev, cur) => prev + cur.weightKg!, 0);
 
   return sum / dataPoints.length;
