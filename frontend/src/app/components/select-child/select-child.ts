@@ -1,4 +1,4 @@
-import { Component, model } from '@angular/core';
+import { Component, effect, model } from '@angular/core';
 import { FullCase } from '../../../../../shared/types';
 import { FormsModule } from '@angular/forms';
 import {
@@ -17,6 +17,20 @@ import { ChildModel as Child } from '../../../../../shared/generated/prisma/mode
 export class SelectChildComponent {
   case = model<FullCase | undefined>(undefined);
   child = model<Child | undefined>(undefined);
+
+  // hold a reference to the last case, so we can clear the child on
+  // a change here, rather than remember it for the consumers
+  prevCaseId: string | undefined;
+
+  constructor() {
+    effect(() => {
+      const caseId = this.case()?.id;
+      if (this.prevCaseId !== undefined && this.prevCaseId !== caseId) {
+        this.child.set(undefined);
+      }
+      this.prevCaseId = caseId;
+    });
+  }
 
   change(child: Child) {
     this.child.set(child);
