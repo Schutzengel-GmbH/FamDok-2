@@ -99,7 +99,9 @@ export function getWeightForMonth(
 
   if (dataPoints.length === 0) return null;
   if (dataPoints.length === 1) return dataPoints[0].weightKg || null;
+  // filter out null values and then double check it's not empty
   dataPoints = dataPoints.filter((d) => d.weightKg != null);
+  if (dataPoints.length === 0) return null;
   const sum = dataPoints.reduce((prev, cur) => prev + cur.weightKg!, 0);
 
   return sum / dataPoints.length;
