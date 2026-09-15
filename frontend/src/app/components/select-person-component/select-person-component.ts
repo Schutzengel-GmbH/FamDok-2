@@ -64,4 +64,6 @@ export class SelectPersonComponent {
 
     return children.concat(caregivers);
   }
+
+  comparePersons = (a: Person, b: Child | Caregiver) => a?.id === b?.id;
 }

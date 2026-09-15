@@ -3,6 +3,7 @@
   ariaLabel="Person auswählen"
   placeholder="Person auswählen"
   bindLabel="name"
+  [compareWith]="comparePersons"
   (change)="select($event)"
   clearAllText="Auswahl aufheben"
   [items]="persons()"

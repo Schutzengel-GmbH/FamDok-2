@@ -21,4 +21,6 @@ export class SelectChildComponent {
   change(child: Child) {
     this.child.set(child);
   }
+
+  compareChildren = (a: Child, b: Child) => a?.id === b?.id;
 }
