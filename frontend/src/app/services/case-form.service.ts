@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import {
   AnswerCreateManyCaseFormResponseInput,
+  AnswerUpdateManyWithWhereWithoutCaseFormResponseInput,
   CaseFormCreateInput,
   CaseFormResponseCreateInput,
   CaseFormResponseUpdateInput,
@@ -141,14 +142,12 @@ export class CaseFormService {
     const { responseId, caregiverId, childId, caseId, formId, answers } =
       response;
     if (responseId) {
-      return this.updateCaseFormResponse(responseId, {
-        caregiver: caregiverId
-          ? { connect: { id: caregiverId } }
-          : { disconnect: true },
-        child: childId ? { connect: { id: childId } } : { disconnect: true },
-        answers: {
-          updateMany: answers.map((a) => ({
-            where: { id: a.id! },
+      // updateMany for all questions that already have an answer.id
+      const updateMany: AnswerUpdateManyWithWhereWithoutCaseFormResponseInput[] =
+        answers
+          .filter((a) => a.id != null)
+          .map((a) => ({
+            where: { id: a.id },
             data: {
               answerBool: a.answerBool,
               answerDate: a.answerDate,
@@ -157,7 +156,23 @@ export class CaseFormService {
               answerSelectId: a.answerSelectId,
               answerText: a.answerText,
             },
-          })),
+          }));
+      // for questions without. this should only happen if a new question is added
+      // to the form when a response has already been submitted
+      const createData = answers.filter(
+        (a) => !a.id,
+      ) as AnswerCreateManyCaseFormResponseInput[];
+
+      return this.updateCaseFormResponse(responseId, {
+        caregiver: caregiverId
+          ? { connect: { id: caregiverId } }
+          : { disconnect: true },
+        child: childId ? { connect: { id: childId } } : { disconnect: true },
+        answers: {
+          updateMany,
+          createMany: {
+            data: createData,
+          },
         },
       });
     } else {
