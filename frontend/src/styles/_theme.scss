@@ -204,8 +204,18 @@ $ink-2-dark: #9ca3af;
   .ng-select-container
   .ng-value-container
   .ng-value {
-  background-color: var(--bs-muted-color);
-  font-size: 1rem;
+  background-color: color-mix(in oklab, var(--bs-primary) 16%, transparent);
+  color: color-mix(in oklab, var(--bs-primary) 80%, var(--bs-body-color));
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ng-select.ng-select-multiple
+  .ng-select-container
+  .ng-value-container
+  .ng-value
+  .ng-value-label {
+  padding-left: 0.65em;
 }
 
 .ng-select.ng-select-multiple
@@ -213,28 +223,36 @@ $ink-2-dark: #9ca3af;
   .ng-value-container
   .ng-value
   .ng-value-icon.right {
-  border-left: 1px solid var(--bs-border-color);
+  border-left: 1px solid
+    color-mix(in oklab, var(--bs-primary) 30%, transparent);
+  padding-right: 0.55em;
 }
 
-.ng-select .ng-dropdown-panel {
+.ng-select.ng-select-multiple
+  .ng-select-container
+  .ng-value-container
+  .ng-value
+  .ng-value-icon:hover {
+  background-color: color-mix(in oklab, var(--bs-primary) 28%, transparent);
+}
+
+.ng-dropdown-panel {
   border-color: var(--bs-border-color);
+  background-color: var(--bs-card-bg);
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
 }
 
 .ng-dropdown-panel .ng-dropdown-panel-items .ng-option {
   background-color: var(--field-bg);
   color: var(--field-color);
   &.ng-option-marked {
-    background-color: var(--bs-muted-color);
+    background-color: color-mix(in oklab, var(--bs-primary) 16%, transparent);
     color: var(--field-color);
   }
   &.ng-option-disabled {
     color: var(--field-color);
   }
-}
-
-.ng-select .ng-dropdown-panel {
-  border-bottom-right-radius: 10px;
-  border-bottom-left-radius: 10px;
 }
 
 .table {
