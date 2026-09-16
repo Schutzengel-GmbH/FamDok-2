@@ -89,10 +89,7 @@ export class OrgController {
     });
 
     if (!subOrg) throw new NotFoundError();
-    if (
-      !canAccessAllOrgs(user) &&
-      user.organisationId !== subOrg.organisationId
-    )
+    if (!canEditOrgs(user) && user.organisationId !== subOrg.organisationId)
       throw new ForbiddenError();
 
     return subOrg;
