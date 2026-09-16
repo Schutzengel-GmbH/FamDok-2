@@ -1,7 +1,14 @@
 import { FullUser, FullOrganisation } from '../../../shared/types';
 import { Role } from '../../../shared/generated/prisma/client';
 
-const CAN_ACCESS_ALL_ORGS: Role[] = [Role.Admin, Role.Controller];
+const CAN_ACCESS_ALL_ORGS: Role[] = [
+  Role.Admin,
+  Role.Controller,
+  Role.OrgController,
+  Role.OrgCoordinator,
+  Role.SubOrgCoordinator,
+  Role.User,
+];
 
 export function canAccessAllOrgs(user: FullUser) {
   return CAN_ACCESS_ALL_ORGS.includes(user.role);
