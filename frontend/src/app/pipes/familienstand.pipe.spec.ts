@@ -7,6 +7,7 @@ describe('FamilienstandPipe', () => {
     expect(pipe.transform('ledig' as any)).toBe('Ledig');
     expect(pipe.transform('verheiratet' as any)).toBe('Verheiratet');
     expect(pipe.transform('geschieden' as any)).toBe('Geschieden');
+    expect(pipe.transform('verwitwet' as any)).toBe('Verwitwet');
     expect(pipe.transform('unspecified' as any)).toBe('Keine Angabe');
   });
 

@@ -72,7 +72,7 @@ export class CaseFormResponseController {
       const definition = await tx.caseForm.findUnique({
         where: {
           id: caseFormId,
-          ...caseFormWhereRestrictions(user),
+          AND: caseFormWhereRestrictions(user),
         },
         include: CASEFORM_DEFAULT_INCLUDE,
       });

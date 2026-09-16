@@ -1,6 +1,6 @@
 <div class="form-floating">
   <select
-    id="ageRange"
+    [id]="ageRangeId"
     class="form-select"
     aria-label="Altersgruppe"
     [(ngModel)]="ageRange"
@@ -9,6 +9,6 @@
     <option [value]="1">1-2 Jahre</option>
     <option [value]="2">2-3 Jahre</option>
   </select>
-  <label for="ageRange">Altersgruppe</label>
+  <label [for]="ageRangeId">Altersgruppe</label>
 </div>
 <canvas baseChart [data]="data()" [options]="options" type="line"></canvas>

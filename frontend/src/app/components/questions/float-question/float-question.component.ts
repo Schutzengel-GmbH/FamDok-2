@@ -59,13 +59,13 @@ export class FloatQuestionComponent implements OnInit {
       return;
     }
 
-    if (question?.max && answer >= question.max) {
+    if (question?.max != null && answer >= question.max) {
       this.reason = `Muss kleiner oder gleich ${question.max.toString().replace('.', ',')} sein`;
       this.answerValid.set(false);
       return;
     }
 
-    if (question?.min && answer <= question.min) {
+    if (question?.min != null && answer <= question.min) {
       this.reason = `Muss größer oder gleich ${question.min.toString().replace('.', ',')} sein`;
       this.answerValid.set(false);
       return;

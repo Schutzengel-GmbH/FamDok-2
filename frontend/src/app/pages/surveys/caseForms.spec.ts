@@ -51,7 +51,7 @@ describe('CaseFormsPage', () => {
 
     component.selectFamForm('HEALTH_DATA');
 
-    expect(router.navigate).toHaveBeenCalledWith(['gesundheits-daten']);
+    expect(router.navigate).toHaveBeenCalledWith(['gesundheit']);
   });
 
   it('navigates to the response route for a regular case form', () => {

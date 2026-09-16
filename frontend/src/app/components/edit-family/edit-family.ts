@@ -169,6 +169,8 @@ export class EditFamilyComponent implements OnInit {
         return 'Verheiratet';
       case 'geschieden':
         return 'Geschieden';
+      case 'verwitwet':
+        return 'Verwitwet';
       case 'unspecified':
         return 'Keine Angabe';
     }

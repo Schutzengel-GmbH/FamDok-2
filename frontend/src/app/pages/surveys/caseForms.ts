@@ -108,7 +108,7 @@ export class CaseFormsPage implements OnInit {
 
   selectFamForm(caseFormId: string): void {
     if (caseFormId === 'HEALTH_DATA') {
-      this.router.navigate(['gesundheits-daten']);
+      this.router.navigate(['gesundheit']);
       return;
     }
 

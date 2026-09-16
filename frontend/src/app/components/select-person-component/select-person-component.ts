@@ -1,4 +1,4 @@
-import { Component, linkedSignal, model } from '@angular/core';
+import { Component, effect, linkedSignal, model } from '@angular/core';
 import { FullCase } from '../../../../../shared/types';
 import {
   NgLabelTemplateDirective,
@@ -35,6 +35,20 @@ export class SelectPersonComponent {
   persons = linkedSignal<Person[]>(() => this.linkPersons());
   person = model<Child | Caregiver | undefined>();
 
+  // hold a reference to the last case, so we can clear the child on
+  // a change here, rather than remember it for the consumers
+  prevCaseId: string | undefined;
+
+  constructor() {
+    effect(() => {
+      const caseId = this.case()?.id;
+      if (this.prevCaseId !== undefined && this.prevCaseId !== caseId) {
+        this.person.set(undefined);
+      }
+      this.prevCaseId = caseId;
+    });
+  }
+
   select(p: Person) {
     const person =
       this.case()?.family?.caregiver.find((c) => c.id === p?.id) ||
@@ -64,4 +78,6 @@ export class SelectPersonComponent {
 
     return children.concat(caregivers);
   }
+
+  comparePersons = (a: Person, b: Child | Caregiver) => a?.id === b?.id;
 }

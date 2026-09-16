@@ -1,0 +1,87 @@
+<div class="container">
+  @if (!caseId) {
+    <div class="mb-2">
+      <app-select-case [(case)]="case" />
+    </div>
+  }
+
+  @if (case()) {
+    <div class="mb-2">
+      <app-select-child
+        [case]="case()"
+        [child]="child()"
+        (childChange)="onChildChange($event)" />
+    </div>
+  }
+
+  @if (child(); as child) {
+    <div class="mb-3">
+      <h5>{{ child.name }} {{ child.lastName }}</h5>
+      <p class="text-muted">
+        Geburtstag: {{ child.dateOfBirth | date }} &middot; Alter: {{ age(child) }}
+      </p>
+    </div>
+
+    <div class="charts mb-3">
+      <div>
+        <h6>Gewicht</h6>
+        <app-growth-chart [child]="child" metric="weight" />
+      </div>
+      <div>
+        <h6>Größe</h6>
+        <app-growth-chart [child]="child" metric="height" />
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Verlauf</h5>
+      @if (!readOnly) {
+        <button type="button" class="btn btn-primary" (click)="openAddModal()">
+          Messung hinzufügen
+        </button>
+      }
+    </div>
+
+    @if (historyEntries().length === 0) {
+      <p class="text-muted">Noch keine Messungen erfasst.</p>
+    } @else {
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Gewicht</th>
+            <th>Größe</th>
+            @if (!readOnly) {
+              <th></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of historyEntries(); track entry.index) {
+            <tr>
+              <td>{{ entry.point.date | date }}</td>
+              <td>{{ entry.point.weightKg != null ? entry.point.weightKg + " kg" : "—" }}</td>
+              <td>{{ entry.point.sizeCm != null ? entry.point.sizeCm + " cm" : "—" }}</td>
+              @if (!readOnly) {
+                <td class="text-end">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary me-1"
+                    (click)="openEditModal(entry.index)">
+                    Bearbeiten
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="deleteEntry(entry.index)">
+                    Löschen
+                  </button>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+</div>

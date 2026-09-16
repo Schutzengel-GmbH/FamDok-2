@@ -79,8 +79,8 @@
   <section class="detail-chart">
     <div class="detail-chart-header">
       <div>
-        <h6 class="section-title mb-1">Gewichtschart</h6>
-        <p class="section-subtitle">Verlauf für ein ausgewähltes Kind</p>
+        <h6 class="section-title mb-1">Gesundheitsdaten</h6>
+        <p class="section-subtitle">Größe/Gewicht für ein ausgewähltes Kind</p>
       </div>
 
       <div
@@ -99,7 +99,16 @@
     </div>
 
     <div class="detail-chart-body">
-      <app-weight-chart [child]="selectedChild()" />
+      @if (selectedChild(); as child) {
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="gotoHealthData(child.id)">
+          Gesundheitsdaten ansehen
+        </button>
+      } @else {
+        <p class="section-subtitle">Bitte ein Kind auswählen</p>
+      }
     </div>
   </section>
 </div>

@@ -425,6 +425,7 @@ enum Familienstand {
   ledig
   verheiratet
   geschieden
+  verwitwet
   unspecified
 }
 

@@ -4,7 +4,7 @@
     tabindex="-1"
     [ngClass]="{ show: isOpen(), 'd-block': isOpen() }">
     <div
-      class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+      class="modal-dialog modal-dialog-centered modal-fullscreen modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <div class="d-flex flex-column">
@@ -104,12 +104,16 @@
             @case ("stammdaten") {
               <ng-container>
                 @if (selectedCase()!.family) {
-                  <app-tab-stammdaten [selectedCase]="selectedCase()!" />
+                  <app-tab-stammdaten
+                    [selectedCase]="selectedCase()!"
+                    [readOnly]="readOnly()" />
                 } @else {
                   <div class="tab-section">
                     <p class="text-muted">
                       Personenbezogene Daten dieser Familie wurden am
-                      {{ formatDateDisplay(selectedCase()!.personalDataDeletedAt) }}
+                      {{
+                        formatDateDisplay(selectedCase()!.personalDataDeletedAt)
+                      }}
                       gelöscht.
                     </p>
                   </div>
@@ -134,7 +138,8 @@
             @case ("formulare") {
               @if (!readOnly()) {
                 <ng-container>
-                  <app-tab-sonstige-formulare [selectedCase]="selectedCase()!" />
+                  <app-tab-sonstige-formulare
+                    [selectedCase]="selectedCase()!" />
                 </ng-container>
               }
             }

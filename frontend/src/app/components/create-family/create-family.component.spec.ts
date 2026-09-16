@@ -125,7 +125,9 @@ describe('CreateFamilyComponent', () => {
     const updated = { name: 'New' } as any;
     modal.open.and.returnValue({
       componentInstance: {},
-      closed: { subscribe: (cb: any) => cb({ reason: 'save', value: updated }) },
+      closed: {
+        subscribe: (cb: any) => cb({ reason: 'save', value: updated }),
+      },
     } as any);
 
     component.handleOpenChild(0);
@@ -152,7 +154,9 @@ describe('CreateFamilyComponent', () => {
     const caregiver = { name: 'Anna' } as any;
     modal.open.and.returnValue({
       componentInstance: {},
-      closed: { subscribe: (cb: any) => cb({ reason: 'save', value: caregiver }) },
+      closed: {
+        subscribe: (cb: any) => cb({ reason: 'save', value: caregiver }),
+      },
     } as any);
 
     component.handleOpenCaregiver();
@@ -169,6 +173,7 @@ describe('CreateFamilyComponent', () => {
     expect(component.familienstandString('ledig')).toBe('Ledig');
     expect(component.familienstandString('verheiratet')).toBe('Verheiratet');
     expect(component.familienstandString('geschieden')).toBe('Geschieden');
+    expect(component.familienstandString('verwitwet')).toBe('Verwitwet');
     expect(component.familienstandString('unspecified')).toBe('Keine Angabe');
 
     component['familienstand'].setValue('ledig' as any);
@@ -214,7 +219,9 @@ describe('CreateFamilyComponent', () => {
     const caseReq = httpMock.expectOne(
       (r) => r.url === `${environment.apiUrl}/case` && r.method === 'POST',
     );
-    expect(caseReq.request.body.family).toEqual({ connect: { id: 'family-1' } });
+    expect(caseReq.request.body.family).toEqual({
+      connect: { id: 'family-1' },
+    });
     expect(caseReq.request.body.responsibleUsers).toEqual({
       connect: { id: user.id },
     });

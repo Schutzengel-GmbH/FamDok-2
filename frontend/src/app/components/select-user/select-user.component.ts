@@ -21,4 +21,6 @@ import {
 export class SelectUser {
   users = input.required<FullUser[]>();
   selectUser = output<FullUser | null>();
+
+  compareUsers = (a: FullUser, b: FullUser) => a?.id === b?.id;
 }
