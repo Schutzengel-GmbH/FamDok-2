@@ -231,7 +231,7 @@ model CaseFormResponse {
   caseForm   CaseForm? @relation(fields: [caseFormId], references: [id])
   caseFormId String?
 
-  case   Case   @relation(fields: [caseId], references: [id])
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
   caseId String
 
   child   Child?  @relation(fields: [childId], references: [id])
@@ -344,13 +344,13 @@ model Answer {
   answerSelectId Int[]
   answerText     String?
 
-  caseFormResponse   CaseFormResponse? @relation(fields: [caseFormResponseId], references: [id])
+  caseFormResponse   CaseFormResponse? @relation(fields: [caseFormResponseId], references: [id], onDelete: Cascade)
   caseFormResponseId String?
 
-  closingDocumentation   ClosingDocumentation? @relation(fields: [closingDocumentationId], references: [id])
+  closingDocumentation   ClosingDocumentation? @relation(fields: [closingDocumentationId], references: [id], onDelete: Cascade)
   closingDocumentationId String?
 
-  generalFormResponse   GeneralFormResponse? @relation(fields: [generalFormResponseId], references: [id])
+  generalFormResponse   GeneralFormResponse? @relation(fields: [generalFormResponseId], references: [id], onDelete: Cascade)
   generalFormResponseId String?
 }
 
