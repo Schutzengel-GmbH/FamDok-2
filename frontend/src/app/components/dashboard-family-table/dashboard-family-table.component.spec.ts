@@ -4,7 +4,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import Keycloak from 'keycloak-js';
 
 import { DashboardFamilyTableComponent } from './dashboard-family-table.component';
@@ -106,7 +106,7 @@ describe('DashboardFamilyTableComponent', () => {
     });
   });
 
-  describe('selectCase / openDetails / openCaseById / closeDetails', () => {
+  describe('selectCase / openDetails / openCaseById', () => {
     it('selectCase sets the selected case and emits changeSelectedCase', () => {
       setup();
       flushCases([]);
@@ -120,65 +120,52 @@ describe('DashboardFamilyTableComponent', () => {
       expect(emitted).toBe(row as any);
     });
 
-    it('openDetails selects the case, sets the tab, computes readOnly and opens the modal', () => {
+    it('openDetails selects the case and navigates to its detail page on the given tab', () => {
       setup(Role.User);
       flushCases([]);
-      const row = buildCase({ responsibleUsers: [{ id: 'other' }] });
+      const router = TestBed.inject(Router);
+      spyOn(router, 'navigate');
+      const row = buildCase({ id: 'c1', responsibleUsers: [{ id: 'other' }] });
 
       component.openDetails(row as any, 'zielvereinbarungen');
 
       expect(component['selectedCase']).toBe(row as any);
-      expect(component['modalInitialTab']).toBe('zielvereinbarungen');
-      expect(component['modalReadOnly']).toBeTrue();
-      expect(component.isDetailModalOpen()).toBeTrue();
+      expect(router.navigate).toHaveBeenCalledWith([
+        '/familien',
+        'c1',
+        'zielvereinbarungen',
+      ]);
     });
 
-    it('openDetails defaults to a writable modal when the user can edit the case', () => {
+    it('openDetails defaults to the stammdaten tab', () => {
       setup(Role.User);
       flushCases([]);
-      const row = buildCase({ responsibleUsers: [{ id: 'me' }] });
+      const router = TestBed.inject(Router);
+      spyOn(router, 'navigate');
+      const row = buildCase({ id: 'c1', responsibleUsers: [{ id: 'me' }] });
 
       component.openDetails(row as any);
 
-      expect(component['modalInitialTab']).toBe('stammdaten');
-      expect(component['modalReadOnly']).toBeFalse();
+      expect(router.navigate).toHaveBeenCalledWith([
+        '/familien',
+        'c1',
+        'stammdaten',
+      ]);
     });
 
-    it('openCaseById opens the matching case from the currently loaded cases', () => {
+    it('openCaseById navigates to the detail page by id, without requiring the case to be loaded', () => {
       setup();
-      const cases = [buildCase({ id: 'c1' }), buildCase({ id: 'c2' })];
-      flushCases(cases);
+      flushCases([]);
+      const router = TestBed.inject(Router);
+      spyOn(router, 'navigate');
 
       component.openCaseById('c2', 'formulare');
 
-      expect(component['selectedCase']).toEqual(cases[1] as any);
-      expect(component['modalInitialTab']).toBe('formulare');
-      expect(component.isDetailModalOpen()).toBeTrue();
-    });
-
-    it('openCaseById is a no-op when no case matches the id', () => {
-      setup();
-      flushCases([buildCase({ id: 'c1' })]);
-
-      component.openCaseById('does-not-exist');
-
-      expect(component.isDetailModalOpen()).toBeFalse();
-    });
-
-    it('closeDetails reloads the cases, closes the modal and emits detailsClosed', () => {
-      setup();
-      flushCases([]);
-      component.isDetailModalOpen.set(true);
-      component['modalInitialTab'] = 'zielvereinbarungen';
-      let closed = false;
-      component.detailsClosed.subscribe(() => (closed = true));
-
-      component.closeDetails();
-
-      expect(component.isDetailModalOpen()).toBeFalse();
-      expect(component['modalInitialTab']).toBe('stammdaten');
-      expect(closed).toBeTrue();
-      flushCases([]); // the reload() triggered by closeDetails
+      expect(router.navigate).toHaveBeenCalledWith([
+        '/familien',
+        'c2',
+        'formulare',
+      ]);
     });
   });
 

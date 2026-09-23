@@ -128,7 +128,7 @@
             <button
               type="button"
               class="m-2 btn btn-sm btn-outline-secondary action-button"
-              (click)="openDetailModal(value)"
+              (click)="openDetails(value)"
               aria-label="Details zur Familie">
               Details
             </button>
@@ -260,7 +260,7 @@
               <button
                 type="button"
                 class="btn btn-sm btn-outline-primary action-button"
-                (click)="openDetailModal(value)"
+                (click)="openDetails(value)"
                 aria-label="Details zur Familie">
                 <i class="bi bi-pencil-square"></i>
               </button>
@@ -327,9 +327,3 @@
   </div>
 </div>
 
-<app-family-detail-modal
-  [isOpen]="isDetailModalOpen"
-  [selectedCase]="selectedCase"
-  [initialTab]="modalInitialTab"
-  [readOnly]="modalReadOnly"
-  (closed)="closeDetails()"></app-family-detail-modal>
