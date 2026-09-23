@@ -335,7 +335,7 @@ export class CaseController {
   static async createContactDocumentation(
     user: FullUser,
     caseId: string,
-    input: Partial<Prisma.ContactDocumentationCreateInput>
+    input: Prisma.ContactDocumentationCreateInput
   ) {
     const c = await prisma.case.findUnique({
       where: { id: caseId },
@@ -380,6 +380,16 @@ export class CaseController {
 
     if (!canEditCase(user, c))
       throw new ForbiddenError("User can't edit this case");
+
+    // if the data contains start and end, calculate duration.
+    if (input.start && input.end) {
+      input.duration = differenceInMinutes(
+        new Date(input.end as Date),
+        new Date(input.start as Date)
+      );
+    }
+
+    console.log(input);
 
     return prisma.contactDocumentation.update({
       where: { id },
