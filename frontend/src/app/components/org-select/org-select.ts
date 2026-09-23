@@ -12,7 +12,6 @@ import { OrgService } from 'src/app/services/organisation.service';
   standalone: true,
   imports: [NgSelectComponent, NgLabelTemplateDirective, FormsModule],
   templateUrl: './org-select.html',
-  styleUrl: './org-select.scss',
 })
 export class OrgSelectComponent {
   private orgService = inject(OrgService);

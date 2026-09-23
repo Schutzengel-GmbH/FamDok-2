@@ -7,7 +7,6 @@ import { FullUser } from '../../../../../shared/types';
   standalone: true,
   imports: [],
   templateUrl: './me.html',
-  styleUrl: './me.scss',
 })
 export class MeComponent {
   private meService = inject(MeService);

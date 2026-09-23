@@ -1,3 +1,5 @@
+@use "abstracts" as *;
+
 :host {
   display: block;
 }
@@ -63,7 +65,7 @@
   }
 }
 
-@media (max-width: 576px) {
+@include media-down("sm") {
   .fachkraft-kpi-card .card-body {
     min-height: 88px;
     padding: 0.75rem 0.9rem;

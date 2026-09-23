@@ -12,7 +12,6 @@ import { CaseFormService } from 'src/app/services/case-form.service';
   standalone: true,
   imports: [AsyncPipe],
   templateUrl: './tab-formulare.component.html',
-  styleUrls: ['./tab-formulare.component.scss'],
 })
 export class TabSonstigeFormulareComponent {
   selectedCase = input.required<FullCase>();

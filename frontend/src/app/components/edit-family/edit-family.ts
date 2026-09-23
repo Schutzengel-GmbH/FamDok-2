@@ -32,7 +32,6 @@ import { Familienstand } from '../../../../../shared/generated/prisma/enums';
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './edit-family.html',
-  styleUrl: './edit-family.scss',
   providers: [
     { provide: NgbDateParserFormatter, useClass: NgbDateDeParserFormatter },
     { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter },

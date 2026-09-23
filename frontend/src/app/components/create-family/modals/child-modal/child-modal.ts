@@ -21,7 +21,6 @@ import { Gender } from '../../../../../../../shared/generated/prisma/enums';
   standalone: true,
   imports: [ReactiveFormsModule, NgbDatepickerModule],
   templateUrl: './child-modal.html',
-  styleUrl: './child-modal.scss',
   providers: [
     { provide: NgbDateParserFormatter, useClass: NgbDateDeParserFormatter },
     { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter },

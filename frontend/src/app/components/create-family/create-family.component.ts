@@ -39,7 +39,6 @@ import { CaseService } from 'src/app/services/case.service';
 @Component({
   selector: 'app-create-family',
   templateUrl: './create-family.component.html',
-  styleUrls: ['./create-family.component.scss'],
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, NgbDatepickerModule],
   providers: [

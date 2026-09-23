@@ -1,3 +1,5 @@
+@use "abstracts" as *;
+
 .modal-backdrop {
   z-index: 1050;
   backdrop-filter: blur(4px);
@@ -33,7 +35,7 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(148, 163, 184, 0.9);
+  color: $slate-muted;
 }
 
 .modal-tabs {
@@ -70,10 +72,10 @@
 
 .footer-hint {
   font-size: 0.75rem;
-  color: rgba(148, 163, 184, 0.9);
+  color: $slate-muted;
 }
 
-@media (max-width: 992px) {
+@include media-down("lg") {
   .modal-tabs {
     padding: 0 1rem;
   }
@@ -86,7 +88,7 @@
   }
 }
 
-@media (max-width: 576px) {
+@include media-down("sm") {
   .family-detail-modal .modal-dialog {
     margin: 0.5rem;
   }
