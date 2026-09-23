@@ -1,3 +1,5 @@
+@use "abstracts" as *;
+
 :host {
   display: block;
   min-width: 0;
@@ -80,23 +82,9 @@
 }
 
 .expand-button {
-  width: 2rem;
-  height: 2rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--bs-secondary-color);
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease,
-    transform 0.18s ease;
+  @include icon-button;
 
   &:hover {
-    background: color-mix(in srgb, var(--bs-primary) 10%, transparent);
-    color: var(--bs-primary);
     transform: translateY(-1px);
   }
 }
@@ -113,16 +101,10 @@
 }
 
 .table-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  @include pill;
   min-width: 2rem;
   min-height: 2rem;
   padding: 0 0.6rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--bs-primary) 12%, transparent);
-  color: var(--bs-primary);
-  font-weight: 700;
   font-size: 0.85rem;
 }
 
@@ -214,61 +196,64 @@
   white-space: nowrap;
 }
 
-:host ::ng-deep .ngx-datatable {
-  width: 100% !important;
-  background: transparent;
+// ngx-datatable (Kindkomponente, daher ::ng-deep)
+:host ::ng-deep {
+  .ngx-datatable {
+    width: 100% !important;
+    background: transparent;
+
+    .datatable-body {
+      overflow: visible !important;
+    }
+
+    .datatable-row-detail {
+      background: transparent;
+    }
+
+    &.bootstrap {
+      box-shadow: none;
+      background: transparent;
+      color: var(--bs-body-color);
+
+      .datatable-header {
+        background: color-mix(in srgb, var(--bs-body-bg) 88%, var(--bs-card-bg) 12%);
+        border-bottom: 1px solid var(--bs-border-color);
+
+        .datatable-header-cell {
+          display: flex;
+          align-items: center;
+          font-weight: 700;
+          color: var(--bs-body-color);
+          padding: 0.8rem 0.85rem;
+          border-bottom: 0;
+        }
+      }
+
+      .datatable-body .datatable-body-row {
+        border-bottom: 1px solid color-mix(in srgb, var(--bs-border-color) 70%, transparent);
+        background: transparent;
+        transition: background-color $ease-fast;
+
+        &:hover {
+          background: primary-tint(4%);
+        }
+      }
+
+      .datatable-body-cell {
+        display: flex;
+        align-items: center;
+        padding: 0.85rem;
+        color: var(--bs-body-color);
+      }
+
+      .datatable-footer {
+        display: none;
+      }
+    }
+  }
 }
 
-:host ::ng-deep .ngx-datatable.bootstrap {
-  box-shadow: none;
-  background: transparent;
-  color: var(--bs-body-color);
-}
-
-:host ::ng-deep .ngx-datatable.bootstrap .datatable-header {
-  background: color-mix(in srgb, var(--bs-body-bg) 88%, var(--bs-card-bg) 12%);
-  border-bottom: 1px solid var(--bs-border-color);
-}
-
-:host ::ng-deep .ngx-datatable.bootstrap .datatable-header .datatable-header-cell {
-  display: flex;
-  align-items: center;
-  font-weight: 700;
-  color: var(--bs-body-color);
-  padding: 0.8rem 0.85rem;
-  border-bottom: 0;
-}
-
-:host ::ng-deep .ngx-datatable .datatable-body {
-  overflow: visible !important;
-}
-
-:host ::ng-deep .ngx-datatable.bootstrap .datatable-body .datatable-body-row {
-  border-bottom: 1px solid color-mix(in srgb, var(--bs-border-color) 70%, transparent);
-  background: transparent;
-  transition: background-color 0.18s ease;
-}
-
-:host ::ng-deep .ngx-datatable.bootstrap .datatable-body .datatable-body-row:hover {
-  background: color-mix(in srgb, var(--bs-primary) 4%, transparent);
-}
-
-:host ::ng-deep .ngx-datatable.bootstrap .datatable-body-cell {
-  display: flex;
-  align-items: center;
-  padding: 0.85rem;
-  color: var(--bs-body-color);
-}
-
-:host ::ng-deep .ngx-datatable .datatable-row-detail {
-  background: transparent;
-}
-
-:host ::ng-deep .ngx-datatable.bootstrap .datatable-footer {
-  display: none;
-}
-
-@media (max-width: 992px) {
+@include media-down("lg") {
 
   .family-list-footer {
     flex-direction: column;
@@ -282,13 +267,13 @@
   }
 }
 
-@media (max-width: 900px) {
+@include media-down(900px) {
   .mobile-scroll-hint {
     display: block;
   }
 }
 
-@media (max-width: 640px) {
+@include media-down(640px) {
 
   .mobile-scroll-hint {
     padding: 0.7rem 0.85rem 0.45rem;
@@ -329,9 +314,11 @@
     margin-right: 0.5rem;
   }
 
-  :host ::ng-deep .ngx-datatable.bootstrap .datatable-header .datatable-header-cell,
-  :host ::ng-deep .ngx-datatable.bootstrap .datatable-body-cell {
-    padding: 0.7rem;
-    font-size: 0.92rem;
+  :host ::ng-deep .ngx-datatable.bootstrap {
+    .datatable-header .datatable-header-cell,
+    .datatable-body-cell {
+      padding: 0.7rem;
+      font-size: 0.92rem;
+    }
   }
 }

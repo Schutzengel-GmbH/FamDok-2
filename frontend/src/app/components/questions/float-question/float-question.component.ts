@@ -15,7 +15,6 @@ import {
 @Component({
   selector: 'app-float-question',
   templateUrl: './float-question.component.html',
-  styleUrls: ['./float-question.component.scss'],
   standalone: true,
   imports: [FormsModule],
 })

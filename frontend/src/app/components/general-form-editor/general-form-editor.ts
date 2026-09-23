@@ -22,7 +22,6 @@ import {
   standalone: true,
   imports: [ReactiveFormsModule, QuestionEditorComponent],
   templateUrl: './general-form-editor.html',
-  styleUrl: './general-form-editor.scss',
 })
 export class GeneralFormEditorComponent implements OnInit {
   private fb = inject(FormBuilder);

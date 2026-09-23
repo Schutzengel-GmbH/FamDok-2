@@ -13,7 +13,6 @@ import { WarningsService } from 'src/app/services/warnings.service';
   standalone: true,
   imports: [ContactBrief],
   templateUrl: './tab-freie-dokumentation.component.html',
-  styleUrls: ['./tab-freie-dokumentation.component.scss'],
 })
 export class TabFreieDokumentationComponent {
   selectedCase = input.required<FullCase>();

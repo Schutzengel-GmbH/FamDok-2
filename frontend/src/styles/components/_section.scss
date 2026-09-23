@@ -1,0 +1,20 @@
+@use "../abstracts" as *;
+
+// Abschnitte in den Tabs des Familien-Detaildialogs
+.tab-section {
+  min-height: 360px;
+}
+
+.section-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $slate-muted;
+  margin-bottom: 0.75rem;
+}
+
+.section-subtitle {
+  margin: 0;
+  font-size: 0.8rem;
+  color: $slate-muted;
+}

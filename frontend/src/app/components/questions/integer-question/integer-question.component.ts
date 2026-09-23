@@ -7,7 +7,6 @@ import {
 @Component({
   selector: 'app-integer-question',
   templateUrl: './integer-question.component.html',
-  styleUrls: ['./integer-question.component.scss'],
   standalone: true,
 })
 export class IntegerQuestionComponent implements OnInit {

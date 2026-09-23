@@ -24,7 +24,7 @@ import { HealthDataModalComponent } from 'src/app/components/health-data-modal/h
     GrowthChartComponent,
   ],
   templateUrl: './health-data.page.html',
-  styleUrl: './health-data.page.css',
+  styleUrl: './health-data.page.scss',
 })
 export class HealthDataPage {
   private activatedRoute = inject(ActivatedRoute);

@@ -1,0 +1,33 @@
+// Dokument-Grundlagen. Das App-Shell-Layout selbst liegt in app.component.scss.
+html,
+body,
+app-root {
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+
+app-root {
+  display: block;
+  height: 100%;
+}
+
+html {
+  font-size: clamp(14px, 1vw, 16px);
+}
+
+body {
+  font-size: 1rem;
+}
+
+@media (max-height: 800px) and (min-width: 900px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+// Header-Schlagschatten zurückhaltend
+.navbar {
+  box-shadow: var(--app-shadow-1);
+}

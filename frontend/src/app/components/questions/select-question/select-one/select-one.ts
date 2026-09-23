@@ -25,7 +25,6 @@ import {
   standalone: true,
   imports: [NgSelectComponent, FormsModule, NgLabelTemplateDirective],
   templateUrl: './select-one.html',
-  styleUrl: './select-one.css',
 })
 export class SelectOneComponent {
   @Input({ required: true }) question!: Question;

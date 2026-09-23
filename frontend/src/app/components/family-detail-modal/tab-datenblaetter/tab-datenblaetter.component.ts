@@ -18,7 +18,6 @@ interface CaseFormWithWarning extends FullCaseForm {
   standalone: true,
   imports: [AsyncPipe],
   templateUrl: './tab-datenblaetter.component.html',
-  styleUrls: ['./tab-datenblaetter.component.scss'],
 })
 export class TabDatenblaetterComponent {
   selectedCase = input.required<FullCase>();

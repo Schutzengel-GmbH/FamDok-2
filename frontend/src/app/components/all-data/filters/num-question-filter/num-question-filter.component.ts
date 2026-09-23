@@ -20,7 +20,6 @@ import { AnswerWhereInput } from '../../../../../../../shared/generated/prisma/m
   selector: 'app-num-question-filter',
   standalone: true,
   templateUrl: './num-question-filter.component.html',
-  styleUrl: '../../all-data.component.scss',
   imports: [FormsModule, NumberFilterInput],
 })
 export class NumQuestionFilter {

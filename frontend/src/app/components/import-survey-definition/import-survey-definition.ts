@@ -25,7 +25,6 @@ import { CaseFormService } from 'src/app/services/case-form.service';
   standalone: true,
   imports: [FormsModule, NgbTooltip],
   templateUrl: './import-survey-definition.html',
-  styleUrl: './import-survey-definition.scss',
 })
 export class ImportSurveyDefinitionComponent {
   private fileReader = new FileReader();

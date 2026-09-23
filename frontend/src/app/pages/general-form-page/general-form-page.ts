@@ -17,7 +17,6 @@ import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
   imports: [QuestionComponent],
   standalone: true,
   templateUrl: './general-form-page.html',
-  styleUrl: './general-form-page.css',
 })
 export class GeneralFormPage {
   private formService = inject(GeneralFormService);
