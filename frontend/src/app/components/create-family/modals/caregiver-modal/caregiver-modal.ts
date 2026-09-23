@@ -25,7 +25,6 @@ import { Caregiver } from '../../../../../../../shared/generated/prisma/client';
   standalone: true,
   imports: [ReactiveFormsModule, NgbDatepickerModule],
   templateUrl: './caregiver-modal.html',
-  styleUrl: './caregiver-modal.scss',
   providers: [
     { provide: NgbDateParserFormatter, useClass: NgbDateDeParserFormatter },
     { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter },

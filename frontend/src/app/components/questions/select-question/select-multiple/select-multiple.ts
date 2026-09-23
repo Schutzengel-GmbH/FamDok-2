@@ -24,7 +24,6 @@ import {
   standalone: true,
   imports: [NgSelectComponent, FormsModule, NgLabelTemplateDirective],
   templateUrl: './select-multiple.html',
-  styleUrl: './select-multiple.css',
 })
 export class SelectMultipleComponent {
   @Input({ required: true }) question!: Question;

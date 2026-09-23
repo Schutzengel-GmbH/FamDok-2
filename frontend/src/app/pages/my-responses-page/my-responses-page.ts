@@ -10,7 +10,6 @@ import { CaseFormService } from 'src/app/services/case-form.service';
   imports: [],
   standalone: true,
   templateUrl: './my-responses-page.html',
-  styleUrl: './my-responses-page.css',
 })
 export class MyResponsesPage {
   private meService = inject(MeService);

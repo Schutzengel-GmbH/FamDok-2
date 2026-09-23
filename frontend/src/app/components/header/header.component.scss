@@ -1,3 +1,5 @@
+@use "abstracts" as *;
+
 :host {
   display: block;
 }
@@ -33,7 +35,7 @@
   border-color: var(--bs-primary);
 }
 
-@media (max-width: 754px) {
+@include media-down("nav") {
   .navbar {
     margin: 0;
     border-radius: 0;

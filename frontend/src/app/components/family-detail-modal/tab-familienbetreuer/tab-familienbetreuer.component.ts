@@ -18,7 +18,6 @@ import { CaseService } from 'src/app/services/case.service';
   standalone: true,
   imports: [AsyncPipe, FormsModule, HandoverBrief, UserPipe, SelectUser],
   templateUrl: './tab-familienbetreuer.component.html',
-  styleUrls: ['./tab-familienbetreuer.component.scss'],
 })
 export class TabFamilienbetreuerComponent {
   selectedCase = model.required<FullCase>();
