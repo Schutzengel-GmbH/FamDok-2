@@ -250,6 +250,8 @@ model ContactDocumentation {
 
   date                     DateTime?
   duration                 Int?
+  start                    DateTime?
+  end                      DateTime?
   artDerBetreuung          Int?
   beratungsThemenEltern    Int[]
   beratungsThemenKinder    Int[]

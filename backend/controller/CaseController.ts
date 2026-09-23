@@ -1,6 +1,6 @@
 import { Primitive } from 'zod/v3';
 import { Response } from 'express';
-import { add } from 'date-fns';
+import { add, differenceInMinutes } from 'date-fns';
 import { prisma } from '../db';
 import {
   BadRequestError,
@@ -335,7 +335,7 @@ export class CaseController {
   static async createContactDocumentation(
     user: FullUser,
     caseId: string,
-    input: Prisma.ContactDocumentationCreateInput
+    input: Partial<Prisma.ContactDocumentationCreateInput>
   ) {
     const c = await prisma.case.findUnique({
       where: { id: caseId },
@@ -345,6 +345,11 @@ export class CaseController {
     if (!c) throw new NotFoundError();
     if (!canEditCase(user, c))
       throw new ForbiddenError("User can't edit this case");
+
+    // if the data contains start and end, calculate duration.
+    if (input.start && input.end) {
+      input.duration = differenceInMinutes(input.end, input.start);
+    }
 
     return prisma.contactDocumentation.create({
       data: {
