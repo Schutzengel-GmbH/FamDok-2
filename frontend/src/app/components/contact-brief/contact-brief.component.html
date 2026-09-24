@@ -44,7 +44,9 @@
       </div>
     </div>
     <span class="text-muted name">{{
-      "Erstellt von " + userPipe.transform(doc().createdBy)
+      doc().createdBy
+        ? "Erstellt von " + userPipe.transform(doc().createdBy)
+        : ""
     }}</span>
   </li>
   <li class="list-group-item">Zusammenfassung: {{ doc().zusammenfassung }}</li>
