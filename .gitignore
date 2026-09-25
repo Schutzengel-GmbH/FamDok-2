@@ -83,3 +83,6 @@ Thumbs.db
 
 # local issues files
 ISSUES.md
+
+# Local backups (backup.sh)
+/backups

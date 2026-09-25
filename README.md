@@ -343,6 +343,10 @@ cd backend && npm run seed:dev
 # Produktivinstanz initialisieren (Admin, Org, Formulare - benötigt seed-prod.config.json)
 cd backend && npm run seed:prod
 
+# Testserver befüllen (eine Organisation, wenige Testfälle, Benutzer controller, orgcontroller,
+# orgcoordinator, suborgcoordinator, user1-3 - Passwort "FamDok20")
+cd backend && npm run seed:test
+
 # Prisma Studio (Datenbank-Browser)
 cd backend && npx prisma studio
 

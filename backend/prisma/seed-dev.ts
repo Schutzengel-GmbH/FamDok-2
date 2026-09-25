@@ -74,7 +74,7 @@ function chance(probability: number): boolean {
   return Math.random() < probability;
 }
 
-function randomInt(min: number, max: number): number {
+export function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
@@ -155,7 +155,7 @@ function paragraph(): string {
 }
 
 /** A random (cosmetic) person name, for display purposes - login uses `username`, not this. */
-function randomPersonName(): { firstName: string; lastName: string } {
+export function randomPersonName(): { firstName: string; lastName: string } {
   const isMale = chance(0.5);
   return {
     firstName: isMale
@@ -200,8 +200,10 @@ async function seedOrganisations() {
   return { org1, org2, org1Sub1, org1Sub2, org2Sub1, org2Sub2 };
 }
 
-interface SeedUserDef {
+export interface SeedUserDef {
   username: string;
+  /** Keycloak password - defaults to DEV_PASSWORD. */
+  password?: string;
   firstName: string;
   lastName: string;
   role: Role;
@@ -242,13 +244,13 @@ async function ensureKeycloakUser(
   await adminClient.users.resetPassword({
     id: kcId,
     realm: KC_REALM,
-    credential: { type: 'password', value: DEV_PASSWORD, temporary: false },
+    credential: { type: 'password', value: def.password ?? DEV_PASSWORD, temporary: false },
   });
 
   return kcId;
 }
 
-async function createUser(
+export async function createUser(
   adminClient: Awaited<ReturnType<typeof getAdminClient>>,
   def: SeedUserDef,
   organisationId: string
@@ -274,7 +276,7 @@ async function createUser(
   return user;
 }
 
-const CASE_WORKER_JOB_TITLES = [
+export const CASE_WORKER_JOB_TITLES = [
   'Familienhebamme',
   'Sozialarbeiter',
   'Familienkinderkrankenschwester',
@@ -676,7 +678,7 @@ async function addCaseFormResponsesForUser(
   }
 }
 
-async function addGeneralFormResponses(
+export async function addGeneralFormResponses(
   userId: string,
   generalForms: GeneralFormGetPayload<{ include: { questions: true } }>[]
 ) {
@@ -699,15 +701,16 @@ async function addGeneralFormResponses(
 // Per-user case data
 // ---------------------------------------------------------------------------
 
-async function seedCasesForUser(
+export async function seedCasesForUser(
   user: { id: string },
   organisationId: string,
   subOrganisationId: string,
   fillableSingleForms: CaseFormGetPayload<{ include: { questions: true } }>[],
-  closingForm: CaseFormGetPayload<{ include: { questions: true } }>
+  closingForm: CaseFormGetPayload<{ include: { questions: true } }>,
+  caseCount = randomInt(8, 12)
 ) {
   const created = await Promise.all(
-    Array.from({ length: randomInt(8, 12) }, () =>
+    Array.from({ length: caseCount }, () =>
       createFamilyWithCase(user.id, organisationId, subOrganisationId)
     )
   );
@@ -825,11 +828,14 @@ async function main() {
   }
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// Only seed when run directly - seed-test.ts imports the helpers above without running this.
+if (require.main === module) {
+  main()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
