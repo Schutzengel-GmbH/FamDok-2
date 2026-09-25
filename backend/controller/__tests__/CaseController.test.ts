@@ -1,6 +1,6 @@
 jest.mock('../../db', () => ({ prisma: require('../../testUtils/prismaMock').createPrismaMock() }));
 jest.mock('../../util/pdfService', () => ({
-  PDFService: { contactDocumentationPDF: jest.fn() },
+  PDFService: { contactDocumentationPDF: jest.fn(), stammdatenPDF: jest.fn() },
 }));
 jest.mock('../../util/fileStorage', () => ({
   streamFile: jest.fn(),
@@ -1088,6 +1088,154 @@ describe('CaseController', () => {
       await expect(CaseController.deleteCaseAttachment(user, 'missing')).rejects.toThrow(
         NotFoundError
       );
+    });
+  });
+
+  describe('case export authorization', () => {
+    const ORG = 'org-1';
+    const SUBORG = 'suborg-1';
+
+    function exportCase(overrides: Record<string, any> = {}) {
+      return buildCase({
+        organisationId: ORG,
+        subOrganisationId: SUBORG,
+        organisation: { id: ORG, name: 'Org' },
+        subOrganisation: { id: SUBORG, name: 'SubOrg' },
+        ...overrides,
+      });
+    }
+
+    const allowed: [string, () => { user: any; c: any }][] = [
+      ['Admin', () => ({ user: buildUser({ role: Role.Admin }), c: exportCase() })],
+      [
+        'a responsible User',
+        () => {
+          const user = buildUser({ role: Role.User });
+          return { user, c: exportCase({ responsibleUsers: [{ id: user.id }] }) };
+        },
+      ],
+      [
+        'an OrgCoordinator of the same org',
+        () => ({
+          user: buildUser({ role: Role.OrgCoordinator, organisationId: ORG }),
+          c: exportCase(),
+        }),
+      ],
+      [
+        'a SubOrgCoordinator of the same suborg',
+        () => ({
+          user: buildUser({
+            role: Role.SubOrgCoordinator,
+            organisationId: ORG,
+            subOrganisations: [{ id: SUBORG }],
+          }),
+          c: exportCase(),
+        }),
+      ],
+    ];
+
+    const forbidden: [string, () => { user: any; c: any }][] = [
+      [
+        'a non-responsible User of the same org',
+        () => ({
+          user: buildUser({ role: Role.User, organisationId: ORG }),
+          c: exportCase(),
+        }),
+      ],
+      ['a Controller', () => ({ user: buildUser({ role: Role.Controller }), c: exportCase() })],
+      [
+        'an OrgController of the same org',
+        () => ({
+          user: buildUser({ role: Role.OrgController, organisationId: ORG }),
+          c: exportCase(),
+        }),
+      ],
+      [
+        'an OrgCoordinator of another org',
+        () => ({
+          user: buildUser({ role: Role.OrgCoordinator, organisationId: 'other-org' }),
+          c: exportCase(),
+        }),
+      ],
+      [
+        'a SubOrgCoordinator of another suborg',
+        () => ({
+          user: buildUser({
+            role: Role.SubOrgCoordinator,
+            organisationId: ORG,
+            subOrganisations: [{ id: 'other-suborg' }],
+          }),
+          c: exportCase(),
+        }),
+      ],
+    ];
+
+    beforeEach(() => {
+      (PDFService.stammdatenPDF as jest.Mock).mockResolvedValue(Buffer.from('pdf'));
+      (PDFService.contactDocumentationPDF as jest.Mock).mockResolvedValue(Buffer.from('pdf'));
+      prismaMock.contactDocumentation.findMany.mockResolvedValue([]);
+      prismaMock.caseFormResponse.findMany.mockResolvedValue([]);
+    });
+
+    describe('getStammdatenPDF', () => {
+      it.each(allowed)('allows %s', async (_, setup) => {
+        const { user, c } = setup();
+        prismaMock.case.findUnique.mockResolvedValue(c);
+
+        const result = await CaseController.getStammdatenPDF(user, c.id);
+
+        expect(result.filename).toBe('Stammdaten-Familie-Test Family.pdf');
+        expect(PDFService.stammdatenPDF).toHaveBeenCalledWith(c);
+      });
+
+      it.each(forbidden)('forbids %s', async (_, setup) => {
+        const { user, c } = setup();
+        prismaMock.case.findUnique.mockResolvedValue(c);
+
+        await expect(CaseController.getStammdatenPDF(user, c.id)).rejects.toThrow(
+          ForbiddenError
+        );
+        expect(PDFService.stammdatenPDF).not.toHaveBeenCalled();
+      });
+
+      it('throws NotFoundError when the case is missing', async () => {
+        prismaMock.case.findUnique.mockResolvedValue(null);
+
+        await expect(
+          CaseController.getStammdatenPDF(buildUser({ role: Role.Admin }), 'missing')
+        ).rejects.toThrow(NotFoundError);
+      });
+    });
+
+    describe('getCaseExport', () => {
+      it.each(allowed)('allows %s', async (_, setup) => {
+        const { user, c } = setup();
+        prismaMock.case.findUnique.mockResolvedValue(c);
+
+        const result = await CaseController.getCaseExport(user, c.id);
+
+        expect(result.filename).toBe('Fallakte-Familie-Test Family.zip');
+        result.archive.abort();
+      });
+
+      it.each(forbidden)('forbids %s without loading any case data', async (_, setup) => {
+        const { user, c } = setup();
+        prismaMock.case.findUnique.mockResolvedValue(c);
+
+        await expect(CaseController.getCaseExport(user, c.id)).rejects.toThrow(ForbiddenError);
+        expect(prismaMock.contactDocumentation.findMany).not.toHaveBeenCalled();
+        expect(prismaMock.caseFormResponse.findMany).not.toHaveBeenCalled();
+        expect(PDFService.stammdatenPDF).not.toHaveBeenCalled();
+        expect(PDFService.contactDocumentationPDF).not.toHaveBeenCalled();
+      });
+
+      it('throws NotFoundError when the case is missing', async () => {
+        prismaMock.case.findUnique.mockResolvedValue(null);
+
+        await expect(
+          CaseController.getCaseExport(buildUser({ role: Role.Admin }), 'missing')
+        ).rejects.toThrow(NotFoundError);
+      });
     });
   });
 });

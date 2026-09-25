@@ -51,9 +51,29 @@ describe('TabClose', () => {
   it('onDateSelect updates the working date', () => {
     setup();
 
-    component.onDateSelect({ target: { value: '2026-03-01' } } as unknown as Event);
+    component.onDateSelect(new Date(2026, 2, 1));
 
-    expect(component.date()).toEqual(new Date('2026-03-01'));
+    expect(component['date']()).toEqual(new Date(2026, 2, 1));
+  });
+
+  it('onDateSelect ignores incomplete input', () => {
+    setup();
+    const before = component['date']();
+
+    component.onDateSelect(null);
+
+    expect(component['date']()).toBe(before);
+  });
+
+  it('defaults the date to the case closing date if the case is closed', () => {
+    setup();
+
+    fixture.componentRef.setInput('selectedCase', {
+      id: 'case-1',
+      closedAt: '2026-01-15T00:00:00.000Z',
+    } as any);
+
+    expect(component['date']()).toEqual(new Date('2026-01-15T00:00:00.000Z'));
   });
 
   it('has no tooltip when there are no relevant warnings', () => {

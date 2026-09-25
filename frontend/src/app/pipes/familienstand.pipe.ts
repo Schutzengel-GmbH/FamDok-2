@@ -1,5 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { Familienstand } from '../../../../shared/generated/prisma/enums';
+import { FAMILIENSTAND_LABELS } from '../../../../shared/utils/labels';
 
 @Pipe({
   name: 'familienstand',
@@ -7,17 +8,6 @@ import { Familienstand } from '../../../../shared/generated/prisma/enums';
 })
 export class FamilienstandPipe implements PipeTransform {
   transform(f: Familienstand) {
-    switch (f) {
-      case 'ledig':
-        return 'Ledig';
-      case 'verheiratet':
-        return 'Verheiratet';
-      case 'geschieden':
-        return 'Geschieden';
-      case 'verwitwet':
-        return 'Verwitwet';
-      case 'unspecified':
-        return 'Keine Angabe';
-    }
+    return FAMILIENSTAND_LABELS[f];
   }
 }

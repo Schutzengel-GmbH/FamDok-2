@@ -40,6 +40,10 @@ describe('FamilyDetailModalComponent', () => {
     fixture.componentRef.setInput('selectedCase', baseCase as any);
     fixture.detectChanges();
     flushSettings(httpMock);
+    // The default stammdaten tab loads the current user to decide whether to show export buttons.
+    httpMock
+      .match((r) => r.url.endsWith('/me'))
+      .forEach((r) => r.flush({ id: 'user-1', role: 'User', subOrganisations: [] }));
   });
 
   afterEach(() => httpMock.verify());
