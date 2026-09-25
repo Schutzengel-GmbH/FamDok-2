@@ -13,7 +13,6 @@ import { CaseService } from 'src/app/services/case.service';
   standalone: true,
   imports: [NgSelectComponent, NgLabelTemplateDirective, FormsModule],
   templateUrl: './select-case.html',
-  styleUrl: './select-case.scss',
 })
 export class SelectCaseComponent {
   private caseService = inject(CaseService);

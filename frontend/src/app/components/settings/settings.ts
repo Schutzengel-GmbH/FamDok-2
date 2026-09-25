@@ -26,7 +26,7 @@ import { NameModalComponent } from './modals/name-modal/name-modal';
   imports: [AsyncPipe, RouterLink],
   standalone: true,
   templateUrl: './settings.html',
-  styleUrl: './settings.css',
+  styleUrl: './settings.scss',
 })
 export class Settings {
   private generalFormService = inject(GeneralFormService);

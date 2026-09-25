@@ -8,7 +8,6 @@ import {
 @Component({
   selector: 'app-text-question',
   templateUrl: './text-question.component.html',
-  styleUrls: ['./text-question.component.scss'],
   standalone: true,
   imports: [FormsModule],
 })

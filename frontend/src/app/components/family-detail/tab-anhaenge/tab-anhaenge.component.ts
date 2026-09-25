@@ -17,7 +17,6 @@ import { Role } from '../../../../../../shared/generated/prisma/enums';
   standalone: true,
   imports: [DatePipe, FormsModule],
   templateUrl: './tab-anhaenge.component.html',
-  styleUrls: ['./tab-anhaenge.component.scss'],
 })
 export class TabAnhaengeComponent implements OnInit {
   selectedCase = input.required<FullCase>();

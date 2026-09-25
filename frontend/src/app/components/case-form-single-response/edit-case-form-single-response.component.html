@@ -10,10 +10,30 @@
         caseForm() ? caseForm().name : "Kein Formular ausgewählt"
       }}</strong>
     </div>
-    <div class="card-body" [class.pe-none]="readOnly()" [class.opacity-75]="readOnly()">
+    <div
+      class="card-body"
+      [class.pe-none]="readOnly()"
+      [class.opacity-75]="readOnly()">
       <ul class="list-group">
         <li class="list-group-item">
-          <h3>{{ caseForm().name + " für Familie " + (case().family?.name ?? "(Daten gelöscht)") }}</h3>
+          <h3>
+            {{
+              caseForm().name +
+                " für Familie " +
+                (case().family?.name ?? "(Daten gelöscht)")
+            }}
+          </h3>
+          @if (caseForm().containsPersonalData) {
+            <small class="text-muted d-flex align-items-center gap-1"
+              ><i class="bi bi-info-circle"></i> Dieses Formular enthält
+              personenbezogene Daten</small
+            >
+          } @else {
+            <small class="text-muted d-flex align-items-center gap-1"
+              ><i class="bi bi-info-circle"></i> Dieses Formular enthält
+              statistisch ausgewertete Daten</small
+            >
+          }
         </li>
         @if (caseForm().isPersonal) {
           <li class="list-group-item">

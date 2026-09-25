@@ -1,5 +1,9 @@
 import { Component, inject, input } from '@angular/core';
-import { FullCase, FullCaseForm, Warning } from '../../../../../../shared/types';
+import {
+  FullCase,
+  FullCaseForm,
+  Warning,
+} from '../../../../../../shared/types';
 import { WarningType } from '../../../../../../shared/consts';
 import { Router } from '@angular/router';
 import { AsyncPipe } from '@angular/common';
@@ -8,6 +12,7 @@ import { sortByStringProperty } from 'src/app/util/generalUtils';
 import { CaseFormService } from 'src/app/services/case-form.service';
 import { SettingsService } from 'src/app/services/settings.service';
 import { WarningsService } from 'src/app/services/warnings.service';
+import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 
 interface CaseFormWithWarning extends FullCaseForm {
   hasWarning: boolean;
@@ -16,9 +21,8 @@ interface CaseFormWithWarning extends FullCaseForm {
 @Component({
   selector: 'app-tab-datenblaetter',
   standalone: true,
-  imports: [AsyncPipe],
+  imports: [AsyncPipe, NgbTooltip],
   templateUrl: './tab-datenblaetter.component.html',
-  styleUrls: ['./tab-datenblaetter.component.scss'],
 })
 export class TabDatenblaetterComponent {
   selectedCase = input.required<FullCase>();

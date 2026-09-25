@@ -1,0 +1,68 @@
+// @ng-select an Formular-Design angepasst.
+@use "../abstracts" as *;
+
+$ng-invalid-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+
+.ng-select {
+  .ng-select-container {
+    border-radius: $radius-control;
+    border-color: var(--bs-border-color);
+    background-color: var(--field-bg);
+    color: var(--field-color);
+    background-clip: padding-box;
+  }
+
+  &.is-invalid .ng-select-container {
+    border-color: var(--bs-danger);
+    background-image: $ng-invalid-icon;
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 2.5rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+  }
+
+  &.ng-select-opened .ng-select-container {
+    border-color: var(--bs-border-color);
+    background-color: var(--field-bg);
+  }
+
+  &.ng-select-multiple .ng-select-container .ng-value-container .ng-value {
+    background-color: color-mix(in oklab, var(--bs-primary) 16%, transparent);
+    color: color-mix(in oklab, var(--bs-primary) 80%, var(--bs-body-color));
+    border-radius: $radius-pill;
+    overflow: hidden;
+
+    .ng-value-label {
+      padding-left: 0.65em;
+    }
+
+    .ng-value-icon.right {
+      border-left: 1px solid color-mix(in oklab, var(--bs-primary) 30%, transparent);
+      padding-right: 0.55em;
+    }
+
+    .ng-value-icon:hover {
+      background-color: color-mix(in oklab, var(--bs-primary) 28%, transparent);
+    }
+  }
+}
+
+.ng-dropdown-panel {
+  border-color: var(--bs-border-color);
+  background-color: var(--bs-card-bg);
+  border-bottom-right-radius: $radius-control;
+  border-bottom-left-radius: $radius-control;
+
+  .ng-dropdown-panel-items .ng-option {
+    background-color: var(--field-bg);
+    color: var(--field-color);
+
+    &.ng-option-marked {
+      background-color: color-mix(in oklab, var(--bs-primary) 16%, transparent);
+      color: var(--field-color);
+    }
+
+    &.ng-option-disabled {
+      color: var(--field-color);
+    }
+  }
+}

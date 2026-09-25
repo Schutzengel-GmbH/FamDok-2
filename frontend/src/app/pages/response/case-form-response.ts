@@ -17,7 +17,6 @@ import { CaseFormService } from 'src/app/services/case-form.service';
   ],
   standalone: true,
   templateUrl: './case-form-response.html',
-  styleUrl: './case-form-response.css',
 })
 export class CaseFormResponsePage {
   private activatedRoute = inject(ActivatedRoute);

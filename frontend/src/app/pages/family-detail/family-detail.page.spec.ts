@@ -53,30 +53,30 @@ describe('FamilyDetailPage', () => {
     httpMock.expectOne(`${environment.apiUrl}/me`).flush(buildUser({ id: 'me', role: Role.User }));
     httpMock.expectOne(`${environment.apiUrl}/case/i/case-1`).flush(baseCase as any);
 
-    expect(component.caseId).toBe('case-1');
-    expect(component.selectedCase()).toEqual(baseCase as any);
-    expect(component.isLoading()).toBeFalse();
+    expect(component['caseId']).toBe('case-1');
+    expect(component['selectedCase']()).toEqual(baseCase as any);
+    expect(component['isLoading']()).toBeFalse();
   });
 
   it('has no initial tab when the route carries none', () => {
     setup({ caseId: 'case-1' });
     httpMock.match(() => true).forEach((r) => r.flush(r.request.url.endsWith('/me') ? buildUser() : baseCase));
 
-    expect(component.initialTab).toBeUndefined();
+    expect(component['initialTab']).toBeUndefined();
   });
 
   it('picks up a valid tab from the route', () => {
     setup({ caseId: 'case-1', tab: 'zielvereinbarungen' });
     httpMock.match(() => true).forEach((r) => r.flush(r.request.url.endsWith('/me') ? buildUser() : baseCase));
 
-    expect(component.initialTab).toBe('zielvereinbarungen');
+    expect(component['initialTab']).toBe('zielvereinbarungen');
   });
 
   it('ignores an invalid tab from the route', () => {
     setup({ caseId: 'case-1', tab: 'not-a-real-tab' });
     httpMock.match(() => true).forEach((r) => r.flush(r.request.url.endsWith('/me') ? buildUser() : baseCase));
 
-    expect(component.initialTab).toBeUndefined();
+    expect(component['initialTab']).toBeUndefined();
   });
 
   it('readOnly reflects whether the current user is one of the case responsibleUsers', () => {
@@ -84,7 +84,7 @@ describe('FamilyDetailPage', () => {
     httpMock.expectOne(`${environment.apiUrl}/me`).flush(buildUser({ id: 'someone-else', role: Role.User }));
     httpMock.expectOne(`${environment.apiUrl}/case/i/case-1`).flush(baseCase as any);
 
-    expect(component.readOnly()).toBeTrue();
+    expect(component['readOnly']()).toBeTrue();
   });
 
   it('readOnly is false for the responsible user', () => {
@@ -92,7 +92,7 @@ describe('FamilyDetailPage', () => {
     httpMock.expectOne(`${environment.apiUrl}/me`).flush(buildUser({ id: 'me', role: Role.User }));
     httpMock.expectOne(`${environment.apiUrl}/case/i/case-1`).flush(baseCase as any);
 
-    expect(component.readOnly()).toBeFalse();
+    expect(component['readOnly']()).toBeFalse();
   });
 
   it('shows an error toast and stops loading when the case fails to load', () => {
@@ -103,8 +103,8 @@ describe('FamilyDetailPage', () => {
       .expectOne(`${environment.apiUrl}/case/i/case-1`)
       .flush('Boom', { status: 404, statusText: 'Not Found' });
 
-    expect(component.isLoading()).toBeFalse();
-    expect(component.selectedCase()).toBeUndefined();
+    expect(component['isLoading']()).toBeFalse();
+    expect(component['selectedCase']()).toBeUndefined();
     expect(toast.toasts()[0].severity).toBe('danger');
   });
 });

@@ -11,6 +11,14 @@
           }
           {{ form.name }}
         </span>
+        @if (form.containsPersonalData) {
+          <span
+            ngbTooltip="Dieses Formular enthält personenbezogene Daten"
+            container="body"
+            class="badge rounded-pill text-bg-secondary ms-2">
+            <i class="bi bi-info-circle"></i>
+          </span>
+        }
         @if (form.hasWarning) {
           <span
             class="badge rounded-pill text-bg-danger ms-2"

@@ -64,7 +64,7 @@ type AnonCase = Prisma.CaseGetPayload<{ include: typeof CASE_ANON_INCLUDE }>;
 
 type AnonContactDocumentation = Omit<
   ContactDocumentation,
-  "userId" | "answers" | "zusammenfassung" | "dokumentation"
+  "userId" | "answers" | "zusammenfassung" | "dokumentation" | "start" | "end"
 >;
 
 type FullFamily = Prisma.FamilyGetPayload<{

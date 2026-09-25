@@ -12,7 +12,6 @@ import { ChildModel as Child } from '../../../../../shared/generated/prisma/mode
   imports: [NgSelectComponent, NgLabelTemplateDirective, FormsModule],
   standalone: true,
   templateUrl: './select-child.html',
-  styleUrl: './select-child.css',
 })
 export class SelectChildComponent {
   case = model<FullCase | undefined>(undefined);

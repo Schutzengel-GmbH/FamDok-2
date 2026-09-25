@@ -1,22 +1,10 @@
+@use "abstracts" as *;
+
 .detail-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr);
   gap: 1.75rem;
   align-items: flex-start;
-}
-
-.section-title {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(148, 163, 184, 0.9);
-  margin-bottom: 0.75rem;
-}
-
-.section-subtitle {
-  margin: 0;
-  font-size: 0.8rem;
-  color: rgba(148, 163, 184, 0.9);
 }
 
 .detail-list {
@@ -29,22 +17,22 @@
   column-gap: 0.75rem;
   row-gap: 0.2rem;
   padding: 0.4rem 0;
-  border-bottom: 1px dashed rgba(148, 163, 184, 0.35);
-}
+  border-bottom: 1px dashed $slate-line;
 
-.detail-row:last-child {
-  border-bottom: none;
-}
+  &:last-child {
+    border-bottom: none;
+  }
 
-.detail-row dt {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgba(148, 163, 184, 0.95);
-}
+  dt {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $slate-muted-strong;
+  }
 
-.detail-row dd {
-  margin: 0;
-  font-size: 0.9rem;
+  dd {
+    margin: 0;
+    font-size: 0.9rem;
+  }
 }
 
 .detail-chart {
@@ -62,10 +50,10 @@
 
 .child-select-wrapper {
   min-width: 180px;
-}
 
-.child-select-wrapper .form-select {
-  min-width: 0;
+  .form-select {
+    min-width: 0;
+  }
 }
 
 .detail-chart-body {
@@ -73,7 +61,7 @@
   border-radius: 12px;
 }
 
-@media (max-width: 992px) {
+@include media-down("lg") {
   .detail-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: 1.25rem;

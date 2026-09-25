@@ -1,0 +1,154 @@
+// Gemeinsame Bausteine der Listen-Seiten (Formular-Übersicht, Datenansicht):
+// Seitenrahmen, Kopfbereich, Suchfeld, Panel-Kopf, Leerzustand.
+// Seiten binden sie per @include ein und übergeben nur ihre abweichenden Maße.
+@use "../abstracts" as *;
+
+/// :host-Rahmen einer scrollbaren Vollhöhen-Seite.
+@mixin list-page-host($padding: 1.5rem) {
+  display: block;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: $padding;
+  box-sizing: border-box;
+}
+
+/// Zentrierter Seiteninhalt: Kopfbereich + füllendes Panel.
+@mixin list-page-root {
+  height: 100%;
+  min-height: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+/// Kopfbereich (Kicker, Titel, Beschreibung) – Selektoren `.page-header`, `.page-kicker`.
+@mixin page-header($h1-max: 2.5rem, $p-margin: 0, $kicker-padding: 0.35rem 0.8rem, $kicker-size: 0.78rem) {
+  .page-header {
+    min-height: 0;
+
+    &__content {
+      @include panel($padding: 1.4rem);
+    }
+
+    h1 {
+      margin: 0.35rem 0 0.55rem;
+      font-size: clamp(1.7rem, 2.4vw, $h1-max);
+      line-height: 1.1;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--bs-heading-color, var(--bs-body-color));
+    }
+
+    p {
+      margin: $p-margin;
+      max-width: 760px;
+      color: var(--bs-secondary-color);
+      line-height: 1.55;
+      font-size: 0.98rem;
+    }
+  }
+
+  .page-kicker {
+    @include pill;
+    min-height: 30px;
+    padding: $kicker-padding;
+    font-size: $kicker-size;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+}
+
+/// Eingabefeld des Suchfelds (Höhe/Innenabstand/Schrift sind seitenspezifisch).
+@mixin search-input($height, $padding, $font-size) {
+  width: 100%;
+  height: $height;
+  padding: $padding;
+  border-radius: 16px;
+  border: 1px solid var(--bs-border-color);
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  font-size: $font-size;
+  transition:
+    border-color $ease-fast,
+    box-shadow $ease-fast,
+    background-color $ease-fast;
+
+  &::placeholder {
+    color: var(--bs-secondary-color);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 4px primary-tint(18%);
+  }
+}
+
+/// Suchfeld-Wrapper mit Icon links und Clear-Button rechts (`.search-field`).
+@mixin search-field-frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+
+  &__icon {
+    position: absolute;
+    left: 1rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--bs-secondary-color);
+    pointer-events: none;
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &__clear {
+    @include icon-button;
+    position: absolute;
+    right: 0.8rem;
+    font-size: 1.35rem;
+    line-height: 1;
+    transition:
+      background-color $ease-fast,
+      color $ease-fast;
+  }
+}
+
+/// Titel in einem Panel-Kopf (`h2`).
+@mixin panel-title($size) {
+  margin: 0.2rem 0 0;
+  font-size: $size;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bs-heading-color, var(--bs-body-color));
+}
+
+/// Leerzustand (`.empty-state`) mit gestricheltem Rahmen.
+@mixin empty-state($padding, $radius, $p-margin: 0) {
+  padding: $padding;
+  border: 1px dashed var(--bs-border-color);
+  border-radius: $radius;
+  background: color-mix(in srgb, var(--bs-body-bg) 85%, var(--bs-primary) 15%);
+
+  h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--bs-heading-color, var(--bs-body-color));
+  }
+
+  p {
+    margin: $p-margin;
+    color: var(--bs-secondary-color);
+    line-height: 1.5;
+    font-size: 0.95rem;
+  }
+}

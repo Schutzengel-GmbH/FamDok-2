@@ -1,0 +1,25 @@
+// Einstiegspunkt der globalen Styles (Reihenfolge = Kaskade).
+// Neue globale Styles gehören in den passenden Ordner, nicht in diese Datei.
+
+// 1. Drittanbieter-CSS
+// (Bootstrap, Bootstrap-Icons und das ng-select-Theme werden in angular.json unter "styles" eingebunden.)
+@use "@swimlane/ngx-datatable/index.scss";
+@use "@swimlane/ngx-datatable/themes/bootstrap.scss" as datatable-bootstrap;
+@use "@swimlane/ngx-datatable/themes/material.scss";
+@use "@swimlane/ngx-datatable/themes/dark.scss";
+@use "@swimlane/ngx-datatable/assets/icons.css";
+
+// 2. Laufzeit-Variablen & Basis
+@use "base/css-variables";
+@use "base/reset";
+@use "base/layout";
+
+// 3. Anpassungen an Drittanbieter-Komponenten
+@use "vendors/bootstrap";
+@use "vendors/ng-select";
+
+// 4. Wiederverwendbare App-Komponenten
+@use "components/badges";
+@use "components/status-dot";
+@use "components/section";
+@use "components/utilities";

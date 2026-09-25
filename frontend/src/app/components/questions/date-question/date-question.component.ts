@@ -21,7 +21,6 @@ import {
 @Component({
   selector: 'app-date-question',
   templateUrl: './date-question.component.html',
-  styleUrls: ['./date-question.component.scss'],
   standalone: true,
   imports: [FormsModule, NgbDatepickerModule],
   providers: [
