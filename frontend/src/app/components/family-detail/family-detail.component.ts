@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import {
   Component,
   signal,
@@ -37,6 +37,19 @@ export type TabKey =
   | 'anhaenge'
   | 'close';
 
+/** Every valid `TabKey`, in the order the tab bar shows them. Used to validate a tab name that
+ * came from the URL before trusting it as the initial tab. */
+export const TAB_KEYS: TabKey[] = [
+  'stammdaten',
+  'zielvereinbarungen',
+  'datenblaetter',
+  'freie-dokumentation',
+  'formulare',
+  'anhaenge',
+  'fachkraft',
+  'close',
+];
+
 type ZielStatusKind = 'green' | 'yellow' | 'red' | 'gray';
 
 type ZielItem = {
@@ -47,8 +60,14 @@ type ZielItem = {
   status: string;
 };
 
+/**
+ * Full detail view of a single case, used by the family-detail page. Was a modal dialog until it
+ * turned out to be unusable on mobile; it's now rendered directly into the page, so navigating
+ * here always keeps the URL - and thus the browser back button and reloads - pinned to the case
+ * currently open.
+ */
 @Component({
-  selector: 'app-family-detail-modal',
+  selector: 'app-family-detail',
   standalone: true,
   imports: [
     CommonModule,
@@ -62,22 +81,21 @@ type ZielItem = {
     TabAnhaengeComponent,
     TabClose,
   ],
-  templateUrl: './family-detail-modal.component.html',
-  styleUrls: ['./family-detail-modal.component.scss'],
+  templateUrl: './family-detail.component.html',
+  styleUrls: ['./family-detail.component.scss'],
 })
-export class FamilyDetailModalComponent {
-  isOpen = model.required<boolean>();
+export class FamilyDetailComponent {
   selectedCase = model<FullCase | undefined>(undefined);
   initialTab = input<TabKey | undefined>(undefined);
   /** Whether the current user can actually write to the selected case - if not, every tab
    * hides its mutating actions (edit/add/delete/handover/close) and shows a plain view. */
   readOnly = input(false);
 
-  closed = output<void>();
   caseUpdated = output<FullCase>();
 
   private caseService = inject(CaseService);
   private toastService = inject(ToastService);
+  private location = inject(Location);
 
   protected familyNamePipe = familyNamePipe;
   protected userArrayPipe = userArrayPipe;
@@ -120,14 +138,16 @@ export class FamilyDetailModalComponent {
     }
   }
 
-  close(): void {
-    this.isOpen.set(false);
-    this.activeTab.set('stammdaten');
-    this.selectedChildId.set(undefined);
-    this.zielFormOpen.set(false);
-    this.zielEditingId.set(null);
-    this.resetZielForm();
-    this.closed.emit();
+  /** Handles the mobile `<select>` tab switcher (the tab bar itself is a plain nav-tabs list,
+   * shown instead on wider screens - see detail-tabs__select-wrap in the stylesheet). */
+  onTabSelectChange(event: Event): void {
+    this.setTab((event.target as HTMLSelectElement).value as TabKey);
+  }
+
+  /** Leaves the case, back to wherever it was opened from (family list, dashboard, a warning
+   * link, ...). Just browser-back, since the page has no other notion of a "parent" view. */
+  goBack(): void {
+    this.location.back();
   }
 
   getAdressString(adress: PrismaJson.Address | null | undefined): string {
@@ -251,9 +271,12 @@ export class FamilyDetailModalComponent {
     this.zielTargetDate.set('');
   }
 
+  /** Reacts to a handover on the Fachkraft tab. If the current user just removed themselves as
+   * a responsible person, they may no longer be able to reload or edit this case, so there's
+   * nothing useful left to show here - go back instead of refreshing in place. */
   responsibleUsersChanged(removedUser: boolean) {
     if (!removedUser) this.refreshCaseFromBackend('fachkraft');
-    else this.close();
+    else this.goBack();
   }
 
   refreshCaseFromBackend(targetTab?: TabKey): void {

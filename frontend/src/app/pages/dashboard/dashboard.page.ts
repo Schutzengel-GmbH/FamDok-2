@@ -24,7 +24,6 @@ import { FormsModule } from '@angular/forms';
 })
 export class DashboardPage {
   @ViewChild('familyTable') familyTable!: DashboardFamilyTableComponent;
-  @ViewChild('warningsList') warningsList!: WarningsListComponent;
 
   protected dashboardCases = inject(DashboardCasesService);
 
@@ -36,10 +35,5 @@ export class DashboardPage {
 
   onOpenZielvereinbarung(caseId: string): void {
     this.familyTable?.openCaseById(caseId, 'zielvereinbarungen');
-  }
-
-  onDetailsClosed(): void {
-    this.dashboardCases.reload();
-    this.warningsList?.refresh();
   }
 }
