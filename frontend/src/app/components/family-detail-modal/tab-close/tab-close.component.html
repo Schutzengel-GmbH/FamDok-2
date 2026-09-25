@@ -18,10 +18,16 @@
     <div class="input-group mb-2">
       <label class="input-group-text">Abschluss zum: </label>
       <input
-        type="date"
-        class="form-control form-control"
-        [value]="date().toISOString().slice(0, 10)"
-        (change)="onDateSelect($event)" />
+        class="form-control"
+        placeholder="TT.MM.JJJJ"
+        ngbDatepicker
+        #d="ngbDatepicker"
+        [ngModel]="date()"
+        (ngModelChange)="onDateSelect($event)" />
+      <button
+        class="btn btn-outline-secondary bi bi-calendar3"
+        (click)="d.toggle()"
+        type="button"></button>
     </div>
 
     <div class="d-flex flex-column gap-2">
