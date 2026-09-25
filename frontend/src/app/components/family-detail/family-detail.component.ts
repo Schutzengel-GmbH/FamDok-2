@@ -1,4 +1,5 @@
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { NavigationService } from 'src/app/services/navigation.service';
 import {
   Component,
   signal,
@@ -95,7 +96,7 @@ export class FamilyDetailComponent {
 
   private caseService = inject(CaseService);
   private toastService = inject(ToastService);
-  private location = inject(Location);
+  private navigation = inject(NavigationService);
 
   protected familyNamePipe = familyNamePipe;
   protected userArrayPipe = userArrayPipe;
@@ -145,9 +146,9 @@ export class FamilyDetailComponent {
   }
 
   /** Leaves the case, back to wherever it was opened from (family list, dashboard, a warning
-   * link, ...). Just browser-back, since the page has no other notion of a "parent" view. */
+   * link, ...) - or to the family list if the case was opened directly (deep link, new tab). */
   goBack(): void {
-    this.location.back();
+    this.navigation.back('/familien');
   }
 
   getAdressString(adress: PrismaJson.Address | null | undefined): string {

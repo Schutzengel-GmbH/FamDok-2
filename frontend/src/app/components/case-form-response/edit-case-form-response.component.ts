@@ -11,7 +11,7 @@ import {
   FullCaseForm,
   FullCaseFormResponse,
 } from '../../../../../shared/types';
-import { Router } from '@angular/router';
+import { NavigationService } from 'src/app/services/navigation.service';
 import { ToastService } from 'src/app/services/toast.service';
 import {
   AnswerModel as Answer,
@@ -49,7 +49,7 @@ export class EditCaseFormResponse implements OnInit {
     );
   });
 
-  private router = inject(Router);
+  private navigation = inject(NavigationService);
   private caseFormService = inject(CaseFormService);
   private toastService = inject(ToastService);
   private dialogService = inject(ConfirmDialogService);
@@ -102,7 +102,7 @@ export class EditCaseFormResponse implements OnInit {
           text: `Antwort für Familie ${res.case.family?.name ?? ''} gespeichert.`,
           severity: 'success',
         });
-        this.router.navigate(['/']);
+        this.navigation.back();
       });
   }
 
@@ -122,7 +122,7 @@ export class EditCaseFormResponse implements OnInit {
               text: `Antwort gelöscht.`,
               severity: 'success',
             });
-            this.router.navigate(['/']);
+            this.navigation.back();
           });
       },
     });

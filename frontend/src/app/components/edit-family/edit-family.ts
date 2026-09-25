@@ -11,7 +11,7 @@ import {
   NgbDateParserFormatter,
   NgbModal,
 } from '@ng-bootstrap/ng-bootstrap';
-import { Location } from '@angular/common';
+import { NavigationService } from 'src/app/services/navigation.service';
 import { FamilyService } from 'src/app/services/family.service';
 import { ToastService } from 'src/app/services/toast.service';
 import { FullFamily } from '../../../../../shared/types';
@@ -44,7 +44,7 @@ export class EditFamilyComponent implements OnInit {
   private familyService = inject(FamilyService);
   private modalService = inject(NgbModal);
   private toast = inject(ToastService);
-  private location = inject(Location);
+  private navigation = inject(NavigationService);
 
   protected family!: FullFamily;
   protected caregivers!: CaregiverUpdateInput[];
@@ -249,7 +249,7 @@ export class EditFamilyComponent implements OnInit {
             text: `Änderungen an ${this.name.value} wurden erfolgreich gespeichert.`,
             severity: 'success',
           });
-          this.location.back();
+          this.navigation.back();
         },
         error: () => {
           this.isSaving = false;

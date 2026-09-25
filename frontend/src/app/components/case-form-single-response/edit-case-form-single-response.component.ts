@@ -1,6 +1,6 @@
 import { Component, inject, input, model, OnInit } from '@angular/core';
 import { FullCase, FullCaseForm } from '../../../../../shared/types';
-import { Router } from '@angular/router';
+import { NavigationService } from 'src/app/services/navigation.service';
 import { ToastService } from 'src/app/services/toast.service';
 import { QuestionComponent } from '../questions/question/question.component';
 import { SelectPersonComponent } from '../select-person-component/select-person-component';
@@ -28,7 +28,7 @@ export class EditCaseFormSingleResponse implements OnInit {
   responseId!: string | undefined;
   protected answers: Record<Answer['questionId'], Answer> = {};
 
-  private router = inject(Router);
+  private navigation = inject(NavigationService);
   private caseFormService = inject(CaseFormService);
   private toastService = inject(ToastService);
   private dialogService = inject(ConfirmDialogService);
@@ -78,7 +78,7 @@ export class EditCaseFormSingleResponse implements OnInit {
           text: `Antwort für Familie ${res.case.family?.name ?? ''} gespeichert.`,
           severity: 'success',
         });
-        this.router.navigate(['/']);
+        this.navigation.back();
       });
   }
 
@@ -98,7 +98,7 @@ export class EditCaseFormSingleResponse implements OnInit {
               text: `Antwort gelöscht.`,
               severity: 'success',
             });
-            this.router.navigate(['/']);
+            this.navigation.back();
           });
       },
     });

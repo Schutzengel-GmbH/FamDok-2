@@ -29,6 +29,7 @@ import {
 import { NgSelectComponent } from '@ng-select/ng-select';
 import { ContactDocumentationOptions } from '../../../../../shared/sharedGlobals';
 import { Router } from '@angular/router';
+import { NavigationService } from 'src/app/services/navigation.service';
 import { NgbDateDeParserFormatter } from 'src/app/util/NgbDatePickerFormatter';
 import { ContactDocumentationService } from 'src/app/services/contact-documentation.service';
 import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
@@ -65,6 +66,7 @@ export class EditContactDocumentation implements OnChanges {
   private toastService = inject(ToastService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private navigation = inject(NavigationService);
   private dialogService = inject(ConfirmDialogService);
 
   protected form!: FormGroup;
@@ -149,7 +151,7 @@ export class EditContactDocumentation implements OnChanges {
         text: `Dokumentation gespeichert.`,
         severity: 'success',
       });
-      if (navigateAfterSave) this.router.navigate(['/']);
+      if (navigateAfterSave) this.navigation.back();
     };
 
     if (docValue) {
@@ -216,7 +218,7 @@ export class EditContactDocumentation implements OnChanges {
               text: `Dokumentation gelöscht.`,
               severity: 'success',
             });
-            this.router.navigate(['/']);
+            this.navigation.back();
           });
       },
     });
