@@ -2,7 +2,11 @@
 // Neue globale Styles gehören in den passenden Ordner, nicht in diese Datei.
 
 // 1. Drittanbieter-CSS
-// (Bootstrap, Bootstrap-Icons und das ng-select-Theme werden in angular.json unter "styles" eingebunden.)
+// Per Paketname eingebunden (nicht über "node_modules/..."-Pfade in angular.json), damit sie auch
+// aufgelöst werden, wenn node_modules nicht direkt im Frontend-Ordner liegt (Docker-Build).
+@use "bootstrap/dist/css/bootstrap.min.css" as bootstrap-css;
+@use "bootstrap-icons/font/bootstrap-icons.css";
+@use "@ng-select/ng-select/themes/default.theme.css";
 @use "@swimlane/ngx-datatable/index.scss";
 @use "@swimlane/ngx-datatable/themes/bootstrap.scss" as datatable-bootstrap;
 @use "@swimlane/ngx-datatable/themes/material.scss";
