@@ -1,7 +1,12 @@
 /// <reference types="@angular/localize" />
 
 import '../../shared/sharedGlobals';
-import { enableProdMode, ErrorHandler } from '@angular/core';
+import {
+  enableProdMode,
+  ErrorHandler,
+  inject,
+  provideAppInitializer,
+} from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -24,6 +29,7 @@ import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { httpErrorInterceptor } from './app/interceptors/http-error.interceptor';
 import { ExceptionHandler } from './app/error-handler';
 import { superJSONInterceptor } from './app/interceptors/http-superjson.interceptor';
+import { NavigationService } from './app/services/navigation.service';
 
 async function main() {
   if (!isDevMode()) {
@@ -82,6 +88,10 @@ async function main() {
         ]),
       ),
       provideRouter(routes),
+      // Start tracking in-app history before the first navigation (see NavigationService).
+      provideAppInitializer(() => {
+        inject(NavigationService);
+      }),
       provideCharts(withDefaultRegisterables()),
     ],
   });

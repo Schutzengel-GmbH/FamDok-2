@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Location } from '@angular/common';
+import { NavigationService } from 'src/app/services/navigation.service';
 import Keycloak from 'keycloak-js';
 
 import { EditFamilyPage } from './edit-family-page';
@@ -21,7 +21,7 @@ describe('EditFamilyPage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: Keycloak, useValue: mockKeycloak() },
-        { provide: Location, useValue: jasmine.createSpyObj('Location', ['back']) },
+        { provide: NavigationService, useValue: jasmine.createSpyObj('NavigationService', ['back']) },
         {
           provide: ActivatedRoute,
           useValue: {

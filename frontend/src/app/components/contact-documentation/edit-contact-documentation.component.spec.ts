@@ -5,6 +5,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
+import { NavigationService } from 'src/app/services/navigation.service';
 import Keycloak from 'keycloak-js';
 
 import { EditContactDocumentation } from './edit-contact-documentation.component';
@@ -21,6 +22,7 @@ describe('EditContactDocumentation', () => {
   let toast: ToastService;
   let confirmDialog: ConfirmDialogService;
   let router: Router;
+  let navigation: NavigationService;
 
   const testCase: any = {
     id: 'case-1',
@@ -56,6 +58,8 @@ describe('EditContactDocumentation', () => {
     confirmDialog = TestBed.inject(ConfirmDialogService);
     router = TestBed.inject(Router);
     spyOn(router, 'navigate');
+    navigation = TestBed.inject(NavigationService);
+    spyOn(navigation, 'back');
 
     fixture = TestBed.createComponent(EditContactDocumentation);
     component = fixture.componentInstance;
@@ -114,7 +118,7 @@ describe('EditContactDocumentation', () => {
 
     expect(toast.toasts().length).toBe(1);
     expect(toast.toasts()[0].severity).toBe('success');
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(navigation.back).toHaveBeenCalled();
   });
 
   it('creates a new documentation for the initialCase when no doc exists yet', () => {
@@ -140,7 +144,7 @@ describe('EditContactDocumentation', () => {
     req.flush({ id: 'doc-2' });
 
     expect(toast.toasts().length).toBe(1);
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(navigation.back).toHaveBeenCalled();
   });
 
   it('does nothing on save when there is no case to attach the documentation to', () => {
@@ -191,7 +195,7 @@ describe('EditContactDocumentation', () => {
     req.flush({});
 
     expect(toast.toasts().some((t) => t.title === 'Gelöscht')).toBeTrue();
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(navigation.back).toHaveBeenCalled();
   });
 
   it('defaults to the "daten" tab', () => {

@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { NavigationService } from 'src/app/services/navigation.service';
 import { GeneralFormService } from 'src/app/services/general-form.service';
 import {
   FullGeneralForm,
@@ -22,6 +23,7 @@ export class GeneralFormPage {
   private formService = inject(GeneralFormService);
   private activatedRoute = inject(ActivatedRoute);
   private router = inject(Router);
+  private navigation = inject(NavigationService);
   private toast = inject(ToastService);
   private dialogService = inject(ConfirmDialogService);
 
@@ -89,7 +91,7 @@ export class GeneralFormPage {
             text: `Antwort zu ${this.form.name} erfolgreich gespeichert.`,
             severity: 'success',
           });
-          this.router.navigate(['']);
+          this.navigation.back();
         },
         error: (err) => {
           this.toast.show({
@@ -129,7 +131,7 @@ export class GeneralFormPage {
             text: `Antwort gelöscht.`,
             severity: 'success',
           });
-          this.router.navigate(['/']);
+          this.navigation.back();
         });
       },
     });

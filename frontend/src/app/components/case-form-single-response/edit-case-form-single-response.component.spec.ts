@@ -5,6 +5,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
+import { NavigationService } from 'src/app/services/navigation.service';
 
 import { EditCaseFormSingleResponse } from './edit-case-form-single-response.component';
 import { ToastService } from 'src/app/services/toast.service';
@@ -18,6 +19,7 @@ describe('EditCaseFormSingleResponse', () => {
   let toast: ToastService;
   let confirmDialog: ConfirmDialogService;
   let router: Router;
+  let navigation: NavigationService;
 
   const testCase: any = {
     id: 'case-1',
@@ -39,6 +41,8 @@ describe('EditCaseFormSingleResponse', () => {
     confirmDialog = TestBed.inject(ConfirmDialogService);
     router = TestBed.inject(Router);
     spyOn(router, 'navigate');
+    navigation = TestBed.inject(NavigationService);
+    spyOn(navigation, 'back');
 
     fixture = TestBed.createComponent(EditCaseFormSingleResponse);
     component = fixture.componentInstance;
@@ -95,7 +99,7 @@ describe('EditCaseFormSingleResponse', () => {
 
     expect(toast.toasts().length).toBe(1);
     expect(toast.toasts()[0].severity).toBe('success');
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(navigation.back).toHaveBeenCalled();
   });
 
   it('sends the caregiverId (not childId) when the selected person is a caregiver', () => {
@@ -170,6 +174,6 @@ describe('EditCaseFormSingleResponse', () => {
     req.flush({});
 
     expect(toast.toasts().some((t) => t.title === 'Gelöscht')).toBeTrue();
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(navigation.back).toHaveBeenCalled();
   });
 });

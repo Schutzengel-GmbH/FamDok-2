@@ -6,7 +6,8 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { NavigationService } from 'src/app/services/navigation.service';
 import { FullCase } from '../../../../../shared/types';
 import {
   NgbDateAdapter,
@@ -50,7 +51,7 @@ export class CreateFamilyComponent {
   private caseService = inject(CaseService);
   private modalService = inject(NgbModal);
   private toastService = inject(ToastService);
-  private location = inject(Location);
+  private navigation = inject(NavigationService);
   private meService = inject(MeService);
 
   protected readonly Familienstand = Object.keys(Familienstand);
@@ -245,7 +246,7 @@ export class CreateFamilyComponent {
         this.form.reset();
         this.caregivers = [];
         this.children = [];
-        this.location.back();
+        this.navigation.back();
         this.toastService.show({
           title: 'Gespeichert',
           text: `Deine neuangelegte Familie wurde gespeichert.`,

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Location } from '@angular/common';
+import { NavigationService } from 'src/app/services/navigation.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import Keycloak from 'keycloak-js';
 
@@ -16,7 +16,7 @@ describe('EditFamily', () => {
   let fixture: ComponentFixture<EditFamilyComponent>;
   let httpMock: HttpTestingController;
   let modal: jasmine.SpyObj<NgbModal>;
-  let location: jasmine.SpyObj<Location>;
+  let navigation: jasmine.SpyObj<NavigationService>;
 
   const family = {
     id: 'family-1',
@@ -40,14 +40,14 @@ describe('EditFamily', () => {
 
   beforeEach(async () => {
     modal = jasmine.createSpyObj('NgbModal', ['open']);
-    location = jasmine.createSpyObj('Location', ['back']);
+    navigation = jasmine.createSpyObj('NavigationService', ['back']);
 
     await TestBed.configureTestingModule({
       imports: [EditFamilyComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: Location, useValue: location },
+        { provide: NavigationService, useValue: navigation },
         { provide: NgbModal, useValue: modal },
         { provide: Keycloak, useValue: mockKeycloak() },
       ],
@@ -287,7 +287,7 @@ describe('EditFamily', () => {
       req.flush(family as any);
 
       expect(toast.toasts()[0].severity).toBe('success');
-      expect(location.back).toHaveBeenCalled();
+      expect(navigation.back).toHaveBeenCalled();
     });
 
     it('shows an error toast when saving fails', () => {
@@ -301,7 +301,7 @@ describe('EditFamily', () => {
         .flush('Boom', { status: 500, statusText: 'Server Error' });
 
       expect(toast.toasts()[0].severity).toBe('danger');
-      expect(location.back).not.toHaveBeenCalled();
+      expect(navigation.back).not.toHaveBeenCalled();
     });
   });
 

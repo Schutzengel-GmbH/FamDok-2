@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Location } from '@angular/common';
+import { NavigationService } from 'src/app/services/navigation.service';
 import Keycloak from 'keycloak-js';
 
 import { FamilyDetailComponent } from './family-detail.component';
@@ -14,7 +14,7 @@ describe('FamilyDetailComponent', () => {
   let component: FamilyDetailComponent;
   let fixture: ComponentFixture<FamilyDetailComponent>;
   let httpMock: HttpTestingController;
-  let location: jasmine.SpyObj<Location>;
+  let navigation: jasmine.SpyObj<NavigationService>;
 
   const baseCase = {
     id: 'case-1',
@@ -26,14 +26,14 @@ describe('FamilyDetailComponent', () => {
   };
 
   beforeEach(async () => {
-    location = jasmine.createSpyObj('Location', ['back']);
+    navigation = jasmine.createSpyObj('NavigationService', ['back']);
 
     await TestBed.configureTestingModule({
       imports: [FamilyDetailComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: Location, useValue: location },
+        { provide: NavigationService, useValue: navigation },
         { provide: Keycloak, useValue: mockKeycloak() },
       ],
     }).compileComponents();
@@ -68,7 +68,7 @@ describe('FamilyDetailComponent', () => {
   it('goBack navigates back in browser history', () => {
     component.goBack();
 
-    expect(location.back).toHaveBeenCalled();
+    expect(navigation.back).toHaveBeenCalledWith('/familien');
   });
 
   describe('getAdressString', () => {
@@ -185,7 +185,7 @@ describe('FamilyDetailComponent', () => {
     it('goes back when the current user removed themselves', () => {
       component.responsibleUsersChanged(true);
 
-      expect(location.back).toHaveBeenCalled();
+      expect(navigation.back).toHaveBeenCalledWith('/familien');
     });
   });
 
