@@ -3,7 +3,7 @@ import {
   computed,
   inject,
   input,
-  model,
+  linkedSignal,
   output,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -19,18 +19,32 @@ import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
 import { ToastService } from 'src/app/services/toast.service';
 import { zip } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { NgbDatepickerModule, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
+import {
+  NgbDateAdapter,
+  NgbDateNativeAdapter,
+  NgbDateParserFormatter,
+  NgbDatepickerModule,
+} from '@ng-bootstrap/ng-bootstrap';
+import { NgbDateDeParserFormatter } from 'src/app/util/NgbDatePickerFormatter';
 
 @Component({
   selector: 'app-tab-close',
   imports: [FormsModule, NgbDatepickerModule],
   templateUrl: './tab-close.component.html',
   standalone: true,
+  providers: [
+    { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter },
+    { provide: NgbDateParserFormatter, useClass: NgbDateDeParserFormatter },
+  ],
 })
 export class TabClose {
   selectedCase = input.required<FullCase>();
   readOnly = input(false);
-  date = model<Date>(new Date());
+  /** The case's closing date if closed, otherwise today. Resets whenever the case changes. */
+  protected date = linkedSignal(() => {
+    const closedAt = this.selectedCase().closedAt;
+    return closedAt ? new Date(closedAt) : new Date();
+  });
   changed = output<void>();
 
   private router = inject(Router);
@@ -101,9 +115,8 @@ export class TabClose {
     return d ? this.formatDate(d) : '';
   }
 
-  onDateSelect(e: Event) {
-    const d = new Date((e.target as HTMLInputElement).value);
-    this.date.set(d);
+  onDateSelect(d: Date | null) {
+    if (d instanceof Date) this.date.set(d);
   }
 
   close() {

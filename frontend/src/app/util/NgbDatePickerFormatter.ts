@@ -27,6 +27,7 @@ export class NgbDateDeParserFormatter extends NgbDateParserFormatter {
   override format(date: NgbDateStruct | null): string {
     if (!date) return '';
     const { year, month, day } = date;
-    return `${day}.${month}.${year}`;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(day)}.${pad(month)}.${year}`;
   }
 }
