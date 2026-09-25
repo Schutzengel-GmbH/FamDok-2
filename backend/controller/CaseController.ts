@@ -1,5 +1,6 @@
 import { Primitive } from 'zod/v3';
 import { Response } from 'express';
+import archiver from 'archiver';
 import { add, differenceInMinutes } from 'date-fns';
 import { prisma } from '../db';
 import {
@@ -7,12 +8,13 @@ import {
   ForbiddenError,
   NotFoundError,
 } from '../util/authUtils';
-import { PDFService } from '../util/pdfService';
+import { PDFService, StammdatenCase } from '../util/pdfService';
 import { deleteStoredFile, streamFile } from '../util/fileStorage';
 import { purgeFamilyPersonalData } from '../util/personalDataPurge';
 import {
   canCreate,
   canEditCase,
+  canExportCase,
   canHandover,
   canSeeCase,
   canSeeCases,
@@ -44,6 +46,20 @@ import {
   CONTACT_DOCUMENTATION_DEFAULT_INCLUDE,
   USER_DEFAULT_INCLUDE,
 } from '../../shared/consts';
+import { CSV_BOM, CsvColumn, toCsv } from '../../shared/utils/csv';
+import { getAnswerValue } from '../../shared/utils/answerValue';
+import {
+  caseExportFilename,
+  safeFilename,
+  stammdatenFilename,
+} from '../../shared/utils/filename';
+
+function isoDay(d: Date | null | undefined): string {
+  if (!d) return 'ohne-Datum';
+  return new Date(d)
+    .toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' })
+    .slice(0, 10);
+}
 
 export class CaseController {
   static async getAll(
@@ -678,6 +694,146 @@ export class CaseController {
     });
     deleteStoredFile(deleted.storageKey, 'case-attachments');
     return deleted;
+  }
+
+  /**
+   * Loads a case with everything the Stammdaten PDF needs, after checking the user may export it.
+   * Throws BadRequestError once the family's personal data has been purged - there's no
+   * Stammdaten left to export then.
+   */
+  private static async loadCaseForExport(
+    user: FullUser,
+    id: string
+  ): Promise<StammdatenCase> {
+    const c = await prisma.case.findUnique({
+      where: { id },
+      include: {
+        ...CASE_DEFAULT_INCLUDE,
+        organisation: true,
+        subOrganisation: true,
+      },
+    });
+    if (!c) throw new NotFoundError();
+    if (!canExportCase(user, c))
+      throw new ForbiddenError("User can't export this case");
+    if (!c.family)
+      throw new BadRequestError(
+        'Personal data of this family has already been deleted'
+      );
+
+    return c;
+  }
+
+  static async getStammdatenPDF(user: FullUser, id: string) {
+    const c = await CaseController.loadCaseForExport(user, id);
+    const buffer = await PDFService.stammdatenPDF(c);
+    return { filename: stammdatenFilename(c.family?.name), buffer };
+  }
+
+  /**
+   * Builds a ZIP of a case's full history: the Stammdaten PDF, one PDF per contact documentation,
+   * and one CSV per CaseForm (one row per response). Authorization and all data loading happen
+   * before anything is returned, so the caller can still send a proper error response; the
+   * returned archive is already finalized and only needs piping into the response.
+   */
+  static async getCaseExport(user: FullUser, id: string) {
+    const c = await CaseController.loadCaseForExport(user, id);
+
+    const [docs, responses] = await Promise.all([
+      prisma.contactDocumentation.findMany({
+        where: { caseId: id },
+        include: CONTACT_DOCUMENTATION_DEFAULT_INCLUDE,
+        orderBy: { date: 'asc' },
+      }),
+      prisma.caseFormResponse.findMany({
+        where: { caseId: id },
+        include: {
+          answers: true,
+          caseForm: { include: { questions: { orderBy: { order: 'asc' } } } },
+          child: true,
+          caregiver: true,
+          createdBy: { include: USER_DEFAULT_INCLUDE },
+        },
+      }),
+    ]);
+
+    const stammdaten = await PDFService.stammdatenPDF(c);
+    const docPDFs = await Promise.all(
+      docs.map((d) => PDFService.contactDocumentationPDF(d))
+    );
+
+    const archive = archiver('zip');
+    archive.append(stammdaten, { name: stammdatenFilename(c.family?.name) });
+
+    const perDayCount = new Map<string, number>();
+    docs.forEach((d, i) => {
+      const day = isoDay(d.date);
+      const n = (perDayCount.get(day) ?? 0) + 1;
+      perDayCount.set(day, n);
+      archive.append(docPDFs[i], {
+        name: `Kontaktdokumentationen/${day}_${String(n).padStart(2, '0')}.pdf`,
+      });
+    });
+
+    type ExportResponse = (typeof responses)[number];
+    const byForm = new Map<string, ExportResponse[]>();
+    for (const r of responses) {
+      if (!r.caseForm) continue;
+      byForm.set(r.caseForm.id, [...(byForm.get(r.caseForm.id) ?? []), r]);
+    }
+
+    const usedNames = new Set<string>();
+    for (const rows of byForm.values()) {
+      const form = rows[0].caseForm!;
+      const columns: CsvColumn<ExportResponse>[] = [
+        ...(form.isPersonal
+          ? [
+              {
+                header: 'Person',
+                value: (r: ExportResponse) => {
+                  const p = r.child ?? r.caregiver;
+                  return p ? [p.name, p.lastName].filter(Boolean).join(' ') : '';
+                },
+              },
+            ]
+          : []),
+        ...form.questions.map((q) => ({
+          header: q.text,
+          value: (r: ExportResponse) =>
+            getAnswerValue(
+              r.answers.find((a) => a.questionId === q.id),
+              q
+            ),
+        })),
+        {
+          header: 'Erstellt von',
+          value: (r) =>
+            r.createdBy
+              ? [r.createdBy.firstName, r.createdBy.lastName]
+                  .filter(Boolean)
+                  .join(' ') || r.createdBy.email
+              : '',
+        },
+      ];
+
+      let name = safeFilename(form.name);
+      for (let i = 2; usedNames.has(name); i++)
+        name = `${safeFilename(form.name)}_${i}`;
+      usedNames.add(name);
+
+      archive.append(CSV_BOM + toCsv(rows, columns), {
+        name: `Fragebögen/${name}.csv`,
+      });
+    }
+
+    // Failures are surfaced via the archive's 'error' event (handled by the router); swallow the
+    // promise rejection so it doesn't additionally crash the process as an unhandled rejection.
+    archive.finalize().catch(() => {});
+
+    return {
+      filename: caseExportFilename(c.family?.name),
+      archive,
+    };
   }
 }
 

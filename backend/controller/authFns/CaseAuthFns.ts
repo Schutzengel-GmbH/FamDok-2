@@ -36,6 +36,19 @@ export function canSeeCase(user: FullUser, c: CaseWithScope): boolean {
   return c.responsibleUsers?.some((ru) => ru.id === user.id) ?? false;
 }
 
+/**
+ * Whether the user may export a case's full, non-anonymized data (Stammdaten PDF / case ZIP).
+ * Unlike canSeeCase, Controller/OrgController are excluded - they only ever get anonymized data.
+ */
+export function canExportCase(user: FullUser, c: CaseWithScope): boolean {
+  if (user.role === Role.Admin) return true;
+  if (c.responsibleUsers?.some((ru) => ru.id === user.id)) return true;
+  if (user.role === Role.OrgCoordinator) return isSameOrg(user, c.organisationId);
+  if (user.role === Role.SubOrgCoordinator)
+    return isSameSubOrg(user, c.subOrganisationId);
+  return false;
+}
+
 export function canEditCase(
   user: User,
   c: Case & { responsibleUsers: { id: string }[] }

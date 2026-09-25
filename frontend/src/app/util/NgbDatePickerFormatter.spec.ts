@@ -16,7 +16,7 @@ describe('NgbDateDeParserFormatter', () => {
 
   describe('format', () => {
     it('formats a date struct as a German date string', () => {
-      expect(formatter.format({ day: 15, month: 3, year: 2026 })).toBe('15.3.2026');
+      expect(formatter.format({ day: 15, month: 3, year: 2026 })).toBe('15.03.2026');
     });
 
     it('returns an empty string for null', () => {

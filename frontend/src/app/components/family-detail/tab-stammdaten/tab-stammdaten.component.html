@@ -2,6 +2,35 @@
   <section class="detail-info">
     <h6 class="section-title">Stammdaten</h6>
 
+    @if (canExport()) {
+      <div class="export-actions">
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="downloading()"
+          (click)="downloadStammdaten()">
+          @if (downloading() === 'stammdaten') {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          } @else {
+            <i class="bi bi-file-earmark-person"></i>
+          }
+          Stammdaten herunterladen (PDF)
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="downloading()"
+          (click)="downloadCaseExport()">
+          @if (downloading() === 'zip') {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          } @else {
+            <i class="bi bi-file-earmark-zip"></i>
+          }
+          Gesamte Fallakte herunterladen (ZIP)
+        </button>
+      </div>
+    }
+
     <dl class="detail-list">
       <div class="detail-row">
         <dt>Adresse</dt>

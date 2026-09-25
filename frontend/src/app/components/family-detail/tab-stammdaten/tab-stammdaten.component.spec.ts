@@ -1,5 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import Keycloak from 'keycloak-js';
+import { mockKeycloak } from 'src/app/testing/keycloak-mock';
 
 import { TabStammdatenComponent } from './tab-stammdaten.component';
 
@@ -11,7 +16,13 @@ describe('TabStammdatenComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TabStammdatenComponent],
-      providers: [provideCharts(withDefaultRegisterables())],
+      providers: [
+        provideCharts(withDefaultRegisterables()),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: Keycloak, useValue: mockKeycloak() },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TabStammdatenComponent);
