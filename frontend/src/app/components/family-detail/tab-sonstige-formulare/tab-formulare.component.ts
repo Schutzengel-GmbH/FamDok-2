@@ -1,16 +1,16 @@
 import { Component, inject, input } from '@angular/core';
 import { FullCase } from '../../../../../../shared/types';
 import { Router } from '@angular/router';
-import { FamilyService } from 'src/app/services/family.service';
 import { AsyncPipe } from '@angular/common';
 import { map } from 'rxjs';
 import { sortByStringProperty } from 'src/app/util/generalUtils';
 import { CaseFormService } from 'src/app/services/case-form.service';
+import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-tab-sonstige-formulare',
   standalone: true,
-  imports: [AsyncPipe],
+  imports: [AsyncPipe, NgbTooltip],
   templateUrl: './tab-formulare.component.html',
 })
 export class TabSonstigeFormulareComponent {

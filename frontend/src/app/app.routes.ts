@@ -30,6 +30,7 @@ import { Settings } from './components/settings/settings';
 import { GeneralFormEditorComponent } from './components/general-form-editor/general-form-editor';
 import { CaseFormEditorComponent } from './components/case-form-editor/case-form-editor';
 import { DocumentLibraryPage } from './pages/document-library/document-library.page';
+import { FamilyDetailPage } from './pages/family-detail/family-detail.page';
 
 export const routes: Routes = [
   {
@@ -64,6 +65,29 @@ export const routes: Routes = [
   {
     path: 'familien',
     component: Families,
+    canActivate: [roleGuard([
+      Role.User,
+      Role.Admin,
+      Role.OrgCoordinator,
+      Role.SubOrgCoordinator,
+    ])],
+  },
+  {
+    // Full detail view of a single case - former family-detail-modal, now a page of its own
+    // so changes made there keep the URL (and thus back/reload) pinned to the current case.
+    path: 'familien/:caseId',
+    component: FamilyDetailPage,
+    canActivate: [roleGuard([
+      Role.User,
+      Role.Admin,
+      Role.OrgCoordinator,
+      Role.SubOrgCoordinator,
+    ])],
+  },
+  {
+    // Same page, opened directly on a given tab (e.g. from a warning link) - see TabKey.
+    path: 'familien/:caseId/:tab',
+    component: FamilyDetailPage,
     canActivate: [roleGuard([
       Role.User,
       Role.Admin,

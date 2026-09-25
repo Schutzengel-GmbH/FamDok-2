@@ -252,30 +252,22 @@ describe('Families', () => {
     ).toBe('Hauptstr. 1, 12345 Berlin');
   });
 
-  describe('detail modal', () => {
-    it('openDetailModal selects the matching case and marks it read-only when not editable', () => {
+  it('getAdressString falls back to a placeholder when there is no address', () => {
+    expect(component.getAdressString(null)).toBe('Keine Adresse hinterlegt');
+    expect(component.getAdressString(undefined)).toBe('Keine Adresse hinterlegt');
+  });
+
+  describe('openDetails', () => {
+    it('navigates to the family-detail page for the given case', () => {
       fixture.detectChanges();
-      flushBootstrapRequests(buildUser({ id: 'me', role: Role.User }));
-      const casesReq = httpMock.expectOne((r) => r.url.includes('/case?'));
-      casesReq.flush([
-        { id: 'case-1', familyId: 'family-1', responsibleUsers: [{ id: 'other' }] },
-      ]);
+      flushBootstrapRequests();
+      httpMock.match(() => true).forEach((r) => r.flush([]));
+      const router = TestBed.inject(Router);
+      spyOn(router, 'navigate');
 
-      component.openDetailModal('case-1');
+      component.openDetails('case-1');
 
-      expect(component['isDetailModalOpen']).toBeTrue();
-      expect(component['selectedCase']).toEqual(
-        jasmine.objectContaining({ familyId: 'family-1' }),
-      );
-      expect(component['modalReadOnly']).toBeTrue();
-    });
-
-    it('closeDetails closes the modal', () => {
-      component['isDetailModalOpen'] = true;
-
-      component.closeDetails();
-
-      expect(component['isDetailModalOpen']).toBeFalse();
+      expect(router.navigate).toHaveBeenCalledWith(['/familien', 'case-1']);
     });
   });
 });

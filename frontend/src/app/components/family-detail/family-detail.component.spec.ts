@@ -1,18 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Location } from '@angular/common';
 import Keycloak from 'keycloak-js';
 
-import { FamilyDetailModalComponent } from './family-detail-modal.component';
+import { FamilyDetailComponent } from './family-detail.component';
 import { mockKeycloak } from 'src/app/testing/keycloak-mock';
 import { flushSettings } from 'src/app/testing/http-helpers';
 import { ToastService } from 'src/app/services/toast.service';
 import { environment } from 'src/environments/environment';
 
-describe('FamilyDetailModalComponent', () => {
-  let component: FamilyDetailModalComponent;
-  let fixture: ComponentFixture<FamilyDetailModalComponent>;
+describe('FamilyDetailComponent', () => {
+  let component: FamilyDetailComponent;
+  let fixture: ComponentFixture<FamilyDetailComponent>;
   let httpMock: HttpTestingController;
+  let location: jasmine.SpyObj<Location>;
 
   const baseCase = {
     id: 'case-1',
@@ -24,19 +26,21 @@ describe('FamilyDetailModalComponent', () => {
   };
 
   beforeEach(async () => {
+    location = jasmine.createSpyObj('Location', ['back']);
+
     await TestBed.configureTestingModule({
-      imports: [FamilyDetailModalComponent],
+      imports: [FamilyDetailComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: Location, useValue: location },
         { provide: Keycloak, useValue: mockKeycloak() },
       ],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
-    fixture = TestBed.createComponent(FamilyDetailModalComponent);
+    fixture = TestBed.createComponent(FamilyDetailComponent);
     component = fixture.componentInstance;
-    fixture.componentRef.setInput('isOpen', true);
     fixture.componentRef.setInput('selectedCase', baseCase as any);
     fixture.detectChanges();
     flushSettings(httpMock);
@@ -61,16 +65,10 @@ describe('FamilyDetailModalComponent', () => {
     ]);
   });
 
-  it('close resets modal state and emits closed', () => {
-    component.setTab('zielvereinbarungen');
-    let closed = false;
-    component.closed.subscribe(() => (closed = true));
+  it('goBack navigates back in browser history', () => {
+    component.goBack();
 
-    component.close();
-
-    expect(component.isOpen()).toBeFalse();
-    expect(component['activeTab']()).toBe('stammdaten');
-    expect(closed).toBeTrue();
+    expect(location.back).toHaveBeenCalled();
   });
 
   describe('getAdressString', () => {
@@ -184,14 +182,10 @@ describe('FamilyDetailModalComponent', () => {
       expect(component['activeTab']()).toBe('fachkraft');
     });
 
-    it('closes the modal when the current user removed themselves', () => {
-      let closed = false;
-      component.closed.subscribe(() => (closed = true));
-
+    it('goes back when the current user removed themselves', () => {
       component.responsibleUsersChanged(true);
 
-      expect(component.isOpen()).toBeFalse();
-      expect(closed).toBeTrue();
+      expect(location.back).toHaveBeenCalled();
     });
   });
 
