@@ -3,10 +3,18 @@
   <div class="d-flex flex-column gap-2">
     @for (form of forms$ | async; track form) {
       <button
-        class="btn btn-outline-secondary"
+        class="btn btn-outline-secondary d-flex align-items-center justify-content-between"
         [disabled]="readOnly()"
         (click)="gotoForm(form.id)">
         {{ form.name }}
+        @if (form.containsPersonalData) {
+          <span
+            ngbTooltip="Dieses Formular enthält personenbezogene Daten"
+            container="body"
+            class="badge rounded-pill text-bg-secondary ms-2">
+            <i class="bi bi-info-circle"></i>
+          </span>
+        }
       </button>
     }
   </div>
