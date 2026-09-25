@@ -252,6 +252,11 @@ describe('Families', () => {
     ).toBe('Hauptstr. 1, 12345 Berlin');
   });
 
+  it('getAdressString falls back to a placeholder when there is no address', () => {
+    expect(component.getAdressString(null)).toBe('Keine Adresse hinterlegt');
+    expect(component.getAdressString(undefined)).toBe('Keine Adresse hinterlegt');
+  });
+
   describe('openDetails', () => {
     it('navigates to the family-detail page for the given case', () => {
       fixture.detectChanges();

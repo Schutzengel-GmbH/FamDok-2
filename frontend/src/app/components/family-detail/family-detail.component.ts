@@ -138,6 +138,12 @@ export class FamilyDetailComponent {
     }
   }
 
+  /** Handles the mobile `<select>` tab switcher (the tab bar itself is a plain nav-tabs list,
+   * shown instead on wider screens - see detail-tabs__select-wrap in the stylesheet). */
+  onTabSelectChange(event: Event): void {
+    this.setTab((event.target as HTMLSelectElement).value as TabKey);
+  }
+
   /** Leaves the case, back to wherever it was opened from (family list, dashboard, a warning
    * link, ...). Just browser-back, since the page has no other notion of a "parent" view. */
   goBack(): void {

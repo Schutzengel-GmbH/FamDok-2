@@ -1,4 +1,4 @@
-version: "3.9"
+name: fh_digihub
 
 services:
   frontend:

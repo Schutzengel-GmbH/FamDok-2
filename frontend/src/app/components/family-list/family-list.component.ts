@@ -212,7 +212,11 @@ export class Families implements OnInit {
     setTimeout(() => this.table?.recalculate(), 0);
   }
 
-  getAdressString(adress: PrismaJson.Address): string {
+  getAdressString(adress: PrismaJson.Address | null | undefined): string {
+    if (!adress) {
+      return 'Keine Adresse hinterlegt';
+    }
+
     return `${adress.street} ${adress.number}, ${adress.plz} ${adress.city}`;
   }
 

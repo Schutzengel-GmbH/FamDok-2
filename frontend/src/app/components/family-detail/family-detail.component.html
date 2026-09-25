@@ -15,7 +15,26 @@
     </div>
 
     <div class="detail-tabs">
-      <ul class="nav nav-tabs">
+      <label class="detail-tabs__select-wrap">
+        <span class="visually-hidden">Bereich wählen</span>
+        <select
+          class="form-select detail-tabs__select"
+          [value]="activeTab()"
+          (change)="onTabSelectChange($event)">
+          <option value="stammdaten">Stammdaten</option>
+          <option value="zielvereinbarungen">Zielvereinbarungen</option>
+          <option value="datenblaetter">Alle Datenblätter</option>
+          <option value="freie-dokumentation">Fallkontaktdokumentation</option>
+          @if (!readOnly()) {
+            <option value="formulare">Sonstige Formulare</option>
+          }
+          <option value="anhaenge">Anhänge</option>
+          <option value="fachkraft">Fachkraft</option>
+          <option value="close">Abschluss</option>
+        </select>
+      </label>
+
+      <ul class="nav nav-tabs detail-tabs__list">
         <li class="nav-item">
           <button
             type="button"

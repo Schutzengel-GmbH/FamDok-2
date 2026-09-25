@@ -72,6 +72,14 @@
   margin-bottom: 1.25rem;
 }
 
+// Mobile: a plain <select> instead of the tab bar - with this many tabs, the bar either
+// wraps into a messy grid of badges or needs horizontal scrolling, neither of which is
+// pleasant to use on a phone. Swapped back for the tab bar from `sm` up.
+.detail-tabs__select-wrap {
+  display: none;
+  margin-bottom: 0.5rem;
+}
+
 .detail-tabs .nav-tabs {
   border-bottom: none;
 }
@@ -88,6 +96,12 @@
   background: color-mix(in oklab, var(--bs-card-bg) 88%, var(--bs-primary) 12%);
   border: 1px solid var(--bs-border-color);
   border-bottom: none;
+}
+
+.detail-tabs__select {
+  font-weight: 600;
+  border-color: var(--bs-primary);
+  background-color: color-mix(in oklab, var(--bs-card-bg) 88%, var(--bs-primary) 12%);
 }
 
 .detail-body {
@@ -121,9 +135,16 @@
     border-radius: 14px;
   }
 
-  .detail-tabs .nav-link {
-    padding: 0.65rem 0.75rem;
-    font-size: 0.85rem;
+  .detail-tabs {
+    border-bottom: none;
+  }
+
+  .detail-tabs__select-wrap {
+    display: block;
+  }
+
+  .detail-tabs .nav-tabs {
+    display: none;
   }
 
   .detail-footer {
