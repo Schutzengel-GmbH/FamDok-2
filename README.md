@@ -175,6 +175,8 @@ Alle Variablen werden in **einer einzigen `.env` im Projekt-Root** gesetzt (Vorl
 | `KC_ADMIN_USER`         | Keycloak-Admin-Username (Bootstrap + Admin-Client)  | `admin`                                             |
 | `KC_ADMIN_PASSWORD`     | Keycloak-Admin-Passwort                             | `admin`                                             |
 | `KEYCLOAK_PORT`         | Host-Port für Keycloak (beide Compose-Dateien); nicht `8080`, da `docker-compose.yaml` den Frontend-Container ebenfalls auf Host-Port `8080` legt | `8090` |
+| `FRONTEND_PORT`         | Host-Port des Frontend-Containers (`docker-compose.yaml`) | `8080` |
+| `BACKEND_PORT`          | Host-Port des Backend-Containers (`docker-compose.yaml`) | `3000` |
 | `KC_BASE_URL`           | Extern erreichbare Keycloak-URL (Browser + Host-Dev-Backend); der containerisierte Backend-Service in `docker-compose.yaml` überschreibt seine eigene Kopie auf `http://keycloak:8080` | `http://localhost:8090` |
 | `KC_REALM`              | Keycloak-Realm-Name (Änderung erfordert auch manuelles Anpassen von `shared/keycloak-config/realm-import.json`) | `fh-realm` |
 | `KC_CLIENT`             | Keycloak-Client-ID (siehe Hinweis bei `KC_REALM`)   | `fh-app`                                            |
@@ -299,8 +301,8 @@ docker compose up -d --build
 
 | Service       | Port   | Beschreibung               |
 | ------------- | ------ | -------------------------- |
-| `frontend`    | `8080` | Angular-App (via Nginx)    |
-| `backend`     | `3000` | Express-API                |
+| `frontend`    | `8080` (`FRONTEND_PORT`) | Angular-App (via Nginx)    |
+| `backend`     | `3000` (`BACKEND_PORT`) | Express-API                |
 | `keycloak`    | `8090` (`KEYCLOAK_PORT`) | Keycloak-Server |
 | `app-db`      | intern | PostgreSQL Anwendungsdaten |
 | `keycloak-db` | intern | PostgreSQL Keycloak-Daten  |

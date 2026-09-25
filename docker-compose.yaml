@@ -14,7 +14,7 @@ services:
       PRODUCTION: ${PRODUCTION}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB}
     ports:
-      - 8080:8080
+      - "${FRONTEND_PORT:-8080}:8080"
     restart: unless-stopped
 
   backend:
@@ -36,14 +36,13 @@ services:
     volumes:
       - uploads-data:/app/dist/uploads
     ports:
-      - 3000:3000
+      - "${BACKEND_PORT:-3000}:3000"
     restart: unless-stopped
     depends_on:
       - app-db
 
   keycloak-db:
     image: postgres:15
-    container_name: keycloak-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${KEYCLOAK_DB_NAME}
@@ -54,7 +53,6 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.3
-    container_name: keycloak
     restart: unless-stopped
     command: ["start-dev", "--import-realm", "--proxy-headers=xforwarded"]
     environment:
@@ -74,7 +72,6 @@ services:
 
   app-db:
     image: postgres:15
-    container_name: app-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
