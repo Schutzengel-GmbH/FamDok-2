@@ -15,11 +15,12 @@ import {
   Validators,
 } from '@angular/forms';
 import { NgbDateDeParserFormatter } from 'src/app/util/NgbDatePickerFormatter';
+import { gramsToKg, kgToGrams } from 'src/app/util/healthDataUtils';
 
 function atLeastOneMeasurement(control: AbstractControl): ValidationErrors | null {
-  const weightKg = control.get('weightKg')?.value;
+  const weightG = control.get('weightG')?.value;
   const sizeCm = control.get('sizeCm')?.value;
-  return weightKg != null || sizeCm != null
+  return weightG != null || sizeCm != null
     ? null
     : { atLeastOneMeasurement: true };
 }
@@ -52,7 +53,11 @@ export class HealthDataModalComponent implements OnInit {
           this.dataPoint?.date ? new Date(this.dataPoint.date) : new Date(),
           [Validators.required],
         ],
-        weightKg: [this.dataPoint?.weightKg ?? null],
+        weightG: [
+          this.dataPoint?.weightKg != null
+            ? kgToGrams(this.dataPoint.weightKg)
+            : null,
+        ],
         sizeCm: [this.dataPoint?.sizeCm ?? null],
       },
       { validators: atLeastOneMeasurement },
@@ -62,11 +67,11 @@ export class HealthDataModalComponent implements OnInit {
   save() {
     const value = this.form.value as {
       date: Date;
-      weightKg: number | null;
+      weightG: number | null;
       sizeCm: number | null;
     };
     const dataPoint: PrismaJson.HealthDataPointChild = { date: value.date };
-    if (value.weightKg != null) dataPoint.weightKg = value.weightKg;
+    if (value.weightG != null) dataPoint.weightKg = gramsToKg(value.weightG);
     if (value.sizeCm != null) dataPoint.sizeCm = value.sizeCm;
 
     this.activeModal.close({ reason: 'save', value: dataPoint });

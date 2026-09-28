@@ -1,7 +1,29 @@
-import { ageString, getPercentileDatasets, getWeightForMonth } from './healthDataUtils';
+import {
+  ageString,
+  getPercentileDatasets,
+  getWeightForMonth,
+  gramsToKg,
+  kgToGrams,
+} from './healthDataUtils';
 import { Gender } from '../../../../shared/generated/prisma/enums';
 
 describe('healthDataUtils', () => {
+  describe('kgToGrams / gramsToKg', () => {
+    it('converts kg to the nearest gram', () => {
+      expect(kgToGrams(3.52)).toBe(3520);
+      // classic floating-point case (3.52 * 1000 === 3519.9999999999995) - must round, not floor
+      expect(kgToGrams(3.523)).toBe(3523);
+    });
+
+    it('converts grams back to kg', () => {
+      expect(gramsToKg(3520)).toBe(3.52);
+    });
+
+    it('round-trips a gram-precision value', () => {
+      expect(kgToGrams(gramsToKg(3520))).toBe(3520);
+    });
+  });
+
   describe('getPercentileDatasets', () => {
     it('returns 5 percentile datasets, each with 12 months of data', () => {
       const datasets = getPercentileDatasets(Gender.male, 0);
