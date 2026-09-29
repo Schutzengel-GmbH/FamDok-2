@@ -1,5 +1,7 @@
 <div class="modal-header">
-  <h4 class="modal-title">Messung {{ dataPoint ? "bearbeiten" : "hinzufügen" }}</h4>
+  <h4 class="modal-title">
+    Messung {{ dataPoint ? "bearbeiten" : "hinzufügen" }}
+  </h4>
   <button
     type="button"
     class="btn-close"
@@ -40,16 +42,23 @@
     </div>
 
     <!-- Gewicht -->
-    <div class="form-group mb-2">
-      <label for="weightG">Gewicht (g)</label>
+    <label for="weightG">Gewicht ({{ weightUnit() }})</label>
+    <div class="input-group mb-2">
       <input
-        id="weightG"
+        id="weight"
         type="number"
         step="1"
         min="0"
-        class="form-control"
-        formControlName="weightG"
-        placeholder="Gewicht in g" />
+        class="form-control w-50"
+        formControlName="weight"
+        placeholder="{{ 'Gewicht in ' + weightUnit() }}" />
+      <select
+        class="form-select"
+        [value]="weightUnit()"
+        (change)="changeUnit($event)">
+        <option value="g">Gramm</option>
+        <option value="kg">Kilogramm</option>
+      </select>
     </div>
 
     <!-- Größe -->
