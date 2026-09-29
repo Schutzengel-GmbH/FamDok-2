@@ -60,7 +60,9 @@ export class EditContactDocumentation implements OnChanges {
     this.doc()?.end ? this.dateToTimeString(this.doc()!.end!) : '00:00',
   );
 
-  protected setDurationViaTime = signal(false);
+  protected setDurationViaTime = linkedSignal(
+    () => !!(this.doc()?.start && this.doc()?.end),
+  );
 
   private documentationService = inject(ContactDocumentationService);
   private toastService = inject(ToastService);
@@ -194,10 +196,10 @@ export class EditContactDocumentation implements OnChanges {
   }
 
   timeStringToDate(time: string) {
-    const hours = parseInt(time.split(':')[0]);
-    const minutes = parseInt(time.split(':')[1]);
+    const [hours, minutes] = time.split(':').map((n) => parseInt(n));
 
-    const date = this.doc()?.date ?? new Date();
+    const base = this.form.get('date')?.value ?? this.doc()?.date ?? new Date();
+    const date = new Date(base);
     date.setHours(hours);
     date.setMinutes(minutes);
 
