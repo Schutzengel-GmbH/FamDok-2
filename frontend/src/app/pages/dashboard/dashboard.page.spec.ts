@@ -10,7 +10,6 @@ import Keycloak from 'keycloak-js';
 import { DashboardPage } from './dashboard.page';
 import { DashboardCasesService } from 'src/app/services/dashboard-cases.service';
 import { DashboardFamilyTableComponent } from 'src/app/components/dashboard-family-table/dashboard-family-table.component';
-import { WarningsListComponent } from 'src/app/components/warnings-list/warnings-list.component';
 import { mockKeycloak } from 'src/app/testing/keycloak-mock';
 import { flushSettings } from 'src/app/testing/http-helpers';
 import { buildUser } from 'src/app/testing/fixtures';
@@ -80,30 +79,6 @@ describe('DashboardPage', () => {
       component.familyTable = undefined as any;
 
       expect(() => component.onOpenZielvereinbarung('case-1')).not.toThrow();
-    });
-  });
-
-  describe('onDetailsClosed', () => {
-    it('reloads the shared cases and refreshes the warnings list', () => {
-      setup();
-      spyOn(dashboardCases, 'reload');
-      component.warningsList = jasmine.createSpyObj('WarningsListComponent', [
-        'refresh',
-      ]) as unknown as WarningsListComponent;
-
-      component.onDetailsClosed();
-
-      expect(dashboardCases.reload).toHaveBeenCalled();
-      expect(component.warningsList.refresh).toHaveBeenCalled();
-    });
-
-    it('does not throw when the warnings list has not rendered yet', () => {
-      setup();
-      spyOn(dashboardCases, 'reload');
-      component.warningsList = undefined as any;
-
-      expect(() => component.onDetailsClosed()).not.toThrow();
-      expect(dashboardCases.reload).toHaveBeenCalled();
     });
   });
 });

@@ -1,0 +1,44 @@
+// Design-Tokens (SCSS-Variablen). Laufzeit-Variablen (--bs-*, --app-*) liegen in base/_css-variables.scss.
+
+// Marke
+$brand-primary: #2563eb;
+$brand-primary-2: #1d4ed8;
+$brand-accent: #f59e0b;
+$brand-success: #10b981;
+$brand-danger: #ef4444;
+$brand-purple: #8b5cf6;
+
+// Flächen & Text
+$surface-1-light: #ffffff;
+$surface-2-light: #f3f4f8;
+$ink-1-light: #020617;
+$ink-2-light: #4b5563;
+
+$surface-1-dark: #020617;
+$surface-2-dark: #020617;
+$ink-1-dark: #e5e7eb;
+$ink-2-dark: #9ca3af;
+
+// Gedämpftes Slate für Labels/Untertitel (funktioniert in Light & Dark)
+$slate-muted: rgba(148, 163, 184, 0.9);
+$slate-muted-strong: rgba(148, 163, 184, 0.95);
+$slate-line: rgba(148, 163, 184, 0.35);
+
+// Radien
+$radius-pill: 999px;
+$radius-panel: 24px;
+$radius-card: 20px;
+$radius-control: 10px;
+
+// Bewegung
+$ease-fast: 0.18s ease;
+
+// Breakpoints (max-width, "down"). Werte, die nur einmal vorkommen, dürfen roh übergeben werden.
+$breakpoints: (
+  "xs": 479.98px,
+  "sm": 576px,
+  "nav": 754px,
+  "md": 767.98px,
+  "lg": 992px,
+  "xl": 1199.98px,
+);

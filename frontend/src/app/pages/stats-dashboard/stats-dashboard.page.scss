@@ -1,3 +1,5 @@
+@use "abstracts" as *;
+
 :host {
   display: block;
   height: 100%;
@@ -77,7 +79,7 @@
   margin-top: 0.75rem;
 }
 
-@media (max-width: 992px) {
+@include media-down("lg") {
   :host {
     height: auto;
   }
@@ -95,7 +97,7 @@
   }
 }
 
-@media (max-width: 576px) {
+@include media-down("sm") {
   .stats-header {
     flex-direction: column;
     align-items: flex-start;

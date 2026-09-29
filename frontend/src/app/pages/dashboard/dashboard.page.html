@@ -2,7 +2,6 @@
   <app-fachkraft-kpi-row [cases]="myCases"></app-fachkraft-kpi-row>
 
   <app-warnings-list
-    #warningsList
     class="d-block"
     [cases]="myCases"
     (openZielvereinbarung)="onOpenZielvereinbarung($event)"></app-warnings-list>
@@ -45,8 +44,7 @@
     <div class="card-body">
       <app-dashboard-family-table
         #familyTable
-        [filterTerm]="search()"
-        (detailsClosed)="onDetailsClosed()"></app-dashboard-family-table>
+        [filterTerm]="search()"></app-dashboard-family-table>
     </div>
   </div>
 </div>

@@ -17,7 +17,6 @@ const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   standalone: true,
   imports: [ReactiveFormsModule, SelectOptionsEditorComponent],
   templateUrl: './question-editor.html',
-  styleUrl: './question-editor.scss',
 })
 export class QuestionEditorComponent {
   @Input({ required: true }) questionGroup!: FormGroup;

@@ -1,0 +1,161 @@
+@use "abstracts" as *;
+
+:host {
+  display: block;
+}
+
+.family-detail {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.1rem;
+}
+
+.detail-header__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.detail-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bs-heading-color, var(--bs-body-color));
+}
+
+.page-kicker {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--bs-primary) 12%, transparent);
+  color: var(--bs-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.detail-back {
+  flex: 0 0 auto;
+  width: 2.4rem;
+  height: 2.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.detail-back:hover {
+  background: color-mix(in oklab, var(--bs-primary) 10%, transparent);
+  color: var(--bs-primary);
+}
+
+.detail-tabs {
+  padding: 0 0.2rem;
+  border-bottom: 1px solid var(--bs-border-color);
+  margin-bottom: 1.25rem;
+}
+
+// Mobile: a plain <select> instead of the tab bar - with this many tabs, the bar either
+// wraps into a messy grid of badges or needs horizontal scrolling, neither of which is
+// pleasant to use on a phone. Swapped back for the tab bar from `sm` up.
+.detail-tabs__select-wrap {
+  display: none;
+  margin-bottom: 0.5rem;
+}
+
+.detail-tabs .nav-tabs {
+  border-bottom: none;
+}
+
+.detail-tabs .nav-link {
+  border: none;
+  color: var(--bs-secondary-color);
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px 12px 0 0;
+}
+
+.detail-tabs .nav-link.active {
+  color: var(--bs-body-color);
+  background: color-mix(in oklab, var(--bs-card-bg) 88%, var(--bs-primary) 12%);
+  border: 1px solid var(--bs-border-color);
+  border-bottom: none;
+}
+
+.detail-tabs__select {
+  font-weight: 600;
+  border-color: var(--bs-primary);
+  background-color: color-mix(in oklab, var(--bs-card-bg) 88%, var(--bs-primary) 12%);
+}
+
+.detail-body {
+  border-radius: 18px;
+  border: 1px solid var(--bs-border-color);
+  background-color: var(--bs-card-bg);
+  box-shadow: var(--app-shadow-2);
+  padding: 1.25rem 1.5rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.detail-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.footer-hint {
+  font-size: 0.75rem;
+  color: $slate-muted;
+}
+
+@include media-down("sm") {
+  .detail-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .detail-body {
+    padding: 1rem;
+    border-radius: 14px;
+  }
+
+  .detail-tabs {
+    border-bottom: none;
+  }
+
+  .detail-tabs__select-wrap {
+    display: block;
+  }
+
+  .detail-tabs .nav-tabs {
+    display: none;
+  }
+
+  .detail-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  .detail-footer .btn {
+    width: 100%;
+  }
+}

@@ -1,0 +1,92 @@
+// Bootstrap-Komponenten an das App-Design angepasst.
+@use "../abstracts" as *;
+
+.card,
+.modal-content,
+.offcanvas,
+.dropdown-menu {
+  border-radius: var(--app-radius);
+  border: 1px solid var(--bs-border-color);
+  background-color: var(--bs-card-bg);
+  background-clip: padding-box;
+  box-shadow: var(--app-shadow-1);
+}
+
+.card-header,
+.modal-header,
+.offcanvas-header,
+.dropdown-header {
+  background-color: var(--bs-card-cap-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+// Buttons
+.btn {
+  border-radius: $radius-control;
+  transition:
+    filter 0.12s ease,
+    transform 0.04s ease;
+
+  &:hover {
+    filter: var(--btn-hover-filter);
+  }
+
+  &:active {
+    transform: translateY(1px);
+    filter: var(--btn-active-filter);
+  }
+}
+
+.btn-primary {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--bs-primary) 94%, white 6%),
+    var(--bs-primary)
+  );
+  border: none;
+
+  &:disabled {
+    opacity: 0.65;
+  }
+}
+
+// Formulare
+.form-control,
+.form-select,
+.input-group-text {
+  border-radius: $radius-control;
+  border-color: var(--bs-border-color);
+  background-color: var(--field-bg);
+  color: var(--field-color);
+  background-clip: padding-box;
+}
+
+.form-control::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
+
+.form-control:disabled,
+.form-control[readonly],
+.form-select:disabled {
+  opacity: 0.7;
+}
+
+// Tabellen
+.table {
+  border-color: var(--bs-border-color);
+  color: var(--bs-body-color);
+
+  thead th {
+    background: color-mix(in oklab, var(--bs-card-bg) 88%, var(--bs-primary) 12%);
+    border-bottom: 1px solid var(--bs-border-color);
+  }
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: var(--table-row-strip);
+}
+
+.table-hover > tbody > tr:hover > * {
+  background-color: color-mix(in oklab, var(--bs-primary) 10%, transparent);
+}

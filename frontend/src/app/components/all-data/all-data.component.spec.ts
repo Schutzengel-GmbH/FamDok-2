@@ -284,7 +284,7 @@ describe('AllDataComponent', () => {
       const withoutDate = rowWithAnswer(
         buildAnswer({ questionId: 'q1', answerDate: null }),
       );
-      expect(component.getValue(withDate, q)).toBe(date.toLocaleDateString());
+      expect(component.getValue(withDate, q)).toBe('05.03.2026');
       expect(component.getValue(withoutDate, q)).toBe('');
     });
 

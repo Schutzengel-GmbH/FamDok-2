@@ -27,7 +27,6 @@ type Person = {
   ],
   standalone: true,
   templateUrl: './select-person-component.html',
-  styleUrl: './select-person-component.css',
 })
 export class SelectPersonComponent {
   case = model<FullCase | undefined>();

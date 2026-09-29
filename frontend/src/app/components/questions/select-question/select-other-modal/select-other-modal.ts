@@ -8,7 +8,6 @@ import { Answer } from '../../../../../../../shared/generated/prisma/client';
   standalone: true,
   imports: [FormsModule],
   templateUrl: './select-other-modal.html',
-  styleUrl: './select-other-modal.css',
 })
 export class SelectOtherModalComponent {
   @Input({ required: true }) selectOption!: PrismaJson.SelectOption;

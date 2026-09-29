@@ -1,13 +1,4 @@
 <div class="family-list-shell">
-  @if (isMobileTable) {
-    <div class="mobile-scroll-hint">
-      <div class="mobile-scroll-hint__content">
-        <i class="bi bi-arrow-left-right"></i>
-        <span>Für weitere Spalten nach links oder rechts wischen</span>
-      </div>
-    </div>
-  }
-
   <div
     class="family-list-table-wrap"
     [class.family-list-table-wrap--mobile]="isMobileTable">
@@ -128,7 +119,7 @@
             <button
               type="button"
               class="m-2 btn btn-sm btn-outline-secondary action-button"
-              (click)="openDetailModal(value)"
+              (click)="openDetails(value)"
               aria-label="Details zur Familie">
               Details
             </button>
@@ -147,137 +138,75 @@
         </ngx-datatable-row-detail>
       </ngx-datatable>
     } @else {
-      <div class="family-table-mobile-scroll">
-        <ngx-datatable
-          #caseTable
-          class="bootstrap family-table family-table--mobile"
-          [rows]="pagedCases"
-          [columnMode]="ColumnMode.standard"
-          [headerHeight]="48"
-          [rowHeight]="64"
-          [footerHeight]="0"
-          [scrollbarH]="false"
-          [scrollbarV]="false"
-          [reorderable]="false">
-          <ngx-datatable-column
-            [sortable]="false"
-            [width]="56"
-            [canAutoResize]="false"
-            [draggable]="false"
-            [resizeable]="false">
-            <ng-template ngx-datatable-header-template
-              ><a
-                class="btn btn-outline-secondary"
-                routerLink="/create-family"
-                ngbTooltip="Familie hinzufügen"
-                container="body"
-                ariaLabel="Familie hinzufügen"
-                placement="bottom">
-                +
-              </a></ng-template
-            >
-            <ng-template
-              let-row="row"
-              let-expanded="expanded"
-              ngx-datatable-cell-template>
-              <button
-                type="button"
-                class="expand-button"
-                (click)="toggleExpandRow(row)"
-                [attr.aria-label]="
-                  expanded ? 'Details einklappen' : 'Details ausklappen'
-                ">
-                <i
-                  class="bi"
-                  [class.bi-chevron-down]="expanded"
-                  [class.bi-chevron-right]="!expanded"></i>
-              </button>
-            </ng-template>
-          </ngx-datatable-column>
+      <div class="family-cards">
+        <a class="family-cards__add" routerLink="/create-family">
+          <i class="bi bi-plus-lg"></i>
+          Familie hinzufügen
+        </a>
 
-          <ngx-datatable-column
-            name="Familie"
-            prop="family"
-            [sortable]="false"
-            [pipe]="familyNamePipe"
-            [width]="220"
-            [canAutoResize]="false">
-            <ng-template let-value="value" ngx-datatable-cell-template>
-              <div class="cell-primary">{{ value }}</div>
-            </ng-template>
-          </ngx-datatable-column>
+        @for (row of pagedCases; track row.id) {
+          <div class="family-card">
+            <div class="family-card__header">
+              <div class="family-card__title">
+                {{ familyNamePipe.transform(row.family) }}
+              </div>
+              <span class="table-badge">{{
+                countChildrenPipe.transform(row.family?.children)
+              }}</span>
+            </div>
 
-          <ngx-datatable-column
-            name="Kinder"
-            prop="family.children"
-            [sortable]="false"
-            [pipe]="countChildrenPipe"
-            [width]="110"
-            [canAutoResize]="false">
-            <ng-template let-value="value" ngx-datatable-cell-template>
-              <span class="table-badge">{{ value }}</span>
-            </ng-template>
-          </ngx-datatable-column>
+            @if (row.family?.note) {
+              <div class="family-card__note">{{ row.family?.note }}</div>
+            }
 
-          <ngx-datatable-column
-            name="Verantwortlich"
-            prop="responsibleUsers"
-            [sortable]="false"
-            [pipe]="userArrayPipe"
-            [width]="240"
-            [canAutoResize]="false">
-            <ng-template let-value="value" ngx-datatable-cell-template>
-              <div class="cell-secondary">{{ value }}</div>
-            </ng-template>
-          </ngx-datatable-column>
+            <dl class="family-card__meta">
+              <div class="family-card__meta-row">
+                <dt>Verantwortlich</dt>
+                <dd>{{ userArrayPipe.transform(row.responsibleUsers) }}</dd>
+              </div>
+              <div class="family-card__meta-row">
+                <dt>Adresse</dt>
+                <dd>
+                  {{
+                    row.family
+                      ? getAdressString(row.family.adress)
+                      : "Keine Adresse hinterlegt"
+                  }}
+                </dd>
+              </div>
+            </dl>
 
-          <ngx-datatable-column
-            name="Bearbeiten/Details"
-            prop="id"
-            [sortable]="false"
-            [width]="120"
-            [canAutoResize]="false">
-            <ng-template let-value="value" let-row="row" ngx-datatable-cell-template>
+            <div class="family-card__actions">
               @if (row.family) {
                 @if (canEditCase(row)) {
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-primary action-button"
-                    (click)="edit(row.family.id)"
-                    aria-label="Familie bearbeiten">
+                    class="btn btn-sm btn-outline-primary"
+                    (click)="edit(row.family.id)">
                     <i class="bi bi-pencil-square"></i>
+                    Bearbeiten
                   </button>
                 } @else {
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-secondary action-button"
-                    (click)="inspect(row.family.id)"
-                    aria-label="Familie ansehen">
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="inspect(row.family.id)">
                     <i class="bi bi-eye"></i>
+                    Ansehen
                   </button>
                 }
               }
               <button
                 type="button"
-                class="btn btn-sm btn-outline-primary action-button"
-                (click)="openDetailModal(value)"
-                aria-label="Details zur Familie">
-                <i class="bi bi-pencil-square"></i>
+                class="btn btn-sm btn-outline-secondary"
+                (click)="openDetails(row.id)">
+                Details
               </button>
-            </ng-template>
-          </ngx-datatable-column>
-
-          <ngx-datatable-row-detail [rowHeight]="96" #myDetailRow>
-            <ng-template let-row="row" ngx-datatable-row-detail-template>
-              <div class="detail-panel">
-                <div class="detail-panel__label">Adresse</div>
-                <div class="detail-panel__value">
-                  {{ row.family ? getAdressString(row.family.adress) : "Keine Adresse hinterlegt" }}
-                </div>
-              </div>
-            </ng-template>
-          </ngx-datatable-row-detail>
-        </ngx-datatable>
+            </div>
+          </div>
+        } @empty {
+          <div class="family-cards__empty">Keine Familien gefunden.</div>
+        }
       </div>
     }
   </div>
@@ -327,9 +256,3 @@
   </div>
 </div>
 
-<app-family-detail-modal
-  [isOpen]="isDetailModalOpen"
-  [selectedCase]="selectedCase"
-  [initialTab]="modalInitialTab"
-  [readOnly]="modalReadOnly"
-  (closed)="closeDetails()"></app-family-detail-modal>

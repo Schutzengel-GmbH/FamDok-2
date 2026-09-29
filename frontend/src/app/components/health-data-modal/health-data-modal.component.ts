@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import {
   NgbActiveModal,
   NgbDateAdapter,
@@ -15,11 +15,14 @@ import {
   Validators,
 } from '@angular/forms';
 import { NgbDateDeParserFormatter } from 'src/app/util/NgbDatePickerFormatter';
+import { gramsToKg, kgToGrams } from 'src/app/util/healthDataUtils';
 
-function atLeastOneMeasurement(control: AbstractControl): ValidationErrors | null {
-  const weightKg = control.get('weightKg')?.value;
+function atLeastOneMeasurement(
+  control: AbstractControl,
+): ValidationErrors | null {
+  const weight = control.get('weight')?.value;
   const sizeCm = control.get('sizeCm')?.value;
-  return weightKg != null || sizeCm != null
+  return weight != null || sizeCm != null
     ? null
     : { atLeastOneMeasurement: true };
 }
@@ -42,6 +45,8 @@ export class HealthDataModalComponent implements OnInit {
   protected form!: FormGroup;
   protected activeModal = inject(NgbActiveModal);
 
+  protected weightUnit = signal<'kg' | 'g'>('g');
+
   private dateAdapter = new NgbDateNativeAdapter();
   protected maxDate = this.dateAdapter.fromModel(new Date())!;
 
@@ -52,7 +57,13 @@ export class HealthDataModalComponent implements OnInit {
           this.dataPoint?.date ? new Date(this.dataPoint.date) : new Date(),
           [Validators.required],
         ],
-        weightKg: [this.dataPoint?.weightKg ?? null],
+        weight: [
+          this.dataPoint?.weightKg != null
+            ? this.weightUnit() === 'g'
+              ? kgToGrams(this.dataPoint.weightKg)
+              : this.dataPoint.weightKg
+            : null,
+        ],
         sizeCm: [this.dataPoint?.sizeCm ?? null],
       },
       { validators: atLeastOneMeasurement },
@@ -62,14 +73,21 @@ export class HealthDataModalComponent implements OnInit {
   save() {
     const value = this.form.value as {
       date: Date;
-      weightKg: number | null;
+      weight: number | null;
       sizeCm: number | null;
     };
     const dataPoint: PrismaJson.HealthDataPointChild = { date: value.date };
-    if (value.weightKg != null) dataPoint.weightKg = value.weightKg;
+    if (value.weight != null)
+      dataPoint.weightKg =
+        this.weightUnit() === 'g' ? gramsToKg(value.weight) : value.weight;
     if (value.sizeCm != null) dataPoint.sizeCm = value.sizeCm;
 
     this.activeModal.close({ reason: 'save', value: dataPoint });
+  }
+
+  changeUnit(e: Event) {
+    const unit = (e.target as HTMLSelectElement).value as 'g' | 'kg';
+    this.weightUnit.set(unit);
   }
 
   cancel() {

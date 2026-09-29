@@ -5,15 +5,12 @@ import {
   input,
   linkedSignal,
   output,
-  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { FullCase } from '../../../../../shared/types';
-import {
-  FamilyDetailModalComponent,
-  TabKey,
-} from '../family-detail-modal/family-detail-modal.component';
+import { TabKey } from '../family-detail/family-detail.component';
 import {
   userArrayPipe,
   familyNamePipe,
@@ -21,23 +18,23 @@ import {
 import { DashboardCasesService } from 'src/app/services/dashboard-cases.service';
 import { MeService } from 'src/app/services/me.service';
 import { FullUser } from '../../../../../shared/types';
-import { Role } from '../../../../../shared/generated/prisma/enums';
+import { userCanEditCase } from 'src/app/util/generalUtils';
 
 type ZielStatusKind = 'green' | 'yellow' | 'red' | 'gray';
 
 @Component({
   selector: 'app-dashboard-family-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, FamilyDetailModalComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard-family-table.component.html',
   styleUrls: ['./dashboard-family-table.component.scss'],
 })
 export class DashboardFamilyTableComponent implements OnInit {
   private dashboardCases = inject(DashboardCasesService);
   private meService = inject(MeService);
+  private router = inject(Router);
 
   protected currentUser: FullUser | undefined;
-  protected modalReadOnly = false;
 
   protected rows = linkedSignal(() =>
     this.dashboardCases.cases().filter((c) =>
@@ -56,12 +53,6 @@ export class DashboardFamilyTableComponent implements OnInit {
   protected selectedCase!: FullCase | undefined;
   changeSelectedCase = output<FullCase>();
 
-  /** Emitted whenever the detail modal closes, e.g. so warnings can be re-fetched after an edit. */
-  detailsClosed = output<void>();
-
-  isDetailModalOpen = signal(false);
-  protected modalInitialTab: TabKey = 'stammdaten';
-
   protected userArrayPipe = userArrayPipe;
   protected familyNamePipe = familyNamePipe;
 
@@ -73,10 +64,7 @@ export class DashboardFamilyTableComponent implements OnInit {
   /** Whether the current user could actually save changes to this case - matches the
    * backend's canEditCase (Admin, or one of the case's responsibleUsers). */
   canEditCase(row: FullCase): boolean {
-    const user = this.currentUser;
-    if (!user) return false;
-    if (user.role === Role.Admin) return true;
-    return row.responsibleUsers.some((ru) => ru.id === user.id);
+    return userCanEditCase(this.currentUser, row);
   }
 
   selectCase(row: FullCase): void {
@@ -86,23 +74,14 @@ export class DashboardFamilyTableComponent implements OnInit {
 
   openDetails(row: FullCase, tab: TabKey = 'stammdaten'): void {
     this.selectCase(row);
-    this.modalInitialTab = tab;
-    this.modalReadOnly = !this.canEditCase(row);
-    this.isDetailModalOpen.set(true);
+    this.router.navigate(['/familien', row.id, tab]);
   }
 
-  /** Opens the detail modal for a case that isn't necessarily part of the current filter, e.g. from a warning link. */
+  /** Opens the detail page for a case that isn't necessarily part of the current filter, e.g.
+   * from a warning link - navigates by id directly, so the case doesn't need to already be
+   * loaded here. */
   openCaseById(caseId: string, tab: TabKey = 'stammdaten'): void {
-    const row = this.dashboardCases.cases().find((c) => c.id === caseId);
-    if (!row) return;
-    this.openDetails(row, tab);
-  }
-
-  closeDetails(): void {
-    this.dashboardCases.reload();
-    this.isDetailModalOpen.set(false);
-    this.modalInitialTab = 'stammdaten';
-    this.detailsClosed.emit();
+    this.router.navigate(['/familien', caseId, tab]);
   }
 
   getZielStatusClass(row: FullCase): string {

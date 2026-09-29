@@ -1,0 +1,151 @@
+@use "sass:map";
+@use "sass:meta";
+@use "tokens" as *;
+
+// ---------------------------------------------------------------------------
+// Responsive
+// ---------------------------------------------------------------------------
+
+/// max-width Media-Query. Akzeptiert einen Namen aus $breakpoints oder einen Rohwert.
+@mixin media-down($bp) {
+  $value: if(meta.type-of($bp) == "string", map.get($breakpoints, $bp), $bp);
+  @media (max-width: $value) {
+    @content;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Farb-Helfer
+// ---------------------------------------------------------------------------
+
+/// Transparente Tönung der Primärfarbe (Hintergründe von Chips, Badges, Hover).
+@function primary-tint($percent) {
+  @return color-mix(in srgb, var(--bs-primary) #{$percent}, transparent);
+}
+
+// ---------------------------------------------------------------------------
+// Bausteine
+// ---------------------------------------------------------------------------
+
+@mixin thin-scrollbar($size: 8px) {
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: $size;
+    height: $size;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--bs-secondary-color) 35%, transparent);
+    border-radius: $radius-pill;
+  }
+}
+
+/// Große Karten-Fläche (Seiten-Panels).
+@mixin panel($radius: $radius-panel, $padding: 1.35rem) {
+  background: var(--bs-card-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: $radius;
+  padding: $padding;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.08);
+}
+
+/// Kleines, versal gesetztes Label über Überschriften.
+@mixin eyebrow($size: 0.76rem) {
+  display: inline-block;
+  font-size: $size;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bs-secondary-color);
+}
+
+/// Runder Primär-Chip (Zähler, Kicker, Ergebnisanzahl).
+@mixin pill($tint: 12%) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-pill;
+  background: primary-tint($tint);
+  color: var(--bs-primary);
+  font-weight: 700;
+}
+
+/// Anklickbare Kachel/Zeile mit Hover-Lift und Fokusring.
+@mixin lift-card($lift: -2px) {
+  border: 1px solid var(--bs-border-color);
+  background: var(--bs-body-bg);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform $ease-fast,
+    box-shadow $ease-fast,
+    border-color $ease-fast,
+    background-color $ease-fast;
+
+  &:hover {
+    transform: translateY($lift);
+    border-color: color-mix(in srgb, var(--bs-primary) 35%, var(--bs-border-color));
+    box-shadow: 0 14px 28px rgba(13, 110, 253, 0.1);
+  }
+
+  &:focus-visible {
+    outline: 3px solid primary-tint(25%);
+    outline-offset: 2px;
+    border-color: var(--bs-primary);
+  }
+}
+
+/// Runder Pfeil-Button innerhalb einer lift-card.
+@mixin card-arrow($size, $icon: 1rem) {
+  flex: 0 0 auto;
+  width: $size;
+  height: $size;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-pill;
+  background: primary-tint(12%);
+  color: var(--bs-primary);
+
+  svg {
+    width: $icon;
+    height: $icon;
+  }
+}
+
+/// Runder, transparenter Icon-Button (Clear, Expand, ...).
+@mixin icon-button($size: 2rem) {
+  width: $size;
+  height: $size;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: $radius-pill;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  cursor: pointer;
+  transition:
+    background-color $ease-fast,
+    color $ease-fast,
+    transform $ease-fast;
+
+  &:hover {
+    background: primary-tint(10%);
+    color: var(--bs-primary);
+  }
+}
+
+/// Bootstrap-Karte als Flex-Spalte, die ihre Höhe füllt (Dashboard/Statistik).
+@mixin fill-card {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
+  .card-body {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}

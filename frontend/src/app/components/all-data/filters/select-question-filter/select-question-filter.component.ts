@@ -17,7 +17,6 @@ import { AnswerWhereInput } from '../../../../../../../shared/generated/prisma/m
   selector: 'app-select-question-filter',
   standalone: true,
   templateUrl: './select-question-filter.component.html',
-  styleUrl: '../../all-data.component.scss',
   imports: [FormsModule, SimpleSelectFilter],
 })
 export class SelectQuestionFilter {

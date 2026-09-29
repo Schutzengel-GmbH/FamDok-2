@@ -1,0 +1,26 @@
+@use "../abstracts" as *;
+
+@mixin badge-soft-variant($color) {
+  background: color-mix(in oklab, #{$color} 16%, transparent);
+  color: color-mix(in oklab, #{$color} 80%, var(--bs-body-color));
+}
+
+.badge-soft {
+  @include badge-soft-variant(var(--bs-primary));
+  border-radius: $radius-pill;
+  padding: 0.35rem 0.6rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+
+  &--red {
+    @include badge-soft-variant(var(--bs-danger));
+  }
+
+  &--yellow {
+    @include badge-soft-variant(var(--bs-warning));
+  }
+
+  &--green {
+    @include badge-soft-variant(var(--bs-success));
+  }
+}

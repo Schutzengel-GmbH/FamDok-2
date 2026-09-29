@@ -1,0 +1,62 @@
+// Laufzeit-Variablen: Bootstrap-Overrides (--bs-*) und App-Variablen (--app-*), Light & Dark.
+@use "../abstracts" as *;
+
+:root {
+  --sidebar-w: 280px;
+
+  --bs-primary: #{$brand-primary};
+  --bs-primary-rgb: 37, 99, 235;
+  --bs-secondary: #64748b;
+  --bs-success: #{$brand-success};
+  --bs-warning: #{$brand-accent};
+  --bs-danger: #{$brand-danger};
+
+  --bs-body-bg: #{$surface-2-light};
+  --bs-body-color: #{$ink-1-light};
+  --bs-secondary-bg: #e5e7f1;
+  --bs-secondary-color: #{$ink-2-light};
+  --bs-muted-color: #6b7280;
+  --bs-border-color: rgba(15, 23, 42, 0.12);
+  --bs-card-bg: #{$surface-1-light};
+  --bs-card-cap-bg: #{$surface-1-light};
+  --bs-link-color: #2563eb;
+  --bs-link-hover-color: #1d4ed8;
+
+  --app-radius: 14px;
+  --app-radius-sm: #{$radius-control};
+  --app-shadow-1: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --app-shadow-2: 0 18px 60px rgba(15, 23, 42, 0.12);
+
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.28);
+
+  --btn-hover-filter: brightness(0.98);
+  --btn-active-filter: brightness(0.96);
+
+  --field-color: #{$ink-1-light};
+  --field-placeholder: #9ca3af;
+
+  --table-row-strip: rgba(15, 23, 42, 0.02);
+}
+
+:root[data-bs-theme="dark"] {
+  --bs-body-bg: #{$surface-2-dark};
+  --bs-body-color: #{$ink-1-dark};
+  --bs-secondary-bg: #0b1120;
+  --bs-secondary-color: #{$ink-2-dark};
+  --bs-muted-color: #6b7280;
+  --bs-border-color: rgba(148, 163, 184, 0.28);
+  --bs-card-bg: #0b1120;
+  --bs-card-cap-bg: #020617;
+  --bs-link-color: #60a5fa;
+  --bs-link-hover-color: #93c5fd;
+
+  --app-shadow-1: 0 10px 30px rgba(0, 0, 0, 0.55);
+  --app-shadow-2: 0 24px 80px rgba(0, 0, 0, 0.75);
+  --focus-ring: 0 0 0 3px rgba(96, 165, 250, 0.45);
+
+  --field-bg: #020617;
+  --field-color: #e5e7eb;
+  --field-placeholder: #6b7280;
+
+  --table-row-strip: rgba(15, 23, 42, 0.7);
+}

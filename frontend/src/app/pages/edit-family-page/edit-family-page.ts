@@ -7,7 +7,6 @@ import { EditFamilyComponent } from 'src/app/components/edit-family/edit-family'
   standalone: true,
   imports: [EditFamilyComponent],
   templateUrl: './edit-family-page.html',
-  styleUrl: './edit-family-page.scss',
 })
 export class EditFamilyPage {
   private activatedRoute = inject(ActivatedRoute);

@@ -25,7 +25,6 @@ import {
   standalone: true,
   imports: [ReactiveFormsModule, QuestionEditorComponent],
   templateUrl: './case-form-editor.html',
-  styleUrl: './case-form-editor.scss',
 })
 export class CaseFormEditorComponent implements OnInit {
   private fb = inject(FormBuilder);

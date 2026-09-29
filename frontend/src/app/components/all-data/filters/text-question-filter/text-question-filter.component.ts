@@ -18,7 +18,6 @@ import { AnswerWhereInput } from '../../../../../../../shared/generated/prisma/m
   selector: 'app-text-question-filter',
   standalone: true,
   templateUrl: './text-question-filter.component.html',
-  styleUrl: '../../all-data.component.scss',
   imports: [FormsModule, SimpleTextFilter],
 })
 export class TextQuestionFilter {

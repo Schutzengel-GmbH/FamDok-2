@@ -21,7 +21,6 @@ import { QuestionModel as Question } from '../../../../../../../shared/generated
 
   standalone: true,
   templateUrl: './date-question-filter.component.html',
-  styleUrl: '../../all-data.component.scss',
   imports: [FormsModule, DateFilter],
 })
 export class DateQuestionFilter {

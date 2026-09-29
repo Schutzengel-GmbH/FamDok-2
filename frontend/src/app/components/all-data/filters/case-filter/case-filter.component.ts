@@ -19,7 +19,6 @@ import { CaseWhereInput } from '../../../../../../../shared/generated/prisma/mod
   selector: 'app-case-filter',
   standalone: true,
   templateUrl: './case-filter.component.html',
-  styleUrl: '../../all-data.component.scss',
   imports: [FormsModule, StringFilter, DateFilter],
 })
 export class CaseFilter {

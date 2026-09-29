@@ -6,7 +6,6 @@ import { ActivatedRoute } from '@angular/router';
   standalone: true,
   imports: [],
   templateUrl: './error-page.html',
-  styleUrl: './error-page.scss',
 })
 export class ErrorPage {
   private activatedRoute = inject(ActivatedRoute);

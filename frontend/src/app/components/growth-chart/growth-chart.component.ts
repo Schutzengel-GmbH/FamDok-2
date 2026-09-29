@@ -24,7 +24,6 @@ import { ChildModel as Child } from '../../../../../shared/generated/prisma/mode
   imports: [FormsModule, BaseChartDirective],
   standalone: true,
   templateUrl: './growth-chart.component.html',
-  styleUrl: './growth-chart.component.css',
 })
 export class GrowthChartComponent {
   private themeService = inject(ThemeService);

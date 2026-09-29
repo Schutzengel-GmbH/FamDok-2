@@ -55,15 +55,43 @@
         <div class="invalid-feedback">Angabe ist nicht optional</div>
       </div>
 
-      <div class="form-floating mb-2">
-        <input
-          type="number"
-          class="form-control"
-          [class.is-invalid]="form.controls['duration'].invalid"
-          id="duration"
-          formControlName="duration" />
-        <label for="duration">Dauer der Beratung (in Minuten)</label>
-        <div class="invalid-feedback">Angabe ist nicht optional</div>
+      <div class="d-flex flex-row gap-2">
+        <div class="flex-grow-1 {{ setDurationViaTime() ? '' : 'd-none' }}">
+          <label>Dauer der Beratung</label>
+          <div class="input-group mb-2">
+            <input
+              id="start"
+              type="time"
+              class="form-control"
+              [value]="start()"
+              (change)="start.set($event.target.value)" />
+            <span class="input-group-text">–</span>
+            <input
+              id="end"
+              type="time"
+              class="form-control"
+              [value]="end()"
+              (change)="end.set($event.target.value)" />
+          </div>
+        </div>
+        <div class="flex-grow-1 {{ setDurationViaTime() ? 'd-none' : '' }}">
+          <div class="form-floating mb-2">
+            <input
+              type="number"
+              class="form-control"
+              [class.is-invalid]="form.controls['duration'].invalid"
+              id="duration"
+              formControlName="duration" />
+            <label for="duration">Dauer der Beratung (in Minuten)</label>
+            <div class="invalid-feedback">Angabe ist nicht optional</div>
+          </div>
+        </div>
+        <button
+          class="btn btn-outline-secondary"
+          type="button"
+          (click)="setDurationViaTime.set(!setDurationViaTime())">
+          {{ setDurationViaTime() ? "von-bis" : "in Minuten" }}
+        </button>
       </div>
 
       <div class="mb-2">

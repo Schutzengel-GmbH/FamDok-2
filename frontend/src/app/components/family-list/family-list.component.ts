@@ -20,15 +20,14 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { MeService } from 'src/app/services/me.service';
 import { FormsModule } from '@angular/forms';
-import {
-  FamilyDetailModalComponent,
-  TabKey,
-} from '../family-detail-modal/family-detail-modal.component';
 import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import { Role } from '../../../../../shared/generated/prisma/enums';
 import { ChildModel as Child } from '../../../../../shared/generated/prisma/models';
 import { CaseService } from 'src/app/services/case.service';
-import { sortCasesByFamilyName } from 'src/app/util/generalUtils';
+import {
+  sortCasesByFamilyName,
+  userCanEditCase,
+} from 'src/app/util/generalUtils';
 
 @Component({
   imports: [
@@ -39,7 +38,6 @@ import { sortCasesByFamilyName } from 'src/app/util/generalUtils';
     DataTableColumnCellDirective,
     DataTableColumnHeaderDirective,
     FormsModule,
-    FamilyDetailModalComponent,
     NgbTooltip,
     RouterLink,
   ],
@@ -194,10 +192,7 @@ export class Families implements OnInit {
    * backend's canEditCase (Admin, or one of the case's responsibleUsers). Coordinators viewing
    * another org member's case only get a read-only view. */
   canEditCase(c: FullCase | undefined): boolean {
-    const user = this.currentUser;
-    if (!user || !c) return false;
-    if (user.role === Role.Admin) return true;
-    return c.responsibleUsers.some((ru) => ru.id === user.id);
+    return userCanEditCase(this.currentUser, c);
   }
 
   edit(id: string): void {
@@ -217,7 +212,11 @@ export class Families implements OnInit {
     setTimeout(() => this.table?.recalculate(), 0);
   }
 
-  getAdressString(adress: PrismaJson.Address): string {
+  getAdressString(adress: PrismaJson.Address | null | undefined): string {
+    if (!adress) {
+      return 'Keine Adresse hinterlegt';
+    }
+
     return `${adress.street} ${adress.number}, ${adress.plz} ${adress.city}`;
   }
 
@@ -244,20 +243,7 @@ export class Families implements OnInit {
     }
   }
 
-  isDetailModalOpen = false;
-  modalInitialTab: TabKey = 'stammdaten';
-  selectedCase: FullCase | undefined = undefined;
-  modalReadOnly = false;
-
-  openDetailModal(caseId: string) {
-    const c = this.allCases.find((c) => c.id === caseId);
-    this.isDetailModalOpen = true;
-    this.selectedCase = c;
-    this.modalReadOnly = !this.canEditCase(c);
-  }
-
-  closeDetails() {
-    this.isDetailModalOpen = false;
-    this.fetchData();
+  openDetails(caseId: string): void {
+    this.router.navigate(['/familien', caseId]);
   }
 }

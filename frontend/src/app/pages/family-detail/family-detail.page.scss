@@ -1,0 +1,15 @@
+:host {
+  display: block;
+  padding: clamp(0.9rem, 1.5vw, 1.5rem);
+}
+
+.family-detail-page-status {
+  max-width: 1080px;
+  margin: 3rem auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  color: var(--bs-secondary-color);
+}

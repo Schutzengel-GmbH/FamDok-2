@@ -46,6 +46,7 @@ import {
 } from 'src/app/util/csvExport';
 import { downloadJson, jsonFilename, toJson } from 'src/app/util/jsonExport';
 import { isEmptyObject } from 'src/app/util/generalUtils';
+import { getAnswerValue } from '../../../../../shared/utils/answerValue';
 import {
   downloadXlsx,
   toXlsxBlob,
@@ -189,36 +190,10 @@ export class AllDataComponent {
   }
 
   getValue(row: FullCaseFormResponse, question: Question) {
-    const answer = row.answers.find((a) => a.questionId === question.id);
-    if (!answer) return '---';
-
-    switch (question.type) {
-      case 'Integer':
-        return answer.answerInt;
-      case 'Float':
-        return answer.answerNum;
-      case 'Text':
-      case 'Textarea':
-        return answer.answerText;
-      case 'Date':
-        return answer.answerDate
-          ? new Date(answer.answerDate).toLocaleDateString()
-          : '';
-      case 'Select':
-        return answer.answerSelectId
-          .map((id) => {
-            const option = question.selectOptions.find((so) => so.id === id);
-
-            if (!option) {
-              console.error(`option ${id} not found, was it deleted?`);
-              return 'Fehler: Antwort-Option nicht gefunden';
-            }
-
-            if (!option.isOpen) return option.text;
-            else return answer.answerText || '';
-          })
-          .join();
-    }
+    return getAnswerValue(
+      row.answers.find((a) => a.questionId === question.id),
+      question,
+    );
   }
 
   protected exportCsv(): void {

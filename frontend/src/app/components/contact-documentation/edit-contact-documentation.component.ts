@@ -7,7 +7,6 @@ import {
   OnChanges,
   signal,
 } from '@angular/core';
-import { FamilyService } from 'src/app/services/family.service';
 import {
   FullCase,
   FullContactDocumentation,
@@ -15,6 +14,7 @@ import {
 import {
   FormBuilder,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
@@ -25,15 +25,11 @@ import {
   NgbDateNativeAdapter,
   NgbDateParserFormatter,
   NgbDatepickerModule,
-  NgbDateStruct,
 } from '@ng-bootstrap/ng-bootstrap';
-import {
-  NgLabelTemplateDirective,
-  NgOptionTemplateDirective,
-  NgSelectComponent,
-} from '@ng-select/ng-select';
+import { NgSelectComponent } from '@ng-select/ng-select';
 import { ContactDocumentationOptions } from '../../../../../shared/sharedGlobals';
 import { Router } from '@angular/router';
+import { NavigationService } from 'src/app/services/navigation.service';
 import { NgbDateDeParserFormatter } from 'src/app/util/NgbDatePickerFormatter';
 import { ContactDocumentationService } from 'src/app/services/contact-documentation.service';
 import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
@@ -42,9 +38,8 @@ import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
   selector: 'app-edit-contact-documentation',
   standalone: true,
   imports: [
+    FormsModule,
     NgSelectComponent,
-    NgLabelTemplateDirective,
-    NgOptionTemplateDirective,
     ReactiveFormsModule,
     SelectCaseComponent,
     NgbDatepickerModule,
@@ -58,10 +53,20 @@ import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
 export class EditContactDocumentation implements OnChanges {
   doc = input<FullContactDocumentation>();
 
+  protected start = linkedSignal(() =>
+    this.doc()?.start ? this.dateToTimeString(this.doc()!.start!) : '00:00',
+  );
+  protected end = linkedSignal(() =>
+    this.doc()?.end ? this.dateToTimeString(this.doc()!.end!) : '00:00',
+  );
+
+  protected setDurationViaTime = signal(false);
+
   private documentationService = inject(ContactDocumentationService);
   private toastService = inject(ToastService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private navigation = inject(NavigationService);
   private dialogService = inject(ConfirmDialogService);
 
   protected form!: FormGroup;
@@ -118,7 +123,7 @@ export class EditContactDocumentation implements OnChanges {
     } = doc ? doc : {};
     this.form = this.fb.group({
       date: [doc?.date, Validators.required],
-      duration: [duration, Validators.required],
+      duration: [duration],
       artDerBetreuung: [artDerBetreuung, Validators.required],
       beratungsThemenEltern: [beratungsThemenEltern ?? []],
       beratungsThemenKinder: [beratungsThemenKinder ?? []],
@@ -146,7 +151,7 @@ export class EditContactDocumentation implements OnChanges {
         text: `Dokumentation gespeichert.`,
         severity: 'success',
       });
-      if (navigateAfterSave) this.router.navigate(['/']);
+      if (navigateAfterSave) this.navigation.back();
     };
 
     if (docValue) {
@@ -154,6 +159,12 @@ export class EditContactDocumentation implements OnChanges {
         .updateDocumentation(docValue.caseId, docValue.id, {
           date: this.form.get('date')?.value,
           ...formWithoutDate,
+          start: this.setDurationViaTime()
+            ? this.timeStringToDate(this.start())
+            : null,
+          end: this.setDurationViaTime()
+            ? this.timeStringToDate(this.end())
+            : null,
         })
         .subscribe(onSaved);
     } else {
@@ -161,12 +172,36 @@ export class EditContactDocumentation implements OnChanges {
         .createDocumentation(caseId, {
           date: this.form.get('date')!.value,
           ...formWithoutDate,
+          start: this.setDurationViaTime()
+            ? this.timeStringToDate(this.start())
+            : null,
+          end: this.setDurationViaTime()
+            ? this.timeStringToDate(this.end())
+            : null,
           case: {
             connect: { id: caseId },
           },
         })
         .subscribe(onSaved);
     }
+  }
+
+  dateToTimeString(date: Date) {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  }
+
+  timeStringToDate(time: string) {
+    const hours = parseInt(time.split(':')[0]);
+    const minutes = parseInt(time.split(':')[1]);
+
+    const date = this.doc()?.date ?? new Date();
+    date.setHours(hours);
+    date.setMinutes(minutes);
+
+    return date;
   }
 
   delete() {
@@ -183,7 +218,7 @@ export class EditContactDocumentation implements OnChanges {
               text: `Dokumentation gelöscht.`,
               severity: 'success',
             });
-            this.router.navigate(['/']);
+            this.navigation.back();
           });
       },
     });

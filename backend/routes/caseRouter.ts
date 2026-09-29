@@ -288,6 +288,42 @@ CaseRouter.get('/documentation/my', async (req, res) => {
   }
 });
 
+CaseRouter.get('/i/:id/export/stammdaten', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { filename, buffer } = await CaseController.getStammdatenPDF(
+      req.user!,
+      id
+    );
+    res.attachment(filename);
+    res.contentType('application/pdf');
+    res.send(buffer);
+  } catch (e) {
+    handleError(e, res);
+  }
+});
+
+CaseRouter.get('/i/:id/export', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { filename, archive } = await CaseController.getCaseExport(
+      req.user!,
+      id
+    );
+    // Headers are already sent once streaming starts, so a failure mid-archive can only abort
+    // the connection - the client then sees an incomplete download instead of a corrupt ZIP.
+    archive.on('error', (err) => {
+      console.error(err);
+      res.destroy(err);
+    });
+    res.attachment(filename);
+    res.contentType('application/zip');
+    archive.pipe(res);
+  } catch (e) {
+    handleError(e, res);
+  }
+});
+
 CaseRouter.get('/i/:id/attachment', async (req, res) => {
   const { id } = req.params;
   try {

@@ -1,0 +1,201 @@
+@if (selectedCase()) {
+  <div class="family-detail">
+    <div class="detail-header">
+      <button
+        type="button"
+        class="detail-back"
+        aria-label="Zurück"
+        (click)="goBack()">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <div class="detail-header__text">
+        <span class="page-kicker">Familiendetails</span>
+        <h1>{{ familyNamePipe.transform(selectedCase()!.family) }}</h1>
+      </div>
+    </div>
+
+    <div class="detail-tabs">
+      <label class="detail-tabs__select-wrap">
+        <span class="visually-hidden">Bereich wählen</span>
+        <select
+          class="form-select detail-tabs__select"
+          [value]="activeTab()"
+          (change)="onTabSelectChange($event)">
+          <option value="stammdaten">Stammdaten</option>
+          <option value="zielvereinbarungen">Zielvereinbarungen</option>
+          <option value="datenblaetter">Alle Datenblätter</option>
+          <option value="freie-dokumentation">Fallkontaktdokumentation</option>
+          @if (!readOnly()) {
+            <option value="formulare">Sonstige Formulare</option>
+          }
+          <option value="anhaenge">Anhänge</option>
+          <option value="fachkraft">Fachkraft</option>
+          <option value="close">Abschluss</option>
+        </select>
+      </label>
+
+      <ul class="nav nav-tabs detail-tabs__list">
+        <li class="nav-item">
+          <button
+            type="button"
+            class="nav-link"
+            [class.active]="activeTab() === 'stammdaten'"
+            (click)="setTab('stammdaten')">
+            Stammdaten
+          </button>
+        </li>
+        <li class="nav-item">
+          <button
+            type="button"
+            class="nav-link"
+            [class.active]="activeTab() === 'zielvereinbarungen'"
+            (click)="setTab('zielvereinbarungen')">
+            Zielvereinbarungen
+          </button>
+        </li>
+        <li class="nav-item">
+          <button
+            type="button"
+            class="nav-link"
+            [class.active]="activeTab() === 'datenblaetter'"
+            (click)="setTab('datenblaetter')">
+            Alle Datenblätter
+          </button>
+        </li>
+        <li class="nav-item">
+          <button
+            type="button"
+            class="nav-link"
+            [class.active]="activeTab() === 'freie-dokumentation'"
+            (click)="setTab('freie-dokumentation')">
+            Fallkontaktdokumentation
+          </button>
+        </li>
+        @if (!readOnly()) {
+          <li class="nav-item">
+            <button
+              type="button"
+              class="nav-link"
+              [class.active]="activeTab() === 'formulare'"
+              (click)="setTab('formulare')">
+              Sonstige Formulare
+            </button>
+          </li>
+        }
+        <li class="nav-item">
+          <button
+            type="button"
+            class="nav-link"
+            [class.active]="activeTab() === 'anhaenge'"
+            (click)="setTab('anhaenge')">
+            Anhänge
+          </button>
+        </li>
+        <li class="nav-item">
+          <button
+            type="button"
+            class="nav-link"
+            [class.active]="activeTab() === 'fachkraft'"
+            (click)="setTab('fachkraft')">
+            Fachkraft
+          </button>
+        </li>
+        <li class="nav-item">
+          <button
+            type="button"
+            class="nav-link"
+            [class.active]="activeTab() === 'close'"
+            (click)="setTab('close')">
+            Abschluss
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="detail-body">
+      @switch (activeTab()) {
+        @case ("stammdaten") {
+          <ng-container>
+            @if (selectedCase()!.family) {
+              <app-tab-stammdaten
+                [selectedCase]="selectedCase()!"
+                [readOnly]="readOnly()" />
+            } @else {
+              <div class="tab-section">
+                <p class="text-muted">
+                  Personenbezogene Daten dieser Familie wurden am
+                  {{
+                    formatDateDisplay(selectedCase()!.personalDataDeletedAt)
+                  }}
+                  gelöscht.
+                </p>
+              </div>
+            }
+          </ng-container>
+        }
+        @case ("zielvereinbarungen") {
+          <ng-container>
+            <app-tab-zielvereinbarungen
+              [selectedCase]="selectedCase()!"
+              [readOnly]="readOnly()"
+              (zielChange)="refreshCaseFromBackend('zielvereinbarungen')" />
+          </ng-container>
+        }
+        @case ("datenblaetter") {
+          <ng-container>
+            <app-tab-datenblaetter
+              [selectedCase]="selectedCase()!"
+              [readOnly]="readOnly()" />
+          </ng-container>
+        }
+        @case ("formulare") {
+          @if (!readOnly()) {
+            <ng-container>
+              <app-tab-sonstige-formulare [selectedCase]="selectedCase()!" />
+            </ng-container>
+          }
+        }
+        @case ("freie-dokumentation") {
+          <ng-container>
+            <app-tab-freie-dokumentation
+              [selectedCase]="selectedCase()!"
+              [readOnly]="readOnly()" />
+          </ng-container>
+        }
+        @case ("anhaenge") {
+          <ng-container>
+            <app-tab-anhaenge
+              [selectedCase]="selectedCase()!"
+              [readOnly]="readOnly()" />
+          </ng-container>
+        }
+        @case ("fachkraft") {
+          <ng-container>
+            <app-tab-familienbetreuer
+              [selectedCase]="selectedCase()!"
+              [readOnly]="readOnly()"
+              (changes)="responsibleUsersChanged($event.userRemoved)" />
+          </ng-container>
+        }
+        @case ("close") {
+          <ng-container>
+            <app-tab-close
+              [selectedCase]="selectedCase()!"
+              [readOnly]="readOnly()"
+              (changed)="refreshCaseFromBackend('close')" />
+          </ng-container>
+        }
+      }
+    </div>
+
+    <div class="detail-footer">
+      <span class="footer-hint">Datenstand: aktuell aus der Fallakte</span>
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        (click)="goBack()">
+        Zurück zur Übersicht
+      </button>
+    </div>
+  </div>
+}

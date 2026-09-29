@@ -1,18 +1,13 @@
+@use "abstracts" as *;
+
 :host {
   display: block;
   height: 100%;
 }
 
 .stats-card {
-  height: 100%;
+  @include fill-card;
   min-height: 200px;
-  display: flex;
-  flex-direction: column;
-}
-
-.stats-card .card-body {
-  flex: 1 1 auto;
-  min-height: 0;
 }
 
 .stats-chart-wrapper {
@@ -23,13 +18,13 @@
 
 .stats-chart-selects {
   max-width: min(440px, 100%);
+
+  select {
+    min-width: 140px;
+  }
 }
 
-.stats-chart-selects select {
-  min-width: 140px;
-}
-
-@media (max-width: 992px) {
+@include media-down("lg") {
   .stats-card {
     height: clamp(320px, 45vh, 460px);
   }
@@ -39,7 +34,7 @@
   }
 }
 
-@media (max-width: 754px) {
+@include media-down("nav") {
   .stats-card {
     height: auto;
   }

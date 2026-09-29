@@ -4,7 +4,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { Location } from '@angular/common';
+import { NavigationService } from 'src/app/services/navigation.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import Keycloak from 'keycloak-js';
 
@@ -20,12 +20,12 @@ describe('CreateFamilyComponent', () => {
   let fixture: ComponentFixture<CreateFamilyComponent>;
   let httpMock: HttpTestingController;
   let modal: jasmine.SpyObj<NgbModal>;
-  let location: jasmine.SpyObj<Location>;
+  let navigation: jasmine.SpyObj<NavigationService>;
   let toast: ToastService;
 
   beforeEach(async () => {
     modal = jasmine.createSpyObj('NgbModal', ['open']);
-    location = jasmine.createSpyObj('Location', ['back']);
+    navigation = jasmine.createSpyObj('NavigationService', ['back']);
 
     await TestBed.configureTestingModule({
       imports: [CreateFamilyComponent],
@@ -33,7 +33,7 @@ describe('CreateFamilyComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: NgbModal, useValue: modal },
-        { provide: Location, useValue: location },
+        { provide: NavigationService, useValue: navigation },
         { provide: Keycloak, useValue: mockKeycloak() },
       ],
     }).compileComponents();
@@ -227,7 +227,7 @@ describe('CreateFamilyComponent', () => {
     });
     caseReq.flush({ id: 'case-1' });
 
-    expect(location.back).toHaveBeenCalled();
+    expect(navigation.back).toHaveBeenCalled();
     expect(component['children']).toEqual([]);
     expect(component['caregivers']).toEqual([]);
     expect(toast.toasts().length).toBe(1);

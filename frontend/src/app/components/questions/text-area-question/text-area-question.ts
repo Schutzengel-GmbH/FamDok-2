@@ -9,7 +9,6 @@ import {
   standalone: true,
   imports: [],
   templateUrl: './text-area-question.html',
-  styleUrl: './text-area-question.css',
 })
 export class TextAreaQuestionComponent implements OnInit {
   @Input({ required: true }) question!: Question;

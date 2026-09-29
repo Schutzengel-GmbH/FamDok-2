@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
+import { NavigationService } from 'src/app/services/navigation.service';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
@@ -119,11 +120,11 @@ describe('GeneralFormPage', () => {
         .flush({ id: 'form-1', name: 'Feedback', questions: [] });
     }
 
-    it('shows a success toast and navigates home on success', () => {
+    it('shows a success toast and navigates back on success', () => {
       setupSaved();
       const toast = TestBed.inject(ToastService);
-      const router = TestBed.inject(Router);
-      spyOn(router, 'navigate');
+      const navigation = TestBed.inject(NavigationService);
+      spyOn(navigation, 'back');
 
       component['save']();
 
@@ -131,7 +132,7 @@ describe('GeneralFormPage', () => {
       req.flush({ id: 'resp-1' });
 
       expect(toast.toasts()[0].severity).toBe('success');
-      expect(router.navigate).toHaveBeenCalledWith(['']);
+      expect(navigation.back).toHaveBeenCalled();
     });
 
     it('shows an error toast and navigates to the error page with the HTTP status on failure', () => {
@@ -178,8 +179,8 @@ describe('GeneralFormPage', () => {
         .flush({ id: 'form-1', name: 'Feedback', questions: [] });
       const confirmDialog = TestBed.inject(ConfirmDialogService);
       const toast = TestBed.inject(ToastService);
-      const router = TestBed.inject(Router);
-      spyOn(router, 'navigate');
+      const navigation = TestBed.inject(NavigationService);
+      spyOn(navigation, 'back');
 
       component['delete']();
       expect(confirmDialog.openDialogs().length).toBe(1);
@@ -190,7 +191,7 @@ describe('GeneralFormPage', () => {
         .flush({});
 
       expect(toast.toasts()[0].severity).toBe('success');
-      expect(router.navigate).toHaveBeenCalledWith(['/']);
+      expect(navigation.back).toHaveBeenCalled();
     });
   });
 });

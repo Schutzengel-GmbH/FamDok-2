@@ -1,0 +1,29 @@
+@use "sass:color";
+@use "../abstracts" as *;
+
+@mixin status-dot-variant($base) {
+  background: $base;
+  box-shadow: 0 0 0 3px color.change($base, $alpha: 0.18);
+}
+
+// Ampel-Punkt (Zielstatus)
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: $radius-pill;
+  background: rgba(148, 163, 184, 0.7);
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
+
+  &--green {
+    @include status-dot-variant($brand-success);
+  }
+
+  &--yellow {
+    @include status-dot-variant($brand-accent);
+  }
+
+  &--red {
+    @include status-dot-variant($brand-danger);
+  }
+}

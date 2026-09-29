@@ -27,6 +27,10 @@ import { map, mergeMap, Observable } from 'rxjs';
 import { MeService } from './me.service';
 import { unique } from '../util/generalUtils';
 import { SettingsService } from './settings.service';
+import {
+  caseExportFilename,
+  stammdatenFilename,
+} from '../../../../shared/utils/filename';
 
 @Injectable({
   providedIn: 'root',
@@ -276,17 +280,45 @@ export class FamilyService {
         { responseType: 'blob' },
       )
       .subscribe({
-        next: (blob) => {
-          const filename = `doc.pdf`;
-          const url = URL.createObjectURL(blob);
-          const anchor = document.createElement('a');
-          anchor.href = url;
-          anchor.download = filename;
-          anchor.click();
-          URL.revokeObjectURL(url);
-        },
+        next: (blob) => this.saveBlob(blob, 'doc.pdf'),
         error: () => {},
       });
+  }
+
+  /**
+   * Download the case's Stammdaten (case + family data) as a PDF
+   * @param {string} caseId UUID of the case
+   * @param {string} familyName used for the file name
+   */
+  downloadStammdatenPDF(caseId: string, familyName: string): Observable<void> {
+    return this.http
+      .get(this.caseApiUrl + '/i/' + caseId + '/export/stammdaten', {
+        responseType: 'blob',
+      })
+      .pipe(map((blob) => this.saveBlob(blob, stammdatenFilename(familyName))));
+  }
+
+  /**
+   * Download the case's full history as a ZIP: Stammdaten PDF, all contact documentation as
+   * PDFs and all case form responses as CSVs
+   * @param {string} caseId UUID of the case
+   * @param {string} familyName used for the file name
+   */
+  downloadCaseExport(caseId: string, familyName: string): Observable<void> {
+    return this.http
+      .get(this.caseApiUrl + '/i/' + caseId + '/export', {
+        responseType: 'blob',
+      })
+      .pipe(map((blob) => this.saveBlob(blob, caseExportFilename(familyName))));
+  }
+
+  private saveBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   /**

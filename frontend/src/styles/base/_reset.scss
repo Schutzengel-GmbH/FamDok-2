@@ -1,0 +1,24 @@
+* {
+  outline: none;
+}
+
+:focus-visible {
+  box-shadow: var(--focus-ring) !important;
+  outline: none !important;
+  border-color: color-mix(
+    in hsl,
+    var(--bs-primary) 65%,
+    transparent
+  ) !important;
+}
+
+.bi {
+  vertical-align: -0.125em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -12,7 +12,6 @@ import {
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './select-options-editor.html',
-  styleUrl: './select-options-editor.scss',
 })
 export class SelectOptionsEditorComponent {
   @Input({ required: true }) optionsArray!: FormArray<FormGroup>;

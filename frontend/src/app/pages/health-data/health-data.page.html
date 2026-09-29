@@ -60,7 +60,7 @@
           @for (entry of historyEntries(); track entry.index) {
             <tr>
               <td>{{ entry.point.date | date }}</td>
-              <td>{{ entry.point.weightKg != null ? entry.point.weightKg + " kg" : "—" }}</td>
+              <td>{{ entry.point.weightKg != null ? weightGrams(entry.point.weightKg) + " g" : "—" }}</td>
               <td>{{ entry.point.sizeCm != null ? entry.point.sizeCm + " cm" : "—" }}</td>
               @if (!readOnly) {
                 <td class="text-end">

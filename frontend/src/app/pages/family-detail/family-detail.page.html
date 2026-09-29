@@ -1,0 +1,19 @@
+@if (selectedCase()) {
+  <app-family-detail
+    [(selectedCase)]="selectedCase"
+    [initialTab]="initialTab"
+    [readOnly]="readOnly()" />
+} @else if (isLoading()) {
+  <div class="family-detail-page-status">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Lädt…</span>
+    </div>
+  </div>
+} @else {
+  <div class="family-detail-page-status">
+    <p>Dieser Fall konnte nicht geladen werden.</p>
+    <a routerLink="/familien" class="btn btn-outline-secondary btn-sm">
+      Zurück zur Familienübersicht
+    </a>
+  </div>
+}

@@ -1,3 +1,5 @@
+@use "abstracts" as *;
+
 :host {
   display: flex;
   height: 100%;
@@ -70,31 +72,7 @@
   justify-content: flex-end;
 }
 
-.status-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(148, 163, 184, 0.7);
-  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
-}
-
-.status-dot--green {
-  background: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
-}
-
-.status-dot--yellow {
-  background: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
-}
-
-.status-dot--red {
-  background: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
-}
-
-@media (max-width: 992px) {
+@include media-down("lg") {
   .family-worklist-item {
     grid-template-columns: 1fr;
     align-items: flex-start;
