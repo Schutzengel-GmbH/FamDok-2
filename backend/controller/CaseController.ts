@@ -405,8 +405,6 @@ export class CaseController {
       );
     }
 
-    console.log(input);
-
     return prisma.contactDocumentation.update({
       where: { id },
       data: { ...input },
