@@ -161,7 +161,6 @@ export class ContactDocumentationService {
     docId: string,
     update: ContactDocumentationUpdateInput,
   ): Observable<FullContactDocumentation> {
-    console.log(update);
     return this.http.put<FullContactDocumentation>(
       this.caseApiUrl + '/i/' + caseId + '/documentation/i/' + docId,
       update,
