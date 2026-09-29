@@ -8,7 +8,7 @@ import { CaseService } from 'src/app/services/case.service';
 import { FamilyService } from 'src/app/services/family.service';
 import { ToastService } from 'src/app/services/toast.service';
 import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
-import { ageString } from 'src/app/util/healthDataUtils';
+import { ageString, kgToGrams } from 'src/app/util/healthDataUtils';
 import { SelectCaseComponent } from 'src/app/components/select-case/select-case';
 import { SelectChildComponent } from 'src/app/components/select-child/select-child';
 import { GrowthChartComponent } from 'src/app/components/growth-chart/growth-chart.component';
@@ -68,6 +68,10 @@ export class HealthDataPage {
 
   age(child: Child | undefined) {
     return child ? ageString(child) : '';
+  }
+
+  weightGrams(kg: number): number {
+    return kgToGrams(kg);
   }
 
   onChildChange(child: Child | undefined) {

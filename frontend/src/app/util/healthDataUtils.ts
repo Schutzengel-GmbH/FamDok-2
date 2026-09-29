@@ -32,6 +32,20 @@ import { ChildModel as Child } from '../../../../shared/generated/prisma/models'
 
 export type GrowthMetric = 'weight' | 'height';
 
+/**
+ * Weight is measured and entered in grams (users read it off a scale as e.g. 3520g, not
+ * 3.52kg) but stays stored as fractional kg internally - `weightKg` matches the WHO reference
+ * tables in consts.ts, and existing data doesn't need migrating. These two converters are the
+ * only place that boundary is crossed; UI code should never do the *1000/1000 math itself.
+ */
+export function kgToGrams(kg: number): number {
+  return Math.round(kg * 1000);
+}
+
+export function gramsToKg(g: number): number {
+  return g / 1000;
+}
+
 const PERCENTILE_SOURCES: Record<
   GrowthMetric,
   {
