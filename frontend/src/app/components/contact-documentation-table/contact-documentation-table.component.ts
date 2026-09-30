@@ -190,6 +190,7 @@ export class ContactDocumentationTable {
   saveDate(doc: FullContactDocumentation, value: Date) {
     let response = this.rows()?.find((r) => r.id === doc.id);
 
+    const previousDate = response!.date;
     response!.date = value;
 
     this.documentationService
@@ -203,11 +204,13 @@ export class ContactDocumentationTable {
             severity: 'success',
           });
         },
-        error: (e) => {
+        error: () => {
+          // undo the optimistic update, otherwise the table keeps showing a value that was never saved
+          response!.date = previousDate;
           this.toggleEdit(doc.id, 'date');
           this.toast.show({
             title: 'Fehler',
-            text: e,
+            text: 'Änderung konnte nicht gespeichert werden',
             severity: 'danger',
           });
         },
@@ -237,6 +240,8 @@ export class ContactDocumentationTable {
         (value as PrismaJson.SelectOption[] | null)?.map((o) => o.id) ?? [];
     }
 
+    const previousValue = response[field];
+
     // @ts-ignore; TODO: figure out proper typing here or otherwise de-hack this solution.
     // This roundabout update is necessary to provide instant view change
     response[field] = storedValue;
@@ -264,11 +269,14 @@ export class ContactDocumentationTable {
             severity: 'success',
           });
         },
-        error: (e) => {
+        error: () => {
+          // undo the optimistic update, otherwise the table keeps showing a value that was never saved
+          // @ts-ignore; see above
+          response[field] = previousValue;
           this.toggleEdit(doc.id, field);
           this.toast.show({
             title: 'Fehler',
-            text: e,
+            text: 'Änderung konnte nicht gespeichert werden',
             severity: 'danger',
           });
         },

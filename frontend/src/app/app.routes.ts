@@ -22,6 +22,7 @@ import Keycloak from 'keycloak-js';
 import { DataViewPage } from './pages/data-view/data-view.page';
 import { AllCaseFormData } from './pages/all-caseform-data/all-caseform-data.page';
 import { authenticatedGuard } from './auth/guards/authenticatedGuard';
+import { unsavedChangesGuard } from './auth/guards/unsavedChangesGuard';
 import { AllContactData } from './pages/all-contact-documentation/all-contact-documentation.page';
 import { EditContactDocumentationPage } from './pages/edit-contact-documentation/edit-contact-documentation.page';
 import { AllFormData } from './pages/all-form-data/all-caseform-data.page';
@@ -168,6 +169,7 @@ export const routes: Routes = [
     // all-stats data tables - they can never write here, but need to reach the page to view it.
     path: 'responses/:caseFormId',
     component: CaseFormResponsePage,
+    canDeactivate: [unsavedChangesGuard],
     canActivate: [roleGuard([
       Role.User,
       Role.Admin,
@@ -180,6 +182,7 @@ export const routes: Routes = [
   {
     path: 'general-responses',
     component: GeneralFormPage,
+    canDeactivate: [unsavedChangesGuard],
     canActivate: [roleGuard([
       Role.User,
       Role.Admin,
@@ -192,6 +195,7 @@ export const routes: Routes = [
     // 'responses/:caseFormId' route above.
     path: 'general-responses/:id',
     component: GeneralFormPage,
+    canDeactivate: [unsavedChangesGuard],
     canActivate: [roleGuard([
       Role.User,
       Role.Admin,
@@ -262,6 +266,7 @@ export const routes: Routes = [
   {
     path: 'contact-documentation',
     component: ContactDocumentation,
+    canDeactivate: [unsavedChangesGuard],
     canActivate: [roleGuard([
       Role.User,
       Role.Admin,
@@ -272,6 +277,7 @@ export const routes: Routes = [
   {
     path: 'contact-documentation/:caseId',
     component: ContactDocumentation,
+    canDeactivate: [unsavedChangesGuard],
     canActivate: [roleGuard([
       Role.User,
       Role.Admin,
@@ -284,6 +290,7 @@ export const routes: Routes = [
     // contact-documentation-table - see the 'responses/:caseFormId' route above.
     path: 'contact-documentation/:caseId/:docId',
     component: EditContactDocumentationPage,
+    canDeactivate: [unsavedChangesGuard],
     canActivate: [roleGuard([
       Role.User,
       Role.Admin,

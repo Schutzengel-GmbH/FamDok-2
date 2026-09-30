@@ -111,6 +111,55 @@ describe('GeneralFormPage', () => {
     });
   });
 
+  describe('hasUnsavedChanges', () => {
+    const question = buildQuestion();
+    const answer = buildAnswer({ questionId: question.id, answerText: 'hi' });
+
+    function setupLoaded(queryParams: Record<string, string> = {}) {
+      setup({ id: '' }, { definitionId: 'form-1', ...queryParams });
+      fixture.detectChanges();
+      httpMock
+        .expectOne((r) => r.url.includes('/general-form/definitions/i/form-1'))
+        .flush({ id: 'form-1', name: 'Feedback', questions: [question] });
+    }
+
+    it('is false for a freshly loaded form', () => {
+      setupLoaded();
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is true once an answer was changed', () => {
+      setupLoaded();
+
+      component['setAnswer'](question.id, answer);
+
+      expect(component['answers'][question.id]).toEqual(answer as any);
+      expect(component.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('is false when read-only', () => {
+      setupLoaded({ readonly: 'true' });
+
+      component['setAnswer'](question.id, answer);
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is false again after a successful save', () => {
+      setupLoaded();
+      spyOn(TestBed.inject(NavigationService), 'back');
+      component['setAnswer'](question.id, answer);
+
+      component['save']();
+      httpMock
+        .expectOne(`${environment.apiUrl}/general-form/responses`)
+        .flush({ id: 'resp-1' });
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+  });
+
   describe('save', () => {
     function setupSaved() {
       setup({ id: '' }, { definitionId: 'form-1' });

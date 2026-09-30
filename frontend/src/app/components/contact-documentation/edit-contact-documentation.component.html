@@ -9,7 +9,7 @@
     {{ initialCase()!.family?.name ?? "(Daten gelöscht)" }}
   </h3>
 }
-@if (case() || initialCase()) {
+@if ((case() || initialCase()) && !draftPending()) {
   <ul class="nav nav-tabs mt-3">
     <li class="nav-item">
       <button
@@ -64,14 +64,14 @@
               type="time"
               class="form-control"
               [value]="start()"
-              (change)="start.set($event.target.value)" />
+              (change)="start.set($event.target.value); form.markAsDirty()" />
             <span class="input-group-text">–</span>
             <input
               id="end"
               type="time"
               class="form-control"
               [value]="end()"
-              (change)="end.set($event.target.value)" />
+              (change)="end.set($event.target.value); form.markAsDirty()" />
           </div>
         </div>
         <div class="flex-grow-1 {{ setDurationViaTime() ? 'd-none' : '' }}">
@@ -89,7 +89,9 @@
         <button
           class="btn btn-outline-secondary"
           type="button"
-          (click)="setDurationViaTime.set(!setDurationViaTime())">
+          (click)="
+            setDurationViaTime.set(!setDurationViaTime()); form.markAsDirty()
+          ">
           {{ setDurationViaTime() ? "von-bis" : "in Minuten" }}
         </button>
       </div>

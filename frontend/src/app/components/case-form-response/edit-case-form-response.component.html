@@ -39,13 +39,16 @@
           <li class="list-group-item">
             <app-select-person-component
               [person]="person()"
-              (personChange)="person.set($event)"
+              (personChange)="setPerson($event)"
               [case]="case()" />
           </li>
         }
         @for (q of caseForm().questions; track $index) {
           <li class="list-group-item">
-            <app-question [question]="q" [(answer)]="answers()[q.id]" />
+            <app-question
+              [question]="q"
+              [answer]="answers()[q.id]"
+              (answerChange)="setAnswer(q.id, $event)" />
           </li>
         }
       </ul>
