@@ -1,7 +1,8 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, viewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { EditContactDocumentation } from 'src/app/components/contact-documentation/edit-contact-documentation.component';
+import { HasUnsavedChanges } from 'src/app/auth/guards/unsavedChangesGuard';
 import { CaseService } from 'src/app/services/case.service';
 import { ContactDocumentationService } from 'src/app/services/contact-documentation.service';
 
@@ -10,7 +11,7 @@ import { ContactDocumentationService } from 'src/app/services/contact-documentat
   standalone: true,
   imports: [AsyncPipe, EditContactDocumentation],
 })
-export class EditContactDocumentationPage {
+export class EditContactDocumentationPage implements HasUnsavedChanges {
   private activatedRoute = inject(ActivatedRoute);
   private documentationService = inject(ContactDocumentationService);
   private caseService = inject(CaseService);
@@ -21,4 +22,10 @@ export class EditContactDocumentationPage {
     this.activatedRoute.snapshot.queryParamMap.get('readonly') === 'true';
   doc$ = this.documentationService.getDocumentation(this.caseId, this.docId);
   case$ = this.caseService.getCase(this.caseId);
+
+  private editor = viewChild(EditContactDocumentation);
+
+  hasUnsavedChanges() {
+    return this.editor()?.hasUnsavedChanges() ?? false;
+  }
 }

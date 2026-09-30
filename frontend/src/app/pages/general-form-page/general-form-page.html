@@ -9,7 +9,10 @@
       <ul class="list-group">
         @for (q of form.questions; track q.id) {
           <li class="list-group-item">
-            <app-question [question]="q" [(answer)]="answers[q.id]" />
+            <app-question
+              [question]="q"
+              [answer]="answers[q.id]"
+              (answerChange)="setAnswer(q.id, $event)" />
           </li>
         }
       </ul>

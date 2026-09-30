@@ -262,4 +262,66 @@ describe('EditContactDocumentation', () => {
     );
     expect(component['draftCreated']).toBeTrue();
   });
+
+  it('hides the form while the draft is being created and shows it if that fails', () => {
+    fixture.componentRef.setInput('initialCase', testCase);
+    fixture.componentRef.setInput('isNew', true);
+    fixture.detectChanges();
+    TestBed.tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('form')).toBeNull();
+
+    httpMock
+      .expectOne(
+        (r) =>
+          r.url === `${environment.apiUrl}/case/i/case-1/documentation` &&
+          r.method === 'POST',
+      )
+      .flush('boom', { status: 500, statusText: 'Server Error' });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('form')).not.toBeNull();
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('keeps the form dirty when saving fails', () => {
+    fixture.componentRef.setInput('initialCase', testCase);
+    fixture.componentRef.setInput('doc', fullDoc);
+    fixture.detectChanges();
+
+    component['form'].patchValue({ zusammenfassung: 'Geändert' });
+    component['form'].markAsDirty();
+    expect(component.hasUnsavedChanges()).toBeTrue();
+
+    component.setActiveTab('dokumentation');
+    httpMock
+      .expectOne(
+        (r) =>
+          r.url ===
+            `${environment.apiUrl}/case/i/case-1/documentation/i/doc-1` &&
+          r.method === 'PUT',
+      )
+      .flush('boom', { status: 500, statusText: 'Server Error' });
+
+    expect(component.hasUnsavedChanges()).toBeTrue();
+    expect(toast.toasts()[0]).toEqual(
+      jasmine.objectContaining({ title: 'Nicht gespeichert', severity: 'danger' }),
+    );
+    expect(component['form'].value.zusammenfassung).toBe('Geändert');
+    expect(navigation.back).not.toHaveBeenCalled();
+  });
+
+  it('reports no unsaved changes for an untouched or read-only form', () => {
+    fixture.componentRef.setInput('initialCase', testCase);
+    fixture.componentRef.setInput('doc', fullDoc);
+    fixture.detectChanges();
+
+    expect(component.hasUnsavedChanges()).toBeFalse();
+
+    component['form'].markAsDirty();
+    fixture.componentRef.setInput('readOnly', true);
+
+    expect(component.hasUnsavedChanges()).toBeFalse();
+  });
 });

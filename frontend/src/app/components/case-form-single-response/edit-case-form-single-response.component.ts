@@ -33,6 +33,25 @@ export class EditCaseFormSingleResponse implements OnInit {
   private toastService = inject(ToastService);
   private dialogService = inject(ConfirmDialogService);
 
+  private dirty = false;
+
+  hasUnsavedChanges() {
+    return !this.readOnly() && this.dirty;
+  }
+
+  protected setAnswer(
+    questionId: Answer['questionId'],
+    answer: Partial<Answer> | undefined,
+  ) {
+    this.answers[questionId] = answer as Answer;
+    this.dirty = true;
+  }
+
+  protected setPerson(person: Child | Caregiver | undefined) {
+    if (person?.id !== this.person()?.id) this.dirty = true;
+    this.person.set(person);
+  }
+
   ngOnInit() {
     this.caseFormService
       .getCaseFormResponsesForForm(this.caseForm().id, {
@@ -78,6 +97,7 @@ export class EditCaseFormSingleResponse implements OnInit {
           text: `Antwort für Familie ${res.case.family?.name ?? ''} gespeichert.`,
           severity: 'success',
         });
+        this.dirty = false;
         this.navigation.back();
       });
   }
@@ -98,6 +118,7 @@ export class EditCaseFormSingleResponse implements OnInit {
               text: `Antwort gelöscht.`,
               severity: 'success',
             });
+            this.dirty = false;
             this.navigation.back();
           });
       },

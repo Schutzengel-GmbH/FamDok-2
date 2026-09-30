@@ -80,6 +80,62 @@ describe('EditCaseFormSingleResponse', () => {
     expect(component.responseId).toBeUndefined();
   });
 
+  describe('hasUnsavedChanges', () => {
+    const question = buildQuestion();
+    const form = { id: 'form-1', name: 'Formular', type: 'single', isPersonal: false, questions: [question] };
+    const answer = buildAnswer({ questionId: question.id, answerText: 'X' });
+
+    function setupLoaded(responses: any[] = []) {
+      setup(form);
+      httpMock.expectOne((r) => r.url.includes('/case-form-response')).flush(responses);
+    }
+
+    it('is false for a freshly loaded response', () => {
+      setupLoaded([{ id: 'resp-1', answers: [answer] }]);
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is true once an answer was changed', () => {
+      setupLoaded();
+
+      component['setAnswer'](question.id, answer);
+
+      expect(component['answers'][question.id]).toEqual(answer as any);
+      expect(component.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('is true once another person was selected', () => {
+      setupLoaded();
+
+      component['setPerson'](undefined);
+      expect(component.hasUnsavedChanges()).toBeFalse();
+
+      component['setPerson']({ id: 'child-1' } as any);
+      expect(component.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('is false when read-only', () => {
+      setupLoaded();
+      component['setAnswer'](question.id, answer);
+      fixture.componentRef.setInput('readOnly', true);
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is false again after a successful save', () => {
+      setupLoaded();
+      component['setAnswer'](question.id, answer);
+
+      component['saveResponse']();
+      httpMock
+        .expectOne((r) => r.url.includes('/case-form-response') && r.method === 'POST')
+        .flush({ id: 'resp-1', case: { family: { name: 'Musterfamilie' } } });
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+  });
+
   it('saves the collected answers and navigates home on success', () => {
     const question = buildQuestion();
     setup({ id: 'form-1', name: 'Formular', type: 'single', isPersonal: false, questions: [question] });
