@@ -140,12 +140,9 @@ export async function canHandover(
     isOrgCoordinatorFor(user, c) ||
     isSubOrgCoordinatorFor(user, c);
 
-  return (
-    canAccess &&
-    notEmptyAfter &&
-    canRemove &&
-    allInOrg(addedUsers, c.organisationId)
-  );
+  const allAreInOrg = await allInOrg(addedUsers, c.organisationId);
+
+  return canAccess && notEmptyAfter && canRemove && allAreInOrg;
 }
 
 /**
