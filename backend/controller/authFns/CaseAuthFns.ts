@@ -119,7 +119,7 @@ export async function canHandover(
     c.responsibleUsers
       .map((c) => c.id)
       .concat(handover.addedIds)
-      .filter((id) => !handover.removedIds.includes(id)).length >= 0;
+      .filter((id) => !handover.removedIds.includes(id)).length > 0;
 
   const addedUsers = await Promise.all(
     handover.addedIds.map((id) => {
