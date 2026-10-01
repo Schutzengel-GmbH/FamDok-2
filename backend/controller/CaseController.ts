@@ -483,7 +483,7 @@ export class CaseController {
     });
 
     if (!c) throw new NotFoundError();
-    if (!canHandover(initiatingUser, c, handover))
+    if (!(await canHandover(initiatingUser, c, handover)))
       throw new ForbiddenError('Illegal Handover');
 
     const update = await prisma.case.update({
@@ -790,7 +790,9 @@ export class CaseController {
                 header: 'Person',
                 value: (r: ExportResponse) => {
                   const p = r.child ?? r.caregiver;
-                  return p ? [p.name, p.lastName].filter(Boolean).join(' ') : '';
+                  return p
+                    ? [p.name, p.lastName].filter(Boolean).join(' ')
+                    : '';
                 },
               },
             ]

@@ -12,6 +12,14 @@ import {
   USER_DEFAULT_INCLUDE,
 } from '../../../shared/consts';
 import { isSameOrg, isSameSubOrg } from './scopeUtils';
+import {
+  allInOrg,
+  isOrgCoordinatorFor,
+  isResponsibleFor,
+  isSubOrgCoordinatorFor,
+} from '../../util/authUtils';
+import { prisma } from '../../db';
+
 // Controllers only ever get anonymized/read-only access to case data - they must never be
 // able to create, edit, close, or hand over a case, even though they can see one.
 const READ_OVERRIDE_ROLES: Role[] = [Role.Admin, Role.Controller];
@@ -27,10 +35,12 @@ type CaseWithScope = Prisma.CaseGetPayload<{
 
 export function canSeeCase(user: FullUser, c: CaseWithScope): boolean {
   if (READ_OVERRIDE_ROLES.includes(user.role)) return true;
-  if (user.role === Role.OrgController) return isSameOrg(user, c.organisationId);
+  if (user.role === Role.OrgController)
+    return isSameOrg(user, c.organisationId);
   // OrgCoordinator/SubOrgCoordinator: same as normal Users below, plus read access to all
   // case data within their org/suborg to coordinate other users.
-  if (user.role === Role.OrgCoordinator) return isSameOrg(user, c.organisationId);
+  if (user.role === Role.OrgCoordinator)
+    return isSameOrg(user, c.organisationId);
   if (user.role === Role.SubOrgCoordinator)
     return isSameSubOrg(user, c.subOrganisationId);
   return c.responsibleUsers?.some((ru) => ru.id === user.id) ?? false;
@@ -43,7 +53,8 @@ export function canSeeCase(user: FullUser, c: CaseWithScope): boolean {
 export function canExportCase(user: FullUser, c: CaseWithScope): boolean {
   if (user.role === Role.Admin) return true;
   if (c.responsibleUsers?.some((ru) => ru.id === user.id)) return true;
-  if (user.role === Role.OrgCoordinator) return isSameOrg(user, c.organisationId);
+  if (user.role === Role.OrgCoordinator)
+    return isSameOrg(user, c.organisationId);
   if (user.role === Role.SubOrgCoordinator)
     return isSameSubOrg(user, c.subOrganisationId);
   return false;
@@ -99,24 +110,39 @@ export function canCreate(user: User, input: Prisma.CaseCreateInput): boolean {
   return true;
 }
 
-export function canHandover(
-  user: User,
+export async function canHandover(
+  user: FullUser,
   c: Case & { responsibleUsers: { id: string }[] },
   handover: Handover
-): boolean {
-  if (
-    !c.responsibleUsers.find((u) => u.id === user.id) &&
-    user.role !== 'Admin'
-  )
-    return false;
+) {
+  const notEmptyAfter =
+    c.responsibleUsers
+      .map((c) => c.id)
+      .concat(handover.addedIds)
+      .filter((id) => !handover.removedIds.includes(id)).length > 0;
 
-  const useridsAfterHandover = c.responsibleUsers
-    .map((c) => c.id)
-    .concat(handover.addedIds)
-    .filter((id) => !handover.removedIds.includes(id));
-  if (useridsAfterHandover.length < 1) return false;
+  const addedUsers = await Promise.all(
+    handover.addedIds.map((id) => {
+      return prisma.user.findUniqueOrThrow({ where: { id } });
+    })
+  );
 
-  return true;
+  const noRemoval = !handover.removedIds || handover.removedIds.length === 0;
+
+  const canRemove =
+    noRemoval ||
+    (handover.removedIds.length === 1 && handover.removedIds[0] === user.id) ||
+    user.role === 'OrgCoordinator' ||
+    user.role === 'SubOrgCoordinator';
+
+  const canAccess =
+    isResponsibleFor(user, c) ||
+    isOrgCoordinatorFor(user, c) ||
+    isSubOrgCoordinatorFor(user, c);
+
+  const allAreInOrg = await allInOrg(addedUsers, c.organisationId);
+
+  return canAccess && notEmptyAfter && canRemove && allAreInOrg;
 }
 
 /**
@@ -276,7 +302,8 @@ function sanitizeScalarRelationFilter<Filter extends Record<string, unknown>>(
 ): Filter {
   if ('is' in filter || 'isNot' in filter) {
     const sanitized: Record<string, unknown> = { ...filter };
-    if (sanitized['is'] !== undefined) sanitized['is'] = sanitize(sanitized['is']);
+    if (sanitized['is'] !== undefined)
+      sanitized['is'] = sanitize(sanitized['is']);
     if (sanitized['isNot'] !== undefined)
       sanitized['isNot'] = sanitize(sanitized['isNot']);
     return sanitized as Filter;

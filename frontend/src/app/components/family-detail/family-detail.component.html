@@ -124,9 +124,7 @@
               <div class="tab-section">
                 <p class="text-muted">
                   Personenbezogene Daten dieser Familie wurden am
-                  {{
-                    formatDateDisplay(selectedCase()!.personalDataDeletedAt)
-                  }}
+                  {{ formatDateDisplay(selectedCase()!.personalDataDeletedAt) }}
                   gelöscht.
                 </p>
               </div>
@@ -173,7 +171,6 @@
           <ng-container>
             <app-tab-familienbetreuer
               [selectedCase]="selectedCase()!"
-              [readOnly]="readOnly()"
               (changes)="responsibleUsersChanged($event.userRemoved)" />
           </ng-container>
         }
@@ -190,10 +187,7 @@
 
     <div class="detail-footer">
       <span class="footer-hint">Datenstand: aktuell aus der Fallakte</span>
-      <button
-        type="button"
-        class="btn btn-secondary btn-sm"
-        (click)="goBack()">
+      <button type="button" class="btn btn-secondary btn-sm" (click)="goBack()">
         Zurück zur Übersicht
       </button>
     </div>
