@@ -47,8 +47,7 @@ export class TabAnhaengeComponent implements OnInit {
   }
 
   protected get canUpload(): boolean {
-    if (this.readOnly()) return false;
-    return this.me()?.role !== Role.Controller;
+    return !this.readOnly();
   }
 
   protected canDelete(attachment: FullCaseAttachment): boolean {
