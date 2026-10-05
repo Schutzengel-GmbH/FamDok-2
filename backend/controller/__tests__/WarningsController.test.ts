@@ -1,4 +1,6 @@
-jest.mock('../../db', () => ({ prisma: require('../../testUtils/prismaMock').createPrismaMock() }));
+jest.mock('../../db', () => ({
+  prisma: require('../../testUtils/prismaMock').createPrismaMock(),
+}));
 
 import { prisma } from '../../db';
 import { createPrismaMock } from '../../testUtils/prismaMock';
@@ -34,7 +36,9 @@ function stubEmptyBaseline() {
 describe('WarningsController.getWarnings', () => {
   it('warns ZV_EXPIRED for an overdue zielvereinbarung', async () => {
     stubEmptyBaseline();
-    const zv = buildZielvereinbarung({ finishBy: new Date(Date.now() - 10 * DAY) });
+    const zv = buildZielvereinbarung({
+      finishBy: new Date(Date.now() - 10 * DAY),
+    });
     prismaMock.zielvereinbarung.findMany.mockResolvedValue([zv]);
 
     const warnings = await WarningsController.getWarnings('user-1');
@@ -43,14 +47,20 @@ describe('WarningsController.getWarnings', () => {
       {
         level: WarningLevel.WARNING,
         type: WarningType.ZV_EXPIRED,
-        data: { zielvereinbarungsId: zv.id, caseId: zv.caseId, finishBy: zv.finishBy },
+        data: {
+          zielvereinbarungsId: zv.id,
+          caseId: zv.caseId,
+          finishBy: zv.finishBy,
+        },
       },
     ]);
   });
 
   it('warns ZV_EXPIRING_SOON when the zielvereinbarung deadline is still in the future', async () => {
     stubEmptyBaseline();
-    const zv = buildZielvereinbarung({ finishBy: new Date(Date.now() + 3 * DAY) });
+    const zv = buildZielvereinbarung({
+      finishBy: new Date(Date.now() + 3 * DAY),
+    });
     prismaMock.zielvereinbarung.findMany.mockResolvedValue([zv]);
 
     const warnings = await WarningsController.getWarnings('user-1');
@@ -59,14 +69,20 @@ describe('WarningsController.getWarnings', () => {
       {
         level: WarningLevel.INFO,
         type: WarningType.ZV_EXPIRING_SOON,
-        data: { zielvereinbarungsId: zv.id, caseId: zv.caseId, finishBy: zv.finishBy },
+        data: {
+          zielvereinbarungsId: zv.id,
+          caseId: zv.caseId,
+          finishBy: zv.finishBy,
+        },
       },
     ]);
   });
 
   it('warns CASE_NO_CONTACT when a case has no contact documentation at all', async () => {
     const userCase = buildCase();
-    prismaMock.case.findMany.mockResolvedValueOnce([userCase]).mockResolvedValue([]);
+    prismaMock.case.findMany
+      .mockResolvedValueOnce([userCase])
+      .mockResolvedValue([]);
     prismaMock.zielvereinbarung.findMany.mockResolvedValue([]);
     prismaMock.contactDocumentation.findFirst.mockResolvedValue(null);
     prismaMock.contactDocumentation.findMany.mockResolvedValue([]);
@@ -84,11 +100,16 @@ describe('WarningsController.getWarnings', () => {
   });
 
   it('warns CASE_NO_CONTACT when the last contact is older than 2 months', async () => {
-    const userCase = buildCase();
-    prismaMock.case.findMany.mockResolvedValueOnce([userCase]).mockResolvedValue([]);
+    const oldContact = buildContactDocumentation({
+      date: new Date(Date.now() - 90 * DAY),
+    });
+    const userCase = buildCase({
+      contactDocumentation: [oldContact],
+    });
+    prismaMock.case.findMany
+      .mockResolvedValueOnce([userCase])
+      .mockResolvedValue([]);
     prismaMock.zielvereinbarung.findMany.mockResolvedValue([]);
-    const oldContact = buildContactDocumentation({ date: new Date(Date.now() - 90 * DAY) });
-    prismaMock.contactDocumentation.findFirst.mockResolvedValue(oldContact);
     prismaMock.contactDocumentation.findMany.mockResolvedValue([]);
     prismaMock.caseFormResponse.findMany.mockResolvedValue([]);
 
@@ -104,11 +125,13 @@ describe('WarningsController.getWarnings', () => {
   });
 
   it('does not warn when the last contact is recent', async () => {
-    const userCase = buildCase();
-    prismaMock.case.findMany.mockResolvedValueOnce([userCase]).mockResolvedValue([]);
+    const userCase = buildCase({
+      contactDocumentation: [{ date: new Date(Date.now() - 7 * DAY) }],
+    });
+    prismaMock.case.findMany
+      .mockResolvedValueOnce([userCase])
+      .mockResolvedValue([]);
     prismaMock.zielvereinbarung.findMany.mockResolvedValue([]);
-    const recentContact = buildContactDocumentation({ date: new Date(Date.now() - 7 * DAY) });
-    prismaMock.contactDocumentation.findFirst.mockResolvedValue(recentContact);
     prismaMock.contactDocumentation.findMany.mockResolvedValue([]);
     prismaMock.caseFormResponse.findMany.mockResolvedValue([]);
 
@@ -119,7 +142,9 @@ describe('WarningsController.getWarnings', () => {
 
   it('warns UNFINISHED_FORM for an incomplete contact documentation', async () => {
     stubEmptyBaseline();
-    const incompleteDoc = buildContactDocumentation({ duration: undefined as any });
+    const incompleteDoc = buildContactDocumentation({
+      duration: undefined as any,
+    });
     prismaMock.contactDocumentation.findMany.mockResolvedValue([incompleteDoc]);
 
     const warnings = await WarningsController.getWarnings('user-1');
@@ -179,7 +204,9 @@ describe('WarningsController.getWarnings', () => {
     const personalDataDueAt = new Date(Date.now() - 5 * DAY);
     const dueCase = buildCase({ personalDataDueAt });
     stubEmptyBaseline();
-    prismaMock.case.findMany.mockResolvedValueOnce([]).mockResolvedValue([dueCase]);
+    prismaMock.case.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([dueCase]);
 
     const warnings = await WarningsController.getWarnings('user-1');
 
