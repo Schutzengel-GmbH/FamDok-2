@@ -790,7 +790,9 @@ export class CaseController {
                 header: 'Person',
                 value: (r: ExportResponse) => {
                   const p = r.child ?? r.caregiver;
-                  return p ? [p.name, p.lastName].filter(Boolean).join(' ') : '';
+                  return p
+                    ? [p.name, p.lastName].filter(Boolean).join(' ')
+                    : '';
                 },
               },
             ]
