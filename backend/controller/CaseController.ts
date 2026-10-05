@@ -249,19 +249,12 @@ export class CaseController {
       ...contactDocumentationQueryArgsFor(user),
     });
 
-    await Promise.all(
-      d.map((doc) =>
-        prisma.case
-          .findUniqueOrThrow({
-            where: { id: doc.caseId },
-            include: CASE_DEFAULT_INCLUDE,
-          })
-          .then((c) => {
-            if (!canSeeCase(user, c))
-              throw new ForbiddenError("User can't access some of these cases");
-          })
-      )
-    );
+    d.forEach((doc) => {
+      // I think we can make this assertion because if the case does not
+      // include responsibleUsers, the canSeeCase should correctly reject
+      if (!canSeeCase(user, doc.case as FullCase))
+        throw new ForbiddenError("User can't access some of these cases");
+    });
 
     return d;
   }

@@ -365,12 +365,10 @@ describe('CaseController', () => {
 
   describe('getMyContactDocumentations', () => {
     it('scopes the filter to documentation created by the user', async () => {
-      const user = buildUser({ role: Role.Admin });
-      const doc = buildContactDocumentation({ userId: user.id });
+      const user = buildUser({ role: Role.User });
+      const c = caseFor(user);
+      const doc = buildContactDocumentation({ userId: user.id, case: c });
       prismaMock.contactDocumentation.findMany.mockResolvedValue([doc]);
-      prismaMock.case.findUniqueOrThrow.mockResolvedValue(
-        caseFor(user, { id: doc.caseId })
-      );
 
       const result = await CaseController.getMyContactDocumentations(user);
 
@@ -382,11 +380,9 @@ describe('CaseController', () => {
 
     it('throws ForbiddenError when a related case is not visible', async () => {
       const user = buildUser({ role: Role.User });
-      const doc = buildContactDocumentation();
+      const c = caseFor({ id: 'someone-else' });
+      const doc = buildContactDocumentation({ case: c });
       prismaMock.contactDocumentation.findMany.mockResolvedValue([doc]);
-      prismaMock.case.findUniqueOrThrow.mockResolvedValue(
-        caseFor({ id: 'someone-else' }, { id: doc.caseId })
-      );
 
       await expect(
         CaseController.getMyContactDocumentations(user)
