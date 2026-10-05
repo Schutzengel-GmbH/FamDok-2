@@ -5,10 +5,12 @@
   </div>
   <div class="card-body">
     <ng-select
+      appendTo="body"
       bindLabel="name"
       [(ngModel)]="selectedForm"
       [items]="forms() || []"></ng-select>
     <ng-select
+      appendTo="body"
       bindLabel="text"
       [(ngModel)]="selectedQuestion"
       [items]="questions() || []"

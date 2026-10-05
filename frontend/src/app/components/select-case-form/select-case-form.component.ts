@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-select-case-form',
   template: `<ng-select
+    appendTo="body"
     ariaLabel="Formular auswählen"
     placeholder="Formular auswählen"
     [items]="forms()"
