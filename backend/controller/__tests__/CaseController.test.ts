@@ -1,4 +1,6 @@
-jest.mock('../../db', () => ({ prisma: require('../../testUtils/prismaMock').createPrismaMock() }));
+jest.mock('../../db', () => ({
+  prisma: require('../../testUtils/prismaMock').createPrismaMock(),
+}));
 jest.mock('../../util/pdfService', () => ({
   PDFService: { contactDocumentationPDF: jest.fn(), stammdatenPDF: jest.fn() },
 }));
@@ -22,7 +24,11 @@ import {
   buildZielvereinbarung,
 } from '../../testUtils/fixtures';
 import { CaseController } from '../CaseController';
-import { BadRequestError, ForbiddenError, NotFoundError } from '../../util/authUtils';
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} from '../../util/authUtils';
 import { PDFService } from '../../util/pdfService';
 import { streamFile, deleteStoredFile } from '../../util/fileStorage';
 import { Role } from '../../../shared/generated/prisma/client';
@@ -50,7 +56,9 @@ describe('CaseController', () => {
       const cases = [caseFor(user)];
       prismaMock.case.findMany.mockResolvedValue(cases);
 
-      const result = await CaseController.getAll(user, { organisationId: 'org-1' } as any);
+      const result = await CaseController.getAll(user, {
+        organisationId: 'org-1',
+      } as any);
 
       expect(result).toBe(cases);
     });
@@ -88,7 +96,9 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       prismaMock.case.findUnique.mockResolvedValue(null);
 
-      await expect(CaseController.get(user, 'missing')).rejects.toThrow(NotFoundError);
+      await expect(CaseController.get(user, 'missing')).rejects.toThrow(
+        NotFoundError
+      );
     });
 
     it('throws ForbiddenError when not visible', async () => {
@@ -96,7 +106,9 @@ describe('CaseController', () => {
       const c = caseFor({ id: 'someone-else' });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      await expect(CaseController.get(user, c.id)).rejects.toThrow(ForbiddenError);
+      await expect(CaseController.get(user, c.id)).rejects.toThrow(
+        ForbiddenError
+      );
     });
   });
 
@@ -125,14 +137,18 @@ describe('CaseController', () => {
       const data = validCreateData(user);
       data.organisation = { connect: { id: 'org-2' } };
 
-      await expect(CaseController.create(user, data)).rejects.toThrow(ForbiddenError);
+      await expect(CaseController.create(user, data)).rejects.toThrow(
+        ForbiddenError
+      );
       expect(prismaMock.case.create).not.toHaveBeenCalled();
     });
 
     it('throws a validation error when required fields are missing', async () => {
       const user = buildUser({ role: Role.User });
 
-      await expect(CaseController.create(user, { startedAt: new Date() } as any)).rejects.toThrow();
+      await expect(
+        CaseController.create(user, { startedAt: new Date() } as any)
+      ).rejects.toThrow();
     });
   });
 
@@ -144,7 +160,9 @@ describe('CaseController', () => {
       const updated = { ...c, city: 'Berlin' };
       prismaMock.case.update.mockResolvedValue(updated);
 
-      const result = await CaseController.updateCase(user, c.id, { city: 'Berlin' });
+      const result = await CaseController.updateCase(user, c.id, {
+        city: 'Berlin',
+      });
 
       expect(result).toBe(updated);
     });
@@ -153,7 +171,9 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       prismaMock.case.findUnique.mockResolvedValue(null);
 
-      await expect(CaseController.updateCase(user, 'missing', {})).rejects.toThrow(NotFoundError);
+      await expect(
+        CaseController.updateCase(user, 'missing', {})
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('throws ForbiddenError when the user cannot edit the case', async () => {
@@ -161,7 +181,9 @@ describe('CaseController', () => {
       const c = caseFor({ id: 'someone-else' });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      await expect(CaseController.updateCase(user, c.id, {})).rejects.toThrow(ForbiddenError);
+      await expect(CaseController.updateCase(user, c.id, {})).rejects.toThrow(
+        ForbiddenError
+      );
       expect(prismaMock.case.update).not.toHaveBeenCalled();
     });
   });
@@ -194,9 +216,9 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       prismaMock.case.findUnique.mockResolvedValue(null);
 
-      await expect(CaseController.addZiel(user, 'missing', zielInput)).rejects.toThrow(
-        NotFoundError
-      );
+      await expect(
+        CaseController.addZiel(user, 'missing', zielInput)
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('throws ForbiddenError when the user cannot edit the case', async () => {
@@ -204,7 +226,9 @@ describe('CaseController', () => {
       const c = caseFor({ id: 'someone-else' });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      await expect(CaseController.addZiel(user, c.id, zielInput)).rejects.toThrow(ForbiddenError);
+      await expect(
+        CaseController.addZiel(user, c.id, zielInput)
+      ).rejects.toThrow(ForbiddenError);
     });
   });
 
@@ -216,16 +240,21 @@ describe('CaseController', () => {
       const zv = buildZielvereinbarung();
       prismaMock.zielvereinbarung.update.mockResolvedValue(zv);
 
-      const result = await CaseController.updateZiel(user, zv.id, { topic: 'New' });
+      const result = await CaseController.updateZiel(user, zv.id, {
+        topic: 'New',
+      });
 
       expect(result).toBe(zv);
     });
 
+    //@ts-ignore
     it('throws NotFoundError when no case owns that zielvereinbarung', async () => {
       const user = buildUser({ role: Role.Admin });
       prismaMock.case.findFirst.mockResolvedValue(null);
 
-      await expect(CaseController.updateZiel(user, 'missing', {})).rejects.toThrow(NotFoundError);
+      await expect(
+        CaseController.updateZiel(user, 'missing', {})
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('throws ForbiddenError when the user cannot edit the case', async () => {
@@ -233,7 +262,9 @@ describe('CaseController', () => {
       const c = caseFor({ id: 'someone-else' });
       prismaMock.case.findFirst.mockResolvedValue(c);
 
-      await expect(CaseController.updateZiel(user, 'zv-1', {})).rejects.toThrow(ForbiddenError);
+      await expect(CaseController.updateZiel(user, 'zv-1', {})).rejects.toThrow(
+        ForbiddenError
+      );
       expect(prismaMock.zielvereinbarung.update).not.toHaveBeenCalled();
     });
   });
@@ -254,7 +285,9 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       prismaMock.case.findUnique.mockResolvedValue(null);
 
-      await expect(CaseController.delete(user, 'missing')).rejects.toThrow(NotFoundError);
+      await expect(CaseController.delete(user, 'missing')).rejects.toThrow(
+        NotFoundError
+      );
     });
 
     it('throws ForbiddenError when the user cannot edit the case', async () => {
@@ -262,7 +295,9 @@ describe('CaseController', () => {
       const c = caseFor({ id: 'someone-else' });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      await expect(CaseController.delete(user, c.id)).rejects.toThrow(ForbiddenError);
+      await expect(CaseController.delete(user, c.id)).rejects.toThrow(
+        ForbiddenError
+      );
       expect(prismaMock.case.delete).not.toHaveBeenCalled();
     });
   });
@@ -276,14 +311,18 @@ describe('CaseController', () => {
 
       await CaseController.deleteZiel(user, 'zv-1');
 
-      expect(prismaMock.zielvereinbarung.delete).toHaveBeenCalledWith({ where: { id: 'zv-1' } });
+      expect(prismaMock.zielvereinbarung.delete).toHaveBeenCalledWith({
+        where: { id: 'zv-1' },
+      });
     });
 
     it('throws NotFoundError when no case owns that zielvereinbarung', async () => {
       const user = buildUser({ role: Role.Admin });
       prismaMock.case.findFirst.mockResolvedValue(null);
 
-      await expect(CaseController.deleteZiel(user, 'missing')).rejects.toThrow(NotFoundError);
+      await expect(CaseController.deleteZiel(user, 'missing')).rejects.toThrow(
+        NotFoundError
+      );
     });
 
     it('throws ForbiddenError when the user cannot edit the case', async () => {
@@ -291,16 +330,18 @@ describe('CaseController', () => {
       const c = caseFor({ id: 'someone-else' });
       prismaMock.case.findFirst.mockResolvedValue(c);
 
-      await expect(CaseController.deleteZiel(user, 'zv-1')).rejects.toThrow(ForbiddenError);
+      await expect(CaseController.deleteZiel(user, 'zv-1')).rejects.toThrow(
+        ForbiddenError
+      );
     });
   });
 
   describe('getContactDocumentations', () => {
     it('returns docs when the user can see every related case', async () => {
       const user = buildUser({ role: Role.Admin });
-      const doc = buildContactDocumentation();
+      const c = caseFor(user);
+      const doc = buildContactDocumentation({ case: c });
       prismaMock.contactDocumentation.findMany.mockResolvedValue([doc]);
-      prismaMock.case.findUniqueOrThrow.mockResolvedValue(caseFor(user, { id: doc.caseId }));
 
       const result = await CaseController.getContactDocumentations(user);
 
@@ -309,13 +350,16 @@ describe('CaseController', () => {
 
     it('throws ForbiddenError (and awaits the check) when a related case is not visible', async () => {
       const user = buildUser({ role: Role.User });
-      const doc = buildContactDocumentation();
+      const c = caseFor({ id: 'someone-else' });
+      const doc = buildContactDocumentation({ case: c });
       prismaMock.contactDocumentation.findMany.mockResolvedValue([doc]);
-      prismaMock.case.findUniqueOrThrow.mockResolvedValue(
-        caseFor({ id: 'someone-else' }, { id: doc.caseId })
-      );
+      // prismaMock.case.findUniqueOrThrow.mockResolvedValue(
+      //   caseFor({ id: 'someone-else' }, { id: doc.caseId })
+      // );
 
-      await expect(CaseController.getContactDocumentations(user)).rejects.toThrow(ForbiddenError);
+      await expect(
+        CaseController.getContactDocumentations(user)
+      ).rejects.toThrow(ForbiddenError);
     });
   });
 
@@ -324,7 +368,9 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       const doc = buildContactDocumentation({ userId: user.id });
       prismaMock.contactDocumentation.findMany.mockResolvedValue([doc]);
-      prismaMock.case.findUniqueOrThrow.mockResolvedValue(caseFor(user, { id: doc.caseId }));
+      prismaMock.case.findUniqueOrThrow.mockResolvedValue(
+        caseFor(user, { id: doc.caseId })
+      );
 
       const result = await CaseController.getMyContactDocumentations(user);
 
@@ -342,9 +388,9 @@ describe('CaseController', () => {
         caseFor({ id: 'someone-else' }, { id: doc.caseId })
       );
 
-      await expect(CaseController.getMyContactDocumentations(user)).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        CaseController.getMyContactDocumentations(user)
+      ).rejects.toThrow(ForbiddenError);
     });
   });
 
@@ -353,7 +399,9 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       const doc = buildContactDocumentation();
       prismaMock.contactDocumentation.findUnique.mockResolvedValue(doc);
-      prismaMock.case.findUniqueOrThrow.mockResolvedValue(caseFor(user, { id: doc.caseId }));
+      prismaMock.case.findUniqueOrThrow.mockResolvedValue(
+        caseFor(user, { id: doc.caseId })
+      );
 
       const result = await CaseController.getContactDocumentation(user, doc.id);
 
@@ -364,9 +412,9 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       prismaMock.contactDocumentation.findUnique.mockResolvedValue(null);
 
-      await expect(CaseController.getContactDocumentation(user, 'missing')).rejects.toThrow(
-        NotFoundError
-      );
+      await expect(
+        CaseController.getContactDocumentation(user, 'missing')
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('throws ForbiddenError when the related case is not visible', async () => {
@@ -377,9 +425,9 @@ describe('CaseController', () => {
         caseFor({ id: 'someone-else' }, { id: doc.caseId })
       );
 
-      await expect(CaseController.getContactDocumentation(user, doc.id)).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        CaseController.getContactDocumentation(user, doc.id)
+      ).rejects.toThrow(ForbiddenError);
     });
   });
 
@@ -388,11 +436,18 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       const doc = buildContactDocumentation();
       prismaMock.contactDocumentation.findUnique.mockResolvedValue(doc);
-      prismaMock.case.findUniqueOrThrow.mockResolvedValue(caseFor(user, { id: doc.caseId }));
+      prismaMock.case.findUniqueOrThrow.mockResolvedValue(
+        caseFor(user, { id: doc.caseId })
+      );
       const buffer = Buffer.from('pdf');
-      (PDFService.contactDocumentationPDF as jest.Mock).mockResolvedValue(buffer);
+      (PDFService.contactDocumentationPDF as jest.Mock).mockResolvedValue(
+        buffer
+      );
 
-      const result = await CaseController.getContactDocumentationPDF(user, doc.id);
+      const result = await CaseController.getContactDocumentationPDF(
+        user,
+        doc.id
+      );
 
       expect(result).toBe(buffer);
       expect(PDFService.contactDocumentationPDF).toHaveBeenCalledWith(doc);
@@ -402,9 +457,9 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       prismaMock.contactDocumentation.findUnique.mockResolvedValue(null);
 
-      await expect(CaseController.getContactDocumentationPDF(user, 'missing')).rejects.toThrow(
-        NotFoundError
-      );
+      await expect(
+        CaseController.getContactDocumentationPDF(user, 'missing')
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('throws ForbiddenError when the related case is not visible', async () => {
@@ -415,9 +470,9 @@ describe('CaseController', () => {
         caseFor({ id: 'someone-else' }, { id: doc.caseId })
       );
 
-      await expect(CaseController.getContactDocumentationPDF(user, doc.id)).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        CaseController.getContactDocumentationPDF(user, doc.id)
+      ).rejects.toThrow(ForbiddenError);
       expect(PDFService.contactDocumentationPDF).not.toHaveBeenCalled();
     });
   });
@@ -430,7 +485,10 @@ describe('CaseController', () => {
       const docs = [buildContactDocumentation({ caseId: c.id })];
       prismaMock.contactDocumentation.findMany.mockResolvedValue(docs);
 
-      const result = await CaseController.getContactDocumentationForCase(user, c.id);
+      const result = await CaseController.getContactDocumentationForCase(
+        user,
+        c.id
+      );
 
       expect(result).toBe(docs);
     });
@@ -449,9 +507,9 @@ describe('CaseController', () => {
       const c = caseFor({ id: 'someone-else' });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      await expect(CaseController.getContactDocumentationForCase(user, c.id)).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        CaseController.getContactDocumentationForCase(user, c.id)
+      ).rejects.toThrow(ForbiddenError);
     });
   });
 
@@ -490,9 +548,9 @@ describe('CaseController', () => {
       const c = caseFor({ id: 'someone-else' });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      await expect(CaseController.getLatestContactDocumentation(user, c.id)).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        CaseController.getLatestContactDocumentation(user, c.id)
+      ).rejects.toThrow(ForbiddenError);
     });
   });
 
@@ -504,14 +562,19 @@ describe('CaseController', () => {
       const created = buildContactDocumentation({ caseId: c.id });
       prismaMock.contactDocumentation.create.mockResolvedValue(created);
 
-      const result = await CaseController.createContactDocumentation(user, c.id, {
-        date: new Date(),
-        duration: 30,
-        artDerBetreuung: 'Telefon',
-      } as any);
+      const result = await CaseController.createContactDocumentation(
+        user,
+        c.id,
+        {
+          date: new Date(),
+          duration: 30,
+          artDerBetreuung: 'Telefon',
+        } as any
+      );
 
       expect(result).toBe(created);
-      const createCall = prismaMock.contactDocumentation.create.mock.calls[0][0];
+      const createCall =
+        prismaMock.contactDocumentation.create.mock.calls[0][0];
       expect(createCall.data.createdBy).toEqual({ connect: { id: user.id } });
     });
 
@@ -540,13 +603,19 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       const doc = buildContactDocumentation();
       prismaMock.contactDocumentation.findUnique.mockResolvedValue(doc);
-      prismaMock.case.findUniqueOrThrow.mockResolvedValue(caseFor(user, { id: doc.caseId }));
+      prismaMock.case.findUniqueOrThrow.mockResolvedValue(
+        caseFor(user, { id: doc.caseId })
+      );
       const updated = { ...doc, duration: 45 };
       prismaMock.contactDocumentation.update.mockResolvedValue(updated);
 
-      const result = await CaseController.updateContactDocumentation(user, doc.id, {
-        duration: 45,
-      } as any);
+      const result = await CaseController.updateContactDocumentation(
+        user,
+        doc.id,
+        {
+          duration: 45,
+        } as any
+      );
 
       expect(result).toBe(updated);
     });
@@ -571,10 +640,15 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       const doc = buildContactDocumentation();
       prismaMock.contactDocumentation.findUnique.mockResolvedValue(doc);
-      prismaMock.case.findUniqueOrThrow.mockResolvedValue(caseFor(user, { id: doc.caseId }));
+      prismaMock.case.findUniqueOrThrow.mockResolvedValue(
+        caseFor(user, { id: doc.caseId })
+      );
       prismaMock.contactDocumentation.delete.mockResolvedValue(doc);
 
-      const result = await CaseController.deleteContactDocumentation(user, doc.id);
+      const result = await CaseController.deleteContactDocumentation(
+        user,
+        doc.id
+      );
 
       expect(result).toBe(doc);
     });
@@ -587,9 +661,9 @@ describe('CaseController', () => {
         caseFor({ id: 'someone-else' }, { id: doc.caseId })
       );
 
-      await expect(CaseController.deleteContactDocumentation(user, doc.id)).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        CaseController.deleteContactDocumentation(user, doc.id)
+      ).rejects.toThrow(ForbiddenError);
       expect(prismaMock.contactDocumentation.delete).not.toHaveBeenCalled();
     });
   });
@@ -628,7 +702,9 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       prismaMock.case.findUnique.mockResolvedValue(null);
 
-      await expect(CaseController.getHandovers(user, 'missing')).rejects.toThrow(NotFoundError);
+      await expect(
+        CaseController.getHandovers(user, 'missing')
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('throws ForbiddenError when the case is not visible', async () => {
@@ -636,7 +712,9 @@ describe('CaseController', () => {
       const c = caseFor({ id: 'someone-else' });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      await expect(CaseController.getHandovers(user, c.id)).rejects.toThrow(ForbiddenError);
+      await expect(CaseController.getHandovers(user, c.id)).rejects.toThrow(
+        ForbiddenError
+      );
     });
   });
 
@@ -657,7 +735,10 @@ describe('CaseController', () => {
         removedIds: [oldUser.id],
       });
 
-      const result = await CaseController.handover(initiator, handoverInput as any);
+      const result = await CaseController.handover(
+        initiator,
+        handoverInput as any
+      );
 
       expect(result).toBe(updated);
       expect(prismaMock.case.update).toHaveBeenCalledWith(
@@ -756,7 +837,10 @@ describe('CaseController', () => {
 
       expect(prismaMock.case.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: { closedAt, personalDataDueAt: new Date('2026-09-25T00:00:00.000Z') },
+          data: {
+            closedAt,
+            personalDataDueAt: new Date('2026-09-25T00:00:00.000Z'),
+          },
         })
       );
       jest.useRealTimers();
@@ -801,7 +885,9 @@ describe('CaseController', () => {
       const c = buildCase({ responsibleUsers: [{ id: 'someone-else' }] });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      await expect(CaseController.reopenCase(user, c.id)).rejects.toThrow(ForbiddenError);
+      await expect(CaseController.reopenCase(user, c.id)).rejects.toThrow(
+        ForbiddenError
+      );
     });
   });
 
@@ -809,26 +895,40 @@ describe('CaseController', () => {
     it('purges the family and returns the updated case for a privileged user', async () => {
       const user = buildUser({ role: Role.Admin });
       const family = buildFamily();
-      const c = buildCase({ family, familyId: family.id, responsibleUsers: [] });
+      const c = buildCase({
+        family,
+        familyId: family.id,
+        responsibleUsers: [],
+      });
       prismaMock.case.findUnique.mockResolvedValue(c);
       prismaMock.caseFormResponse.findMany.mockResolvedValue([]);
       prismaMock.family.delete.mockResolvedValue(family);
       const finalCase = buildCase({ familyId: null });
-      prismaMock.case.findUniqueOrThrow.mockResolvedValueOnce(c).mockResolvedValue(finalCase);
+      prismaMock.case.findUniqueOrThrow
+        .mockResolvedValueOnce(c)
+        .mockResolvedValue(finalCase);
 
       const result = await CaseController.purgeFamily(user, c.id);
 
-      expect(prismaMock.family.delete).toHaveBeenCalledWith({ where: { id: family.id } });
+      expect(prismaMock.family.delete).toHaveBeenCalledWith({
+        where: { id: family.id },
+      });
       expect(result).toBe(finalCase);
     });
 
     it('throws ForbiddenError for a non-privileged user', async () => {
       const user = buildUser({ role: Role.User });
       const family = buildFamily();
-      const c = buildCase({ family, familyId: family.id, responsibleUsers: [{ id: user.id }] });
+      const c = buildCase({
+        family,
+        familyId: family.id,
+        responsibleUsers: [{ id: user.id }],
+      });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      await expect(CaseController.purgeFamily(user, c.id)).rejects.toThrow(ForbiddenError);
+      await expect(CaseController.purgeFamily(user, c.id)).rejects.toThrow(
+        ForbiddenError
+      );
       expect(prismaMock.family.delete).not.toHaveBeenCalled();
     });
 
@@ -837,7 +937,9 @@ describe('CaseController', () => {
       const c = buildCase({ family: null, familyId: null });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      await expect(CaseController.purgeFamily(user, c.id)).rejects.toThrow(NotFoundError);
+      await expect(CaseController.purgeFamily(user, c.id)).rejects.toThrow(
+        NotFoundError
+      );
     });
   });
 
@@ -860,22 +962,31 @@ describe('CaseController', () => {
     });
 
     it("scope 'org' works for an OrgCoordinator", async () => {
-      const user = buildUser({ role: Role.OrgCoordinator, organisationId: 'org-1' });
-      const cases = [buildCase({ organisationId: 'org-1', responsibleUsers: [] })];
+      const user = buildUser({
+        role: Role.OrgCoordinator,
+        organisationId: 'org-1',
+      });
+      const cases = [
+        buildCase({ organisationId: 'org-1', responsibleUsers: [] }),
+      ];
       prismaMock.case.findMany.mockResolvedValue(cases);
 
       const result = await CaseController.getMyCases(user, 'org');
 
       expect(result).toBe(cases);
       expect(prismaMock.case.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ organisationId: 'org-1' }) })
+        expect.objectContaining({
+          where: expect.objectContaining({ organisationId: 'org-1' }),
+        })
       );
     });
 
     it("scope 'org' is forbidden for a non-OrgCoordinator", async () => {
       const user = buildUser({ role: Role.User });
 
-      await expect(CaseController.getMyCases(user, 'org')).rejects.toThrow(ForbiddenError);
+      await expect(CaseController.getMyCases(user, 'org')).rejects.toThrow(
+        ForbiddenError
+      );
       expect(prismaMock.case.findMany).not.toHaveBeenCalled();
     });
 
@@ -884,7 +995,9 @@ describe('CaseController', () => {
         role: Role.SubOrgCoordinator,
         subOrganisations: [{ id: 'suborg-1' }],
       });
-      const cases = [buildCase({ subOrganisationId: 'suborg-1', responsibleUsers: [] })];
+      const cases = [
+        buildCase({ subOrganisationId: 'suborg-1', responsibleUsers: [] }),
+      ];
       prismaMock.case.findMany.mockResolvedValue(cases);
 
       const result = await CaseController.getMyCases(user, 'subOrg');
@@ -900,9 +1013,14 @@ describe('CaseController', () => {
     });
 
     it("scope 'subOrg' is forbidden when the user has no suborganisations", async () => {
-      const user = buildUser({ role: Role.SubOrgCoordinator, subOrganisations: [] });
+      const user = buildUser({
+        role: Role.SubOrgCoordinator,
+        subOrganisations: [],
+      });
 
-      await expect(CaseController.getMyCases(user, 'subOrg')).rejects.toThrow(ForbiddenError);
+      await expect(CaseController.getMyCases(user, 'subOrg')).rejects.toThrow(
+        ForbiddenError
+      );
       expect(prismaMock.case.findMany).not.toHaveBeenCalled();
     });
   });
@@ -924,9 +1042,9 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.Admin });
       prismaMock.case.findUnique.mockResolvedValue(null);
 
-      await expect(CaseController.getCaseAttachments(user, 'missing')).rejects.toThrow(
-        NotFoundError
-      );
+      await expect(
+        CaseController.getCaseAttachments(user, 'missing')
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('throws ForbiddenError for Controller (attachments hold personal data)', async () => {
@@ -934,9 +1052,9 @@ describe('CaseController', () => {
       const c = caseFor({ id: 'someone-else' });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      await expect(CaseController.getCaseAttachments(user, c.id)).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        CaseController.getCaseAttachments(user, c.id)
+      ).rejects.toThrow(ForbiddenError);
     });
   });
 
@@ -949,7 +1067,12 @@ describe('CaseController', () => {
       prismaMock.caseAttachment.create.mockResolvedValue(created);
       const file = multerFile();
 
-      const result = await CaseController.createCaseAttachment(user, c.id, file, 'a note');
+      const result = await CaseController.createCaseAttachment(
+        user,
+        c.id,
+        file,
+        'a note'
+      );
 
       expect(result).toBe(created);
       expect(prismaMock.caseAttachment.create).toHaveBeenCalledWith(
@@ -979,7 +1102,10 @@ describe('CaseController', () => {
     });
 
     it('throws ForbiddenError for OrgCoordinator (read-only access)', async () => {
-      const user = buildUser({ role: Role.OrgCoordinator, organisationId: 'org-1' });
+      const user = buildUser({
+        role: Role.OrgCoordinator,
+        organisationId: 'org-1',
+      });
       const c = buildCase({ organisationId: 'org-1', responsibleUsers: [] });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
@@ -1062,10 +1188,16 @@ describe('CaseController', () => {
       prismaMock.case.findUniqueOrThrow.mockResolvedValue(c);
       prismaMock.caseAttachment.delete.mockResolvedValue(attachment);
 
-      const result = await CaseController.deleteCaseAttachment(user, attachment.id);
+      const result = await CaseController.deleteCaseAttachment(
+        user,
+        attachment.id
+      );
 
       expect(result).toBe(attachment);
-      expect(deleteStoredFile).toHaveBeenCalledWith(attachment.storageKey, 'case-attachments');
+      expect(deleteStoredFile).toHaveBeenCalledWith(
+        attachment.storageKey,
+        'case-attachments'
+      );
     });
 
     it('throws ForbiddenError for a user who did not upload the attachment', async () => {
@@ -1085,9 +1217,9 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.User });
       prismaMock.caseAttachment.findUnique.mockResolvedValue(null);
 
-      await expect(CaseController.deleteCaseAttachment(user, 'missing')).rejects.toThrow(
-        NotFoundError
-      );
+      await expect(
+        CaseController.deleteCaseAttachment(user, 'missing')
+      ).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -1106,12 +1238,18 @@ describe('CaseController', () => {
     }
 
     const allowed: [string, () => { user: any; c: any }][] = [
-      ['Admin', () => ({ user: buildUser({ role: Role.Admin }), c: exportCase() })],
+      [
+        'Admin',
+        () => ({ user: buildUser({ role: Role.Admin }), c: exportCase() }),
+      ],
       [
         'a responsible User',
         () => {
           const user = buildUser({ role: Role.User });
-          return { user, c: exportCase({ responsibleUsers: [{ id: user.id }] }) };
+          return {
+            user,
+            c: exportCase({ responsibleUsers: [{ id: user.id }] }),
+          };
         },
       ],
       [
@@ -1142,7 +1280,10 @@ describe('CaseController', () => {
           c: exportCase(),
         }),
       ],
-      ['a Controller', () => ({ user: buildUser({ role: Role.Controller }), c: exportCase() })],
+      [
+        'a Controller',
+        () => ({ user: buildUser({ role: Role.Controller }), c: exportCase() }),
+      ],
       [
         'an OrgController of the same org',
         () => ({
@@ -1153,7 +1294,10 @@ describe('CaseController', () => {
       [
         'an OrgCoordinator of another org',
         () => ({
-          user: buildUser({ role: Role.OrgCoordinator, organisationId: 'other-org' }),
+          user: buildUser({
+            role: Role.OrgCoordinator,
+            organisationId: 'other-org',
+          }),
           c: exportCase(),
         }),
       ],
@@ -1171,8 +1315,12 @@ describe('CaseController', () => {
     ];
 
     beforeEach(() => {
-      (PDFService.stammdatenPDF as jest.Mock).mockResolvedValue(Buffer.from('pdf'));
-      (PDFService.contactDocumentationPDF as jest.Mock).mockResolvedValue(Buffer.from('pdf'));
+      (PDFService.stammdatenPDF as jest.Mock).mockResolvedValue(
+        Buffer.from('pdf')
+      );
+      (PDFService.contactDocumentationPDF as jest.Mock).mockResolvedValue(
+        Buffer.from('pdf')
+      );
       prismaMock.contactDocumentation.findMany.mockResolvedValue([]);
       prismaMock.caseFormResponse.findMany.mockResolvedValue([]);
     });
@@ -1192,9 +1340,9 @@ describe('CaseController', () => {
         const { user, c } = setup();
         prismaMock.case.findUnique.mockResolvedValue(c);
 
-        await expect(CaseController.getStammdatenPDF(user, c.id)).rejects.toThrow(
-          ForbiddenError
-        );
+        await expect(
+          CaseController.getStammdatenPDF(user, c.id)
+        ).rejects.toThrow(ForbiddenError);
         expect(PDFService.stammdatenPDF).not.toHaveBeenCalled();
       });
 
@@ -1202,7 +1350,10 @@ describe('CaseController', () => {
         prismaMock.case.findUnique.mockResolvedValue(null);
 
         await expect(
-          CaseController.getStammdatenPDF(buildUser({ role: Role.Admin }), 'missing')
+          CaseController.getStammdatenPDF(
+            buildUser({ role: Role.Admin }),
+            'missing'
+          )
         ).rejects.toThrow(NotFoundError);
       });
     });
@@ -1218,22 +1369,32 @@ describe('CaseController', () => {
         result.archive.abort();
       });
 
-      it.each(forbidden)('forbids %s without loading any case data', async (_, setup) => {
-        const { user, c } = setup();
-        prismaMock.case.findUnique.mockResolvedValue(c);
+      it.each(forbidden)(
+        'forbids %s without loading any case data',
+        async (_, setup) => {
+          const { user, c } = setup();
+          prismaMock.case.findUnique.mockResolvedValue(c);
 
-        await expect(CaseController.getCaseExport(user, c.id)).rejects.toThrow(ForbiddenError);
-        expect(prismaMock.contactDocumentation.findMany).not.toHaveBeenCalled();
-        expect(prismaMock.caseFormResponse.findMany).not.toHaveBeenCalled();
-        expect(PDFService.stammdatenPDF).not.toHaveBeenCalled();
-        expect(PDFService.contactDocumentationPDF).not.toHaveBeenCalled();
-      });
+          await expect(
+            CaseController.getCaseExport(user, c.id)
+          ).rejects.toThrow(ForbiddenError);
+          expect(
+            prismaMock.contactDocumentation.findMany
+          ).not.toHaveBeenCalled();
+          expect(prismaMock.caseFormResponse.findMany).not.toHaveBeenCalled();
+          expect(PDFService.stammdatenPDF).not.toHaveBeenCalled();
+          expect(PDFService.contactDocumentationPDF).not.toHaveBeenCalled();
+        }
+      );
 
       it('throws NotFoundError when the case is missing', async () => {
         prismaMock.case.findUnique.mockResolvedValue(null);
 
         await expect(
-          CaseController.getCaseExport(buildUser({ role: Role.Admin }), 'missing')
+          CaseController.getCaseExport(
+            buildUser({ role: Role.Admin }),
+            'missing'
+          )
         ).rejects.toThrow(NotFoundError);
       });
     });
