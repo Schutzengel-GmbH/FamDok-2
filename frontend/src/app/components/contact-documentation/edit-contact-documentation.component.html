@@ -194,11 +194,14 @@
     }
 
     @if (!readOnly()) {
-      <button type="submit" class="btn btn-outline-primary">Speichern</button>
-      {{ " " }}
-      <button type="button" (click)="delete()" class="btn btn-outline-danger">
-        Löschen
-      </button>
+      <div class="page-actions">
+        <button type="submit" class="btn btn-outline-primary">
+          Speichern
+        </button>
+        <button type="button" (click)="delete()" class="btn btn-outline-danger">
+          Löschen
+        </button>
+      </div>
     }
   </form>
 }
