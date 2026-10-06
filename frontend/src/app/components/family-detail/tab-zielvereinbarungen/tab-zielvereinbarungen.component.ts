@@ -188,8 +188,8 @@ export class TabZielvereinbarungenComponent {
           this.toastService.show({
             title: 'Fehler',
             text:
-              'Beim Speichern ist ein Fehler aufgetreten: ' + error.message ||
-              error,
+              'Beim Speichern ist ein Fehler aufgetreten: ' +
+              (error.message || error),
             severity: 'danger',
           });
           this.zielChange.emit();
@@ -221,8 +221,8 @@ export class TabZielvereinbarungenComponent {
           this.toastService.show({
             title: 'Fehler',
             text:
-              'Beim Speichern ist ein Fehler aufgetreten: ' + error.message ||
-              error,
+              'Beim Speichern ist ein Fehler aufgetreten: ' +
+              (error.message || error),
             severity: 'danger',
           });
           this.zielChange.emit();
@@ -254,8 +254,8 @@ export class TabZielvereinbarungenComponent {
         this.toastService.show({
           title: 'Fehler',
           text:
-            'Beim Löschen ist ein Fehler aufgetreten: ' + error.message ||
-            error,
+            'Beim Löschen ist ein Fehler aufgetreten: ' +
+            (error.message || error),
           severity: 'danger',
         });
         this.zielChange.emit();
