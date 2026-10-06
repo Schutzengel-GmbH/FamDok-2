@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   inject,
   input,
   linkedSignal,
@@ -9,9 +10,8 @@ import {
 import { ChartData, ChartOptions } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import {
+  ageInMonths,
   getPercentileDatasets,
-  getSizeForMonth,
-  getWeightForMonth,
   GrowthMetric,
 } from 'src/app/util/healthDataUtils';
 import { FormsModule } from '@angular/forms';
@@ -50,13 +50,11 @@ export class GrowthChartComponent {
       if (!child) return { datasets: [] };
       else
         return {
-          labels: this.getMonthArray(),
           datasets: [
             {
               label: child.name,
               borderColor: this.theme() === 'light' ? 'rgba(0,0,0,1)' : 'white',
               spanGaps: true,
-
               data: this.getChildData(),
             },
             ...getPercentileDatasets(child.gender, ageRange, metric),
@@ -65,24 +63,44 @@ export class GrowthChartComponent {
     },
   });
 
-  options: ChartOptions = {};
+  options = computed<ChartOptions>(() => ({
+    scales: {
+      x: {
+        type: 'linear',
+        min: this.ageRange() * 12,
+        max: this.ageRange() * 12 + 12,
+        title: { text: 'Alter (in Monaten)', display: true },
+        ticks: { stepSize: 1 },
+      },
+    },
+    plugins: {
+      tooltip: {
+        callbacks: {
+          title: (items) => {
+            const age = (items[0]?.parsed as { x?: number } | undefined)?.x;
+            return age != null
+              ? `${age.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Monate`
+              : '';
+          },
+        },
+      },
+    },
+  }));
 
   getChildData() {
-    if (!this.child()) return [];
-    const monthArray = this.getMonthArray();
-    const healthData = this.child()!.healthData;
-    const getForMonth =
-      this.metric() === 'height' ? getSizeForMonth : getWeightForMonth;
-    return monthArray.map((m) => {
-      return getForMonth(
-        healthData || [],
-        new Date(this.child()!.dateOfBirth),
-        m,
-      );
-    });
-  }
+    const child = this.child();
+    if (!child) return [];
 
-  getMonthArray() {
-    return [...Array(12).keys()].map((n) => n + this.ageRange() * 12);
+    const min = this.ageRange() * 12;
+    const max = min + 12;
+    return (child.healthData ?? [])
+      .map((h) => ({
+        x: ageInMonths(new Date(child.dateOfBirth), new Date(h.date)),
+        y: this.metric() === 'height' ? h.sizeCm : h.weightKg,
+      }))
+      .filter(
+        (v): v is { x: number; y: number } =>
+          v.y != null && v.x >= min && v.x <= max,
+      );
   }
 }
