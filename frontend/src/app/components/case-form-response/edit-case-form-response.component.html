@@ -22,11 +22,14 @@
       @if (caseForm().isPersonal) {
         <app-select-person-component
           [person]="person()"
-          (personChange)="person.set($event)"
+          (personChange)="setPerson($event)"
           [case]="case()" />
       }
       @for (q of caseForm().questions; track $index) {
-        <app-question [question]="q" [(answer)]="answers()[q.id]" />
+        <app-question
+          [question]="q"
+          [answer]="answers()[q.id]"
+          (answerChange)="setAnswer(q.id, $event)" />
       }
     </div>
   </div>

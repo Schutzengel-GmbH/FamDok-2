@@ -70,6 +70,41 @@ describe('httpErrorInterceptor', () => {
     });
   }
 
+  it('appends the backend error detail, also when the body arrives as a JSON string', (done) => {
+    http.get('/api/thing', { responseType: 'text' }).subscribe({
+      error: () => {
+        expect(toastService.show).toHaveBeenCalledWith(
+          jasmine.objectContaining({
+            text: "Nicht erlaubt: User can't edit this case",
+          }),
+        );
+        done();
+      },
+    });
+
+    httpMock
+      .expectOne('/api/thing')
+      .flush(
+        JSON.stringify({ message: 'Forbidden', error: "User can't edit this case" }),
+        { status: 403, statusText: 'Forbidden' },
+      );
+  });
+
+  it('shows only the status message when the body carries no error detail', (done) => {
+    http.get('/api/thing').subscribe({
+      error: () => {
+        expect(toastService.show).toHaveBeenCalledWith(
+          jasmine.objectContaining({ text: 'Interner Serverfehler' }),
+        );
+        done();
+      },
+    });
+
+    httpMock
+      .expectOne('/api/thing')
+      .flush({}, { status: 500, statusText: 'Server Error' });
+  });
+
   it('falls back to a generic message for an unrecognized status code', (done) => {
     http.get('/api/thing').subscribe({
       error: () => {

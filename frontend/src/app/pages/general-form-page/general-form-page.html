@@ -4,7 +4,10 @@
     <div [class.pe-none]="readOnly" [class.opacity-75]="readOnly">
       <div>
         @for (q of form.questions; track q.id) {
-          <app-question [question]="q" [(answer)]="answers[q.id]" />
+          <app-question
+            [question]="q"
+            [answer]="answers[q.id]"
+            (answerChange)="setAnswer(q.id, $event)" />
         }
       </div>
     </div>

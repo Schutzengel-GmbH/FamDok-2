@@ -1,6 +1,7 @@
 import {
   Component,
   effect,
+  HostListener,
   inject,
   input,
   linkedSignal,
@@ -83,6 +84,9 @@ export class EditContactDocumentation implements OnChanges {
   protected activeTab = signal<'daten' | 'dokumentation'>('daten');
 
   private draftCreated = false;
+  /** True while the draft for a new documentation is being created. The form stays hidden until
+   * then, because the redirect to the draft replaces this component and would drop any input. */
+  protected draftPending = signal(false);
 
   constructor() {
     effect(() => {
@@ -92,14 +96,28 @@ export class EditContactDocumentation implements OnChanges {
       if (!caseId) return;
 
       this.draftCreated = true;
+      this.draftPending.set(true);
       this.documentationService
         .createDocumentation(caseId, { case: { connect: { id: caseId } } })
-        .subscribe((doc) => {
-          this.router.navigate(['contact-documentation', caseId, doc.id], {
-            replaceUrl: true,
-          });
+        .subscribe({
+          next: (doc) => {
+            this.router.navigate(['contact-documentation', caseId, doc.id], {
+              replaceUrl: true,
+            });
+          },
+          // No draft - show the form anyway, save() then creates the documentation.
+          error: () => this.draftPending.set(false),
         });
     });
+  }
+
+  hasUnsavedChanges() {
+    return !this.readOnly() && !!this.form?.dirty;
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  protected onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.hasUnsavedChanges()) event.preventDefault();
   }
 
   onCaseChange(c: FullCase | undefined) {
@@ -155,6 +173,13 @@ export class EditContactDocumentation implements OnChanges {
       });
       if (navigateAfterSave) this.navigation.back();
     };
+    // The form is left untouched (and dirty), so nothing is lost and saving can be retried.
+    const onError = () =>
+      this.toastService.show({
+        title: 'Nicht gespeichert',
+        text: 'Dokumentation konnte nicht gespeichert werden. Die Eingaben bleiben erhalten.',
+        severity: 'danger',
+      });
 
     if (docValue) {
       this.documentationService
@@ -168,7 +193,7 @@ export class EditContactDocumentation implements OnChanges {
             ? this.timeStringToDate(this.end())
             : null,
         })
-        .subscribe(onSaved);
+        .subscribe({ next: onSaved, error: onError });
     } else {
       this.documentationService
         .createDocumentation(caseId, {
@@ -184,7 +209,7 @@ export class EditContactDocumentation implements OnChanges {
             connect: { id: caseId },
           },
         })
-        .subscribe(onSaved);
+        .subscribe({ next: onSaved, error: onError });
     }
   }
 
@@ -215,6 +240,7 @@ export class EditContactDocumentation implements OnChanges {
         this.documentationService
           .deleteDocumentation(docValue.caseId, docValue.id)
           .subscribe(() => {
+            this.form.markAsPristine();
             this.toastService.show({
               title: 'Gelöscht',
               text: `Dokumentation gelöscht.`,
