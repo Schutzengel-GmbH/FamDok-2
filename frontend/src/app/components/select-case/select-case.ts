@@ -1,6 +1,5 @@
 import { Component, inject, model } from '@angular/core';
 import { FullCase } from '../../../../../shared/types';
-import { FamilyService } from 'src/app/services/family.service';
 import {
   NgSelectComponent,
   NgLabelTemplateDirective,
@@ -22,7 +21,13 @@ export class SelectCaseComponent {
   protected cases!: FullCase[];
 
   constructor() {
-    this.caseService.getMyCases({}).subscribe((cases) => (this.cases = cases));
+    this.caseService.getMyCases({}).subscribe({
+      next: (cases) => (this.cases = cases),
+      error: (err) => {
+        console.error(err);
+        this.cases = [];
+      },
+    });
   }
 
   handleChange(c: FullCase) {
