@@ -13,45 +13,11 @@
           <app-handover-brief [handover]="handover"></app-handover-brief>
         }
       </div>
-      @if (!readOnly()) {
-        <div class="col p-2">
-          <h6 class="section-title">Übergabe an</h6>
-          <app-select-user
-            [users]="(users$ | async) || []"
-            (selectUser)="user.set($event)" />
-
-          <div class="form-check m-2">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              [(ngModel)]="removeMe"
-              id="flexCheckDefault" />
-            <label class="form-check-label" for="flexCheckDefault">
-              Mich als Verantwortlichen streichen
-            </label>
-          </div>
-
-          <div class="mb-2">
-            <label for="notes" class="form-label">Notizen:</label>
-            <textarea
-              class="form-control"
-              id="notes"
-              [(ngModel)]="notes"
-              rows="5"></textarea>
-          </div>
-
-          <button
-            class="btn btn-outline-primary"
-            type="button"
-            (click)="handover()"
-            [disabled]="error() || (!removeMe() && !user())">
-            Übergabe durchführen
-          </button>
-          @if (error()) {
-            <div class="alert alert-danger mt-2">{{ error() }}</div>
-          }
-        </div>
-      }
+      <div class="col p-2">
+        <app-case-handover
+          [selectedCase]="selectedCase()"
+          (changes)="changes.emit($event)" />
+      </div>
     </div>
   </div>
 </div>
