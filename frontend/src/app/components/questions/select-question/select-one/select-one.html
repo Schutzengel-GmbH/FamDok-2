@@ -2,6 +2,7 @@
   <label for="select">{{ question.text }}</label>
   <ng-select
     #select
+    appendTo="body"
     class="w-100"
     [class.is-invalid]="!isAnswerValid()"
     [ariaLabel]="question.text"

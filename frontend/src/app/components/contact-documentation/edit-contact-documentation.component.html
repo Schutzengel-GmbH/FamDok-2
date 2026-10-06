@@ -99,6 +99,7 @@
       <div class="mb-2">
         <label for="artDerBetreuung">Art der Betreuung</label>
         <ng-select
+          appendTo="body"
           id="artDerBetreuung"
           class="w-100"
           [class.is-invalid]="form.controls['artDerBetreuung'].invalid"
@@ -119,6 +120,7 @@
           >Beratungsthemen mit Bezug auf die Eltern</label
         >
         <ng-select
+          appendTo="body"
           id="beratungsThemenEltern"
           class="w-100"
           ariaLabel="Beratungsthemen mit Bezug auf die Eltern"
@@ -138,6 +140,7 @@
           >Beratungsthemen mit Bezug auf die Kinder</label
         >
         <ng-select
+          appendTo="body"
           id="beratungsThemenKinder"
           class="w-100"
           ariaLabel="Beratungsthemen mit Bezug auf die Kinder"
@@ -155,6 +158,7 @@
       <div class="mb-2">
         <label for="beratungsThemenAllgemein">Allgemeine Beratungsthemen</label>
         <ng-select
+          appendTo="body"
           id="beratungsThemenAllgemein"
           class="w-100"
           ariaLabel="Allgemeine Beratungsthemen"

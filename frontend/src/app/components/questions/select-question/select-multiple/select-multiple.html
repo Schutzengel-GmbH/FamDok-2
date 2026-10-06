@@ -1,6 +1,7 @@
 <div class="input-group mb-3">
   <label for="select">{{ question.text }}</label>
   <ng-select
+    appendTo="body"
     #select
     class="w-100"
     [class.is-invalid]="!isAnswerValid()"
