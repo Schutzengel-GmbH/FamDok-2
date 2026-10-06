@@ -1,16 +1,18 @@
 import { add, isBefore, sub } from 'date-fns';
 import { prisma } from '../db';
 import { Warning } from '../../shared/types';
-import { FormType, WarningLevel, WarningType } from '../../shared/consts';
+import {
+  CONTACT_DOCUMENTATION_DEFAULT_INCLUDE,
+  FormType,
+  WarningLevel,
+  WarningType,
+} from '../../shared/consts';
 
 export class WarningsController {
   static async getWarnings(userId: string): Promise<Warning[]> {
     const warnings: Warning[] = [];
 
     const now = new Date();
-    const userCases = await prisma.case.findMany({
-      where: { responsibleUsers: { some: { id: userId } } },
-    });
 
     // check expiring and expired ZV
     const zvs = await prisma.zielvereinbarung.findMany({
@@ -46,11 +48,21 @@ export class WarningsController {
     }
     // check case contacts
     // get latest contact for each
+    const userCases = await prisma.case.findMany({
+      where: { responsibleUsers: { some: { id: userId } } },
+      include: {
+        contactDocumentation: {
+          take: 1,
+          orderBy: { date: { sort: 'desc', nulls: 'last' } },
+        },
+      },
+    });
+
     for (const c of userCases) {
-      const contact = await prisma.contactDocumentation.findFirst({
-        where: { caseId: c.id },
-        orderBy: { date: { sort: 'desc', nulls: 'last' } },
-      });
+      const contact = c.contactDocumentation
+        ? c.contactDocumentation[0]
+        : undefined;
+
       if (!contact)
         warnings.push({
           level: WarningLevel.INFO,
