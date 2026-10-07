@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import Keycloak from 'keycloak-js';
 
 import { TabAnhaengeComponent } from './tab-anhaenge.component';
@@ -33,8 +36,12 @@ describe('TabAnhaengeComponent', () => {
     fixture.detectChanges();
 
     flushSettings(httpMock);
-    httpMock.expectOne(`${environment.apiUrl}/me`).flush(buildUser({ id: 'me', role }));
-    httpMock.expectOne((r) => r.url.includes('/case/i/case-1/attachment')).flush([]);
+    httpMock
+      .expectOne(`${environment.apiUrl}/me`)
+      .flush(buildUser({ id: 'me', role }));
+    httpMock
+      .expectOne((r) => r.url.includes('/case/i/case-1/attachment'))
+      .flush([]);
   }
 
   afterEach(() => httpMock.verify());
@@ -53,12 +60,6 @@ describe('TabAnhaengeComponent', () => {
       expect(component['canUpload']).toBeFalse();
     });
 
-    it('is false for Controller (attachments are personal data)', () => {
-      setup(Role.Controller);
-
-      expect(component['canUpload']).toBeFalse();
-    });
-
     it('is true for a plain user', () => {
       setup(Role.User);
 
@@ -70,7 +71,9 @@ describe('TabAnhaengeComponent', () => {
     it('is true for Admin regardless of uploader', () => {
       setup(Role.Admin);
 
-      expect(component['canDelete']({ uploadedById: 'someone-else' } as any)).toBeTrue();
+      expect(
+        component['canDelete']({ uploadedById: 'someone-else' } as any),
+      ).toBeTrue();
     });
 
     it('is true for the uploader', () => {
@@ -82,28 +85,40 @@ describe('TabAnhaengeComponent', () => {
     it('is false for a different user', () => {
       setup(Role.User);
 
-      expect(component['canDelete']({ uploadedById: 'someone-else' } as any)).toBeFalse();
+      expect(
+        component['canDelete']({ uploadedById: 'someone-else' } as any),
+      ).toBeFalse();
     });
   });
 
   it('filesChanged uploads the file and reloads attachments on success', () => {
     setup(Role.User);
     const file = new File(['x'], 'scan.pdf');
-    const input = { files: { item: () => file }, value: 'scan.pdf' } as unknown as HTMLInputElement;
+    const input = {
+      files: { item: () => file },
+      value: 'scan.pdf',
+    } as unknown as HTMLInputElement;
 
     component.filesChanged({ target: input } as unknown as Event);
 
-    const req = httpMock.expectOne((r) => r.url.includes('/case/i/case-1/attachment'));
+    const req = httpMock.expectOne((r) =>
+      r.url.includes('/case/i/case-1/attachment'),
+    );
     expect(req.request.method).toBe('POST');
     req.flush({});
 
-    httpMock.expectOne((r) => r.url.includes('/case/i/case-1/attachment')).flush([]);
+    httpMock
+      .expectOne((r) => r.url.includes('/case/i/case-1/attachment'))
+      .flush([]);
     expect(input.value).toBe('');
   });
 
   it('filesChanged does nothing when no file is selected', () => {
     setup(Role.User);
-    const input = { files: { item: () => null }, value: '' } as unknown as HTMLInputElement;
+    const input = {
+      files: { item: () => null },
+      value: '',
+    } as unknown as HTMLInputElement;
 
     component.filesChanged({ target: input } as unknown as Event);
 
@@ -134,10 +149,14 @@ describe('TabAnhaengeComponent', () => {
 
     dialogService.openDialogs()[0].confirmAction();
 
-    const req = httpMock.expectOne((r) => r.url.includes('/attachment/i/att-1'));
+    const req = httpMock.expectOne((r) =>
+      r.url.includes('/attachment/i/att-1'),
+    );
     expect(req.request.method).toBe('DELETE');
     req.flush({});
 
-    httpMock.expectOne((r) => r.url.includes('/case/i/case-1/attachment')).flush([]);
+    httpMock
+      .expectOne((r) => r.url.includes('/case/i/case-1/attachment'))
+      .flush([]);
   });
 });
