@@ -115,6 +115,12 @@ export async function canHandover(
   c: Case & { responsibleUsers: { id: string }[] },
   handover: Handover
 ) {
+  const canAccess =
+    isResponsibleFor(user, c) ||
+    isOrgCoordinatorFor(user, c) ||
+    isSubOrgCoordinatorFor(user, c);
+  if (!canAccess) return false;
+
   const notEmptyAfter =
     c.responsibleUsers
       .map((c) => c.id)
@@ -135,14 +141,9 @@ export async function canHandover(
     user.role === 'OrgCoordinator' ||
     user.role === 'SubOrgCoordinator';
 
-  const canAccess =
-    isResponsibleFor(user, c) ||
-    isOrgCoordinatorFor(user, c) ||
-    isSubOrgCoordinatorFor(user, c);
-
   const allAreInOrg = await allInOrg(addedUsers, c.organisationId);
 
-  return canAccess && notEmptyAfter && canRemove && allAreInOrg;
+  return notEmptyAfter && canRemove && allAreInOrg;
 }
 
 /**
