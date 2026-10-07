@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 
 import { ThemeService } from './theme.service';
+import { mockMatchMedia } from 'src/app/testing/matchMediaMock';
 
 describe('ThemeService', () => {
+  beforeEach(() => mockMatchMedia(false));
   afterEach(() => localStorage.removeItem('theme'));
 
   it('restores the previously saved theme from localStorage', () => {

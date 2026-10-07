@@ -38,22 +38,32 @@ export class GrowthChartComponent {
   protected ageRangeId = `ageRange-${Math.random().toString(36).slice(2)}`;
 
   data = linkedSignal<
-    { child: Child | undefined; ageRange: 0 | 1 | 2; metric: GrowthMetric },
+    {
+      child: Child | undefined;
+      ageRange: 0 | 1 | 2;
+      metric: GrowthMetric;
+      theme: 'light' | 'dark';
+    },
     ChartData
   >({
+    // `theme` has to be part of `source`, not just read inside `computation` - a linkedSignal
+    // only recomputes when its source changes, so reading an unrelated signal directly inside
+    // `computation` (as `theme` used to be) silently never retriggers it on its own, and the
+    // border color would stay stuck on whatever it was when child/ageRange/metric last changed.
     source: () => ({
       child: this.child(),
       ageRange: this.ageRange(),
       metric: this.metric(),
+      theme: this.theme(),
     }),
-    computation: ({ child, ageRange, metric }) => {
+    computation: ({ child, ageRange, metric, theme }) => {
       if (!child) return { datasets: [] };
       else
         return {
           datasets: [
             {
               label: child.name,
-              borderColor: this.theme() === 'light' ? 'rgba(0,0,0,1)' : 'white',
+              borderColor: theme === 'light' ? 'rgba(0,0,0,1)' : 'white',
               spanGaps: true,
               data: this.getChildData(),
             },
