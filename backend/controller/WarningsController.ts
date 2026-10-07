@@ -4,9 +4,11 @@ import { Warning } from '../../shared/types';
 import {
   CONTACT_DOCUMENTATION_DEFAULT_INCLUDE,
   FormType,
+  QUESTION_DEFAULT_INCLUDE,
   WarningLevel,
   WarningType,
 } from '../../shared/consts';
+import { Answer } from '../../shared/generated/prisma/client';
 
 export class WarningsController {
   static async getWarnings(userId: string): Promise<Warning[]> {
@@ -104,31 +106,40 @@ export class WarningsController {
         data: {
           formType: FormType.CONTACT_DOC,
           responseId: d.id,
+          formId: 'CONTACT_DOC',
           caseId: d.caseId,
+          unfinishedQuestions: {
+            date: d.date,
+            dokumentation: d.dokumentation == null,
+            duration: d.duration == null,
+            zusammenfassung: d.zusammenfassung == null,
+            artDerBetreuung: d.artDerBetreuung == null,
+          },
         },
       });
     }
     //  - check caseForms
     const caseFormResponses = await prisma.caseFormResponse.findMany({
       where: { caseId: { in: userCases.map((c) => c.id) } },
-      include: { answers: true, caseForm: { include: { questions: true } } },
+      include: {
+        answers: { include: { question: QUESTION_DEFAULT_INCLUDE } },
+      },
     });
     const unfinishedCaseFormResponses = caseFormResponses.filter((r) => {
-      if (!r.caseForm) return false;
+      if (!r.caseFormId) return false;
 
-      return r.caseForm.questions.some((q) => {
-        if (!q.required) return false;
+      return r.answers.some((a) => {
+        if (!a.question.required) return false;
 
-        const answer = r.answers.find((a) => a.questionId === q.id);
-        if (!answer) return true;
+        if (!a) return true;
 
         return (
-          (!answer.answerSelectId || answer.answerSelectId.length < 1) &&
-          answer.answerBool === null &&
-          !answer.answerDate &&
-          answer.answerInt === null &&
-          answer.answerNum === null &&
-          answer.answerText === null
+          (!a.answerSelectId || a.answerSelectId.length < 1) &&
+          a.answerBool === null &&
+          !a.answerDate &&
+          a.answerInt === null &&
+          a.answerNum === null &&
+          a.answerText === null
         );
       });
     });
@@ -140,7 +151,11 @@ export class WarningsController {
           formType: FormType.CASE_FORM,
           responseId: r.id,
           caseId: r.caseId,
-          caseFormId: r.caseForm?.id,
+          formId: r.caseFormId!,
+          unfinishedQuestions: r.answers
+            .filter((a) => a.question.required)
+            .filter(unansweredFilter)
+            .map((a) => a.question),
         },
       });
     }
@@ -194,4 +209,15 @@ export class WarningsController {
 
     return warnings;
   }
+}
+
+function unansweredFilter(answer: Answer) {
+  return (
+    (!answer.answerSelectId || answer.answerSelectId.length < 1) &&
+    answer.answerBool === null &&
+    !answer.answerDate &&
+    answer.answerInt === null &&
+    answer.answerNum === null &&
+    answer.answerText === null
+  );
 }

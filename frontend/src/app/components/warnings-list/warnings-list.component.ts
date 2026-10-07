@@ -19,6 +19,9 @@ import {
 import { CaseFormService } from 'src/app/services/case-form.service';
 import { GeneralFormService } from 'src/app/services/general-form.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { truncate } from 'src/app/pipes/truncate.pipe';
+import { ContactDocumentationOptions } from '../../../../../shared/sharedGlobals';
+import { ContactDocumentation } from '../../../../../shared/generated/prisma/client';
 
 @Component({
   selector: 'app-warnings-list',
@@ -94,9 +97,9 @@ export class WarningsListComponent implements OnInit {
       case WarningType.UNFINISHED_FORM:
         switch (w.data.formType) {
           case FormType.CONTACT_DOC:
-            return 'Fallkontaktdokumentation ist unvollständig.';
+            return `${w.data.unfinishedQuestions.date ? `Zum Kontakt am ${w.data.unfinishedQuestions.date.toLocaleDateString()}` : 'In einer Fallkontaktdokumentation'} fehlen Angaben zu: ${unfinishedQuestions(w)}`;
           case FormType.CASE_FORM:
-            return `${this.caseForms()?.find((f) => f.id === w.data.caseFormId)?.name || 'Ein Fallformular'} ist unvollständig.`;
+            return `Im Formular ${this.caseForms()?.find((f) => f.id === w.data.formId)?.name || '[UNBEKANNT]'} fehlen Angaben zu: ${unfinishedQuestions(w)}`;
           case FormType.GENERAL_FORM:
             // Note: currently shouldn't happen as general forms must be complete to save
             return 'Allgemeines Formular unvollständig';
@@ -114,7 +117,7 @@ export class WarningsListComponent implements OnInit {
 
   protected hasAction(w: Warning): boolean {
     if (w.type !== WarningType.UNFINISHED_FORM) return true;
-    return w.data.formType === FormType.CONTACT_DOC || !!w.data.caseFormId;
+    return w.data.formType === FormType.CONTACT_DOC || !!w.data.formId;
   }
 
   protected actionLabel(w: Warning): string {
@@ -149,8 +152,8 @@ export class WarningsListComponent implements OnInit {
             w.data.caseId,
             w.data.responseId,
           ]);
-        } else if (w.data.caseFormId) {
-          this.router.navigate(['responses', w.data.caseFormId], {
+        } else if (w.data.formId) {
+          this.router.navigate(['responses', w.data.formId], {
             queryParams: { id: w.data.responseId, caseId: w.data.caseId },
           });
         }
@@ -168,5 +171,46 @@ export class WarningsListComponent implements OnInit {
 
   private formatDate(d: Date): string {
     return new Date(d).toLocaleDateString('de-DE');
+  }
+}
+
+function unfinishedQuestions(w: Warning) {
+  if (w.type !== WarningType.UNFINISHED_FORM) return '';
+
+  switch (w.data.formType) {
+    case FormType.CONTACT_DOC:
+      let res: string[] = [];
+      for (let k in w.data.unfinishedQuestions) {
+        switch (k as keyof ContactDocumentation) {
+          case 'date':
+            if (!w.data.unfinishedQuestions.date) res.push('Datum');
+            break;
+          case 'duration':
+            if (w.data.unfinishedQuestions.duration) res.push('Dauer');
+            break;
+          case 'artDerBetreuung':
+            if (w.data.unfinishedQuestions.artDerBetreuung)
+              res.push('Art der Beratung');
+            break;
+          case 'zusammenfassung':
+            if (w.data.unfinishedQuestions.zusammenfassung)
+              res.push('Zusammenfassung');
+            break;
+          case 'dokumentation':
+            if (w.data.unfinishedQuestions.dokumentation)
+              res.push('Dokumentation');
+            break;
+          default:
+            res.push(k);
+            break;
+        }
+      }
+      return res.join(', ');
+    case FormType.CLOSING_DOC:
+    case FormType.GENERAL_FORM:
+    case FormType.CASE_FORM:
+      return w.data.unfinishedQuestions
+        .map((q) => 'Frage ' + (q.order + 1) + ': ' + truncate(q.text, 10))
+        .join(', ');
   }
 }
