@@ -79,7 +79,7 @@ export class TabClose {
         w.data.caseId === caseId &&
         w.data.formType === FormType.CASE_FORM &&
         !!closingDocId &&
-        w.data.caseFormId === closingDocId,
+        w.data.formId === closingDocId,
     );
     if (unfinishedClosingDoc) {
       return 'Dokumentation ist unvollständig.';

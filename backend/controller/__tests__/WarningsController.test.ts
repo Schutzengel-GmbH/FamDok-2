@@ -157,6 +157,14 @@ describe('WarningsController.getWarnings', () => {
           formType: FormType.CONTACT_DOC,
           responseId: incompleteDoc.id,
           caseId: incompleteDoc.caseId,
+          formId: 'CONTACT_DOC',
+          unfinishedQuestions: {
+            date: new Date('2026-01-01'),
+            duration: true,
+            artDerBetreuung: false,
+            dokumentation: false,
+            zusammenfassung: false,
+          },
         },
       },
     ]);
