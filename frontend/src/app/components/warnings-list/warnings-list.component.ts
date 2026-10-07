@@ -41,9 +41,9 @@ export class WarningsListComponent implements OnInit {
   protected readonly WarningLevel = WarningLevel;
 
   protected caseForms = toSignal(inject(CaseFormService).getCaseForms());
-  protected generalForms = toSignal(
-    inject(GeneralFormService).getDefinitions(),
-  );
+  // protected generalForms = toSignal(
+  //   inject(GeneralFormService).getDefinitions(),
+  // );
   protected warnings = signal<Warning[]>([]);
   protected isLoading = signal(true);
   protected expanded = signal(true);
