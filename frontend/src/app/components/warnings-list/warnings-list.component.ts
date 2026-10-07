@@ -1,10 +1,24 @@
-import { Component, inject, input, OnInit, output, signal } from '@angular/core';
+import {
+  Component,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { WarningsService } from 'src/app/services/warnings.service';
 import { SettingsService } from 'src/app/services/settings.service';
 import { FullCase, Warning } from '../../../../../shared/types';
-import { FormType, WarningLevel, WarningType } from '../../../../../shared/consts';
+import {
+  FormType,
+  WarningLevel,
+  WarningType,
+} from '../../../../../shared/consts';
+import { CaseFormService } from 'src/app/services/case-form.service';
+import { GeneralFormService } from 'src/app/services/general-form.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-warnings-list',
@@ -26,6 +40,10 @@ export class WarningsListComponent implements OnInit {
 
   protected readonly WarningLevel = WarningLevel;
 
+  protected caseForms = toSignal(inject(CaseFormService).getCaseForms());
+  protected generalForms = toSignal(
+    inject(GeneralFormService).getDefinitions(),
+  );
   protected warnings = signal<Warning[]>([]);
   protected isLoading = signal(true);
   protected expanded = signal(true);
@@ -39,9 +57,7 @@ export class WarningsListComponent implements OnInit {
     this.isLoading.set(true);
     this.warningsService.refresh().subscribe({
       next: (warnings) => {
-        this.warnings.set(
-          [...warnings].sort((a, b) => b.level - a.level),
-        );
+        this.warnings.set([...warnings].sort((a, b) => b.level - a.level));
         this.isLoading.set(false);
       },
       error: () => {
@@ -76,7 +92,19 @@ export class WarningsListComponent implements OnInit {
           ? `Kein Kontakt seit ${this.formatDate(w.data.lastContact)}.`
           : 'Noch kein Kontakt dokumentiert.';
       case WarningType.UNFINISHED_FORM:
-        return 'Dokumentation ist unvollständig.';
+        switch (w.data.formType) {
+          case FormType.CONTACT_DOC:
+            return 'Fallkontaktdokumentation ist unvollständig.';
+          case FormType.CASE_FORM:
+            return `${this.caseForms()?.find((f) => f.id === w.data.caseFormId)?.name || 'Ein Fallformular'} ist unvollständig.`;
+          case FormType.GENERAL_FORM:
+            // Note: currently shouldn't happen as general forms must be complete to save
+            return 'Allgemeines Formular unvollständig';
+          case FormType.CLOSING_DOC:
+            return 'Abschlussdokumentation ist unvollständig.';
+          default:
+            return '???';
+        }
       case WarningType.CLOSED_WITHOUT_DOC:
         return `Fall seit ${this.formatDate(w.data.closedAt)} geschlossen, Abschlussdokumentation fehlt.`;
       default:
