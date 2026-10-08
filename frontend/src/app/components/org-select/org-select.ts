@@ -23,8 +23,4 @@ export class OrgSelectComponent {
   constructor() {
     this.orgService.getAll().subscribe((orgs) => (this.orgs = orgs));
   }
-
-  handleChange(org: FullOrganisation) {
-    this.org.set(org);
-  }
 }

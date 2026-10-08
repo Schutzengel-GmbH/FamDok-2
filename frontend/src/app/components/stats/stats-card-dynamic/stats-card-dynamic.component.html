@@ -13,8 +13,7 @@
       appendTo="body"
       bindLabel="text"
       [(ngModel)]="selectedQuestion"
-      [items]="questions() || []"
-      (change)="refreshValue()"></ng-select>
+      [items]="questions() || []"></ng-select>
     <div class="stats-kpi-row">
       <span class="stats-kpi-label-muted">{{
         selectedQuestion()?.text || "Wert"
