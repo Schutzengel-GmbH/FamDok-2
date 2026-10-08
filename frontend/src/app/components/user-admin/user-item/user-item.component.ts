@@ -75,7 +75,9 @@ export class UserItemComponent implements OnInit {
       }
     });
 
-    this.form.get('role')?.valueChanges.subscribe(() => this.updateScopeValidators());
+    this.form
+      .get('role')
+      ?.valueChanges.subscribe(() => this.updateScopeValidators());
     this.updateScopeValidators();
   }
 
@@ -152,6 +154,7 @@ export class UserItemComponent implements OnInit {
     this.dialogService.open({
       title: `Benutzer ${userPipe.transform(this.user)} löschen?`,
       text: `Soll der Benutzer ${userPipe.transform(this.user)} wirklich gelöscht werden? Dies kann nicht rückgängig gemacht werden.`,
+      style: 'danger',
       confirmAction: () =>
         this.userService.deleteUser(this.user.id).subscribe((u) =>
           this.toastService.show({

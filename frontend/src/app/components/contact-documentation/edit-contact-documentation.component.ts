@@ -235,6 +235,7 @@ export class EditContactDocumentation implements OnChanges {
     this.dialogService.open({
       title: 'Dokumentation löschen?',
       text: 'Soll die Dokumentation wirklich endgültig gelöscht werden?',
+      style: 'danger',
       confirmAction: () => {
         const docValue = this.doc()!;
         this.documentationService

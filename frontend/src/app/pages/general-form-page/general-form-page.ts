@@ -139,6 +139,7 @@ export class GeneralFormPage implements HasUnsavedChanges {
     this.dialogService.open({
       title: 'Antwort löschen?',
       text: 'Soll die Antwort wirklich endgültig gelöscht werden?',
+      style: 'danger',
       confirmAction: () => {
         this.formService.deleteResponse(responseId).subscribe(() => {
           this.toast.show({
