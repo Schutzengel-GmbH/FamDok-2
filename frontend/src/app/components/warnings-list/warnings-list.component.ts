@@ -97,7 +97,7 @@ export class WarningsListComponent implements OnInit {
       case WarningType.UNFINISHED_FORM:
         switch (w.data.formType) {
           case FormType.CONTACT_DOC:
-            return `${w.data.unfinishedQuestions.date ? `Zum Kontakt am ${w.data.unfinishedQuestions.date.toLocaleDateString()}` : 'In einer Fallkontaktdokumentation'} fehlen Angaben zu: ${unfinishedQuestions(w)}`;
+            return `${w.data.unfinishedQuestions.date ? `Zum Kontakt am ${this.formatDate(w.data.unfinishedQuestions.date)}` : 'In einer Fallkontaktdokumentation'} fehlen Angaben zu: ${unfinishedQuestions(w)}`;
           case FormType.CASE_FORM:
             return `Im Formular ${this.caseForms()?.find((f) => f.id === w.data.formId)?.name || '[UNBEKANNT]'} fehlen Angaben zu: ${unfinishedQuestions(w)}`;
           case FormType.GENERAL_FORM:
@@ -106,7 +106,7 @@ export class WarningsListComponent implements OnInit {
           case FormType.CLOSING_DOC:
             return 'Abschlussdokumentation ist unvollständig.';
           default:
-            return '???';
+            return 'Dokumentation ist unvollständig.';
         }
       case WarningType.CLOSED_WITHOUT_DOC:
         return `Fall seit ${this.formatDate(w.data.closedAt)} geschlossen, Abschlussdokumentation fehlt.`;
