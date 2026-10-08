@@ -31,6 +31,7 @@ import {
   caseExportFilename,
   stammdatenFilename,
 } from '../../../../shared/utils/filename';
+import { triggerBlobDownload } from './document.service';
 
 @Injectable({
   providedIn: 'root',
@@ -280,7 +281,7 @@ export class FamilyService {
         { responseType: 'blob' },
       )
       .subscribe({
-        next: (blob) => this.saveBlob(blob, 'doc.pdf'),
+        next: (blob) => triggerBlobDownload('doc.pdf', blob),
         error: () => {},
       });
   }
@@ -295,7 +296,11 @@ export class FamilyService {
       .get(this.caseApiUrl + '/i/' + caseId + '/export/stammdaten', {
         responseType: 'blob',
       })
-      .pipe(map((blob) => this.saveBlob(blob, stammdatenFilename(familyName))));
+      .pipe(
+        map((blob) =>
+          triggerBlobDownload(stammdatenFilename(familyName), blob),
+        ),
+      );
   }
 
   /**
@@ -309,16 +314,11 @@ export class FamilyService {
       .get(this.caseApiUrl + '/i/' + caseId + '/export', {
         responseType: 'blob',
       })
-      .pipe(map((blob) => this.saveBlob(blob, caseExportFilename(familyName))));
-  }
-
-  private saveBlob(blob: Blob, filename: string) {
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-    URL.revokeObjectURL(url);
+      .pipe(
+        map((blob) =>
+          triggerBlobDownload(caseExportFilename(familyName), blob),
+        ),
+      );
   }
 
   /**
