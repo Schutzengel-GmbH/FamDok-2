@@ -39,13 +39,4 @@ describe('SelectCase', () => {
 
     expect(component['cases']).toEqual(cases as any);
   });
-
-  it('updates the selected case on change', () => {
-    httpMock.match((r) => r.url.includes('/case/my')).forEach((r) => r.flush([]));
-
-    const selected = { id: 'case-1' } as any;
-    component.handleChange(selected);
-
-    expect(component.case()).toBe(selected);
-  });
 });

@@ -14,6 +14,7 @@ describe('ThemeService', () => {
   });
 
   it('defaults to light when nothing is saved and the system has no preference', (done) => {
+    spyOn(window, 'matchMedia').and.returnValue({ matches: false } as MediaQueryList);
     const service = TestBed.inject(ThemeService);
 
     service.theme.subscribe((theme) => {

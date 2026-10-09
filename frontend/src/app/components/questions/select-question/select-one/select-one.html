@@ -10,7 +10,7 @@
     [items]="question.selectOptions || []"
     bindLabel="text"
     [multiple]="false"
-    [(ngModel)]="model"
+    [ngModel]="model()"
     (change)="onChange($event)"
     clearAllText="Auswahl aufheben">
     <ng-template ng-label-tmp let-item="item">

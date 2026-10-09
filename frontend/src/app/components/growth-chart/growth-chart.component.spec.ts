@@ -9,6 +9,9 @@ describe('GrowthChartComponent', () => {
   let fixture: ComponentFixture<GrowthChartComponent>;
 
   beforeEach(async () => {
+    // pin the system preference to light, so toggle() below always switches to dark,
+    // regardless of the OS theme of a headed browser
+    spyOn(window, 'matchMedia').and.returnValue({ matches: false } as MediaQueryList);
     await TestBed.configureTestingModule({
       imports: [GrowthChartComponent],
       providers: [provideCharts(withDefaultRegisterables())],

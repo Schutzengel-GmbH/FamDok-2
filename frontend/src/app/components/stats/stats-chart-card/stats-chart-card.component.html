@@ -6,8 +6,7 @@
     <div class="ms-auto d-flex gap-2 stats-chart-selects">
       <select
         class="form-select form-select-sm"
-        [(ngModel)]="selectedChartKey"
-        (change)="update()">
+        [(ngModel)]="selectedChartKey">
         <option *ngFor="let c of availableCharts" [value]="c.key">
           {{ c.label }}
         </option>
@@ -17,7 +16,7 @@
 
   <div class="card-body">
     <div class="stats-chart-wrapper">
-      @switch (selectedChartKey) {
+      @switch (selectedChartKey()) {
         @case ("artDerBeratung") {
           <app-pie-chart [datasets]="{ data }" [labels]="labels" />
         }
