@@ -110,9 +110,8 @@ export class GeneralFormPage implements HasUnsavedChanges {
           this.toast.show({
             title: 'Fehler',
             text:
-              'Beim Speichern ist ein Fehler aufgetreten: ' + err.message
-                ? err.message
-                : err,
+              'Beim Speichern ist ein Fehler aufgetreten: ' +
+              (err.message ? err.message : err),
             severity: 'danger',
           });
 
