@@ -38,7 +38,7 @@ describe('StatsChartCardComponent', () => {
   it('defaults to the artDerBeratung chart and lists all available charts', () => {
     fixture.detectChanges();
 
-    expect(component.selectedChartKey).toBe('artDerBeratung');
+    expect(component.selectedChartKey()).toBe('artDerBeratung');
     expect(component.availableCharts.map((c) => c.key)).toEqual([
       'artDerBeratung',
       'ziel',
@@ -51,6 +51,20 @@ describe('StatsChartCardComponent', () => {
 
     expect(chartsService.updateData).toHaveBeenCalledWith(
       'artDerBeratung',
+      undefined,
+      { start: new Date('2026-01-01'), end: new Date('2026-02-01') },
+    );
+  });
+
+  it('requests new data when the selected chart changes', () => {
+    fixture.detectChanges();
+    chartsService.updateData.calls.reset();
+
+    component.selectedChartKey.set('ort');
+    fixture.detectChanges();
+
+    expect(chartsService.updateData).toHaveBeenCalledWith(
+      'ort',
       undefined,
       { start: new Date('2026-01-01'), end: new Date('2026-02-01') },
     );

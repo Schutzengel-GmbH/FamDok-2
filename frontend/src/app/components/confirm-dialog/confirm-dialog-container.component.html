@@ -2,16 +2,34 @@
   <div class="modal display-block modal-dialog-centered" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">{{ dialog.title }}</h5>
+        <div
+          class="modal-header  bg-{{
+            dialog.style === 'default' ? 'info' : dialog.style
+          }}-subtle">
+          <div class="d-flex gap-2 align-items-center">
+            @switch (dialog.style) {
+              @case ("success") {
+                <i class="bi bi-exclamation-circle text-success"></i>
+              }
+              @case ("warning") {
+                <i class="bi bi-exclamation-circle text-warning"></i>
+              }
+              @case ("danger") {
+                <i class="bi bi-exclamation-triangle text-danger"></i>
+              }
+              @default {
+                <i class="bi bi-exclamation-circle"></i>
+              }
+            }
+            <h5 class="modal-title">{{ dialog.title }}</h5>
+          </div>
           <button
             type="button"
             class="btn-close"
             aria-label="Close"
-            (click)="dialog.cancelAction()"
-          ></button>
+            (click)="dialog.cancelAction()"></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body d-flex gap-2">
           <p>{{ dialog.text }}</p>
         </div>
         <div class="modal-footer">
@@ -19,15 +37,13 @@
             type="button"
             class="btn btn-secondary"
             data-bs-dismiss="modal"
-            (click)="dialog.cancelAction()"
-          >
+            (click)="dialog.cancelAction()">
             Abbrechen
           </button>
           <button
             type="button"
             class="btn btn-primary"
-            (click)="dialog.confirmAction()"
-          >
+            (click)="dialog.confirmAction()">
             Bestätigen
           </button>
         </div>

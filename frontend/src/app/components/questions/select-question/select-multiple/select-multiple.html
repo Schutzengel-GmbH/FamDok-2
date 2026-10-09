@@ -10,7 +10,7 @@
     [items]="question.selectOptions || []"
     bindLabel="text"
     [multiple]="question.multiple"
-    [(ngModel)]="model"
+    [ngModel]="model()"
     (change)="onChange($event)"
     (add)="onAdd($event)"
     [compareWith]="compareFn"

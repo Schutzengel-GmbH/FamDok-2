@@ -234,6 +234,7 @@ export class TabZielvereinbarungenComponent {
     this.dialogService.open({
       title: 'Löschen?',
       text: 'Soll diese Zielvereinbarung wirklich gelöscht werden?',
+      style: 'danger',
       confirmAction: () => {
         this._deleteZiel(id);
       },

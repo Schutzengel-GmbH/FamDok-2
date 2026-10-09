@@ -53,7 +53,7 @@ describe('ChartsService', () => {
     expect(labels).toEqual(['In Arbeit', 'Abgeschlossen', 'Fehlgeschlagen']);
   });
 
-  it('ort tallies cases per city', () => {
+  it('ort tallies cases per city, unknown cities under "Kein Ort"', () => {
     let data: number[] | undefined;
     let labels: string[] | undefined;
     service.data.subscribe((d) => (data = d));
@@ -64,9 +64,14 @@ describe('ChartsService', () => {
     httpMock.expectOne((r) => r.url.includes('/stats/cities')).flush(['Berlin', 'Hamburg']);
     httpMock
       .expectOne((r) => r.url.includes('/stats/case') && !r.url.includes('count'))
-      .flush([{ city: 'Berlin' }, { city: 'Berlin' }, { city: 'Hamburg' }]);
+      .flush([
+        { city: 'Berlin' },
+        { city: 'Berlin' },
+        { city: 'Hamburg' },
+        { city: 'München' },
+      ]);
 
-    expect(data).toEqual([2, 1]);
-    expect(labels).toEqual(['Berlin', 'Hamburg']);
+    expect(data).toEqual([2, 1, 1]);
+    expect(labels).toEqual(['Berlin', 'Hamburg', 'Kein Ort']);
   });
 });

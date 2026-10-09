@@ -716,11 +716,15 @@ describe('CaseController', () => {
 
   describe('handover', () => {
     it('reassigns responsible users and records the handover', async () => {
-      const initiator = buildUser({ role: Role.Admin });
       const oldUser = buildUser();
-      const newUser = buildUser();
       const c = buildCase({ responsibleUsers: [{ id: oldUser.id }] });
+      const initiator = buildUser({
+        role: Role.OrgCoordinator,
+        organisationId: c.organisationId,
+      });
+      const newUser = buildUser({ organisationId: c.organisationId });
       prismaMock.case.findUnique.mockResolvedValue(c);
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(newUser);
       const updated = { ...c };
       prismaMock.case.update.mockResolvedValue(updated);
       prismaMock.handover.create.mockResolvedValue({});
@@ -760,9 +764,12 @@ describe('CaseController', () => {
     });
 
     it('throws ForbiddenError when the handover would leave no responsible users', async () => {
-      const initiator = buildUser({ role: Role.Admin });
       const oldUser = buildUser();
       const c = buildCase({ responsibleUsers: [{ id: oldUser.id }] });
+      const initiator = buildUser({
+        role: Role.OrgCoordinator,
+        organisationId: c.organisationId,
+      });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
       const handoverInput = buildHandover({
@@ -778,11 +785,15 @@ describe('CaseController', () => {
     });
 
     it('throws ForbiddenError when the initiator is not responsible and not privileged', async () => {
-      const initiator = buildUser({ role: Role.User });
       const oldUser = buildUser();
-      const newUser = buildUser();
       const c = buildCase({ responsibleUsers: [{ id: oldUser.id }] });
+      const initiator = buildUser({
+        role: Role.User,
+        organisationId: c.organisationId,
+      });
+      const newUser = buildUser({ organisationId: c.organisationId });
       prismaMock.case.findUnique.mockResolvedValue(c);
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(newUser);
 
       const handoverInput = buildHandover({
         caseId: c.id,
@@ -793,6 +804,71 @@ describe('CaseController', () => {
       await expect(
         CaseController.handover(initiator, handoverInput as any)
       ).rejects.toThrow(ForbiddenError);
+      expect(prismaMock.case.update).not.toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenError when an added user belongs to another organisation', async () => {
+      const oldUser = buildUser();
+      const c = buildCase({ responsibleUsers: [{ id: oldUser.id }] });
+      const initiator = buildUser({
+        role: Role.OrgCoordinator,
+        organisationId: c.organisationId,
+      });
+      const foreignUser = buildUser();
+      prismaMock.case.findUnique.mockResolvedValue(c);
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(foreignUser);
+
+      const handoverInput = buildHandover({
+        caseId: c.id,
+        addedIds: [foreignUser.id],
+        removedIds: [],
+      });
+
+      await expect(
+        CaseController.handover(initiator, handoverInput as any)
+      ).rejects.toThrow(ForbiddenError);
+      expect(prismaMock.case.update).not.toHaveBeenCalled();
+    });
+
+    it('allows a responsible user to hand themselves off the case', async () => {
+      const c = buildCase();
+      const initiator = buildUser({ organisationId: c.organisationId });
+      c.responsibleUsers = [{ id: initiator.id }];
+      const newUser = buildUser({ organisationId: c.organisationId });
+      prismaMock.case.findUnique.mockResolvedValue(c);
+      prismaMock.user.findUniqueOrThrow.mockResolvedValue(newUser);
+      prismaMock.case.update.mockResolvedValue({ ...c });
+      prismaMock.handover.create.mockResolvedValue({});
+
+      const handoverInput = buildHandover({
+        caseId: c.id,
+        addedIds: [newUser.id],
+        removedIds: [initiator.id],
+      });
+
+      await CaseController.handover(initiator, handoverInput as any);
+
+      expect(prismaMock.case.update).toHaveBeenCalled();
+      expect(prismaMock.handover.create).toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenError when a responsible user removes another user', async () => {
+      const otherUser = buildUser();
+      const c = buildCase();
+      const initiator = buildUser({ organisationId: c.organisationId });
+      c.responsibleUsers = [{ id: initiator.id }, { id: otherUser.id }];
+      prismaMock.case.findUnique.mockResolvedValue(c);
+
+      const handoverInput = buildHandover({
+        caseId: c.id,
+        addedIds: [],
+        removedIds: [otherUser.id],
+      });
+
+      await expect(
+        CaseController.handover(initiator, handoverInput as any)
+      ).rejects.toThrow(ForbiddenError);
+      expect(prismaMock.case.update).not.toHaveBeenCalled();
     });
   });
 

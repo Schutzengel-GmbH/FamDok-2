@@ -35,7 +35,6 @@ export function isSubOrgCoordinatorFor(
 
 export async function allInOrg(users: User[], orgId: string) {
   return users.every((u) => {
-    console.log(u.organisationId === orgId);
     return u.organisationId === orgId;
   });
 }

@@ -30,9 +30,5 @@ export class SelectCaseComponent {
     });
   }
 
-  handleChange(c: FullCase) {
-    this.case.set(c);
-  }
-
   compareCases = (a: FullCase, b: FullCase) => a?.id === b?.id;
 }

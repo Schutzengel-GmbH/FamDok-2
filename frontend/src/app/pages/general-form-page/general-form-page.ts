@@ -110,9 +110,8 @@ export class GeneralFormPage implements HasUnsavedChanges {
           this.toast.show({
             title: 'Fehler',
             text:
-              'Beim Speichern ist ein Fehler aufgetreten: ' + err.message
-                ? err.message
-                : err,
+              'Beim Speichern ist ein Fehler aufgetreten: ' +
+              (err.message ? err.message : err),
             severity: 'danger',
           });
 
@@ -139,6 +138,7 @@ export class GeneralFormPage implements HasUnsavedChanges {
     this.dialogService.open({
       title: 'Antwort löschen?',
       text: 'Soll die Antwort wirklich endgültig gelöscht werden?',
+      style: 'danger',
       confirmAction: () => {
         this.formService.deleteResponse(responseId).subscribe(() => {
           this.toast.show({

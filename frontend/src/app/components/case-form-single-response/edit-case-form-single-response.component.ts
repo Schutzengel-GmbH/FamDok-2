@@ -109,6 +109,7 @@ export class EditCaseFormSingleResponse implements OnInit {
     this.dialogService.open({
       title: 'Antwort löschen?',
       text: 'Soll die Antwort wirklich endgültig gelöscht werden?',
+      style: 'danger',
       confirmAction: () => {
         this.caseFormService
           .deleteCaseFormResponse(responseId)
