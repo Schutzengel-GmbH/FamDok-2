@@ -97,7 +97,7 @@ describe('TabClose', () => {
     setup([
       {
         type: WarningType.UNFINISHED_FORM,
-        data: { caseId: 'case-1', formType: FormType.CASE_FORM, caseFormId: 'form-1' },
+        data: { caseId: 'case-1', formType: FormType.CASE_FORM, formId: 'form-1' },
       },
     ]);
 
