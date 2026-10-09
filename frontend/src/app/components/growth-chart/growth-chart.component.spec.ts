@@ -3,15 +3,20 @@ import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 import { GrowthChartComponent } from './growth-chart.component';
 import { ThemeService } from 'src/app/services/theme.service';
+import { mockMatchMedia } from 'src/app/testing/matchMediaMock';
 
 describe('GrowthChartComponent', () => {
   let component: GrowthChartComponent;
   let fixture: ComponentFixture<GrowthChartComponent>;
 
   beforeEach(async () => {
-    // pin the system preference to light, so toggle() below always switches to dark,
-    // regardless of the OS theme of a headed browser
-    spyOn(window, 'matchMedia').and.returnValue({ matches: false } as MediaQueryList);
+    // ThemeService (constructed below, via inject()) falls back to the system's
+    // prefers-color-scheme when nothing is saved - pin it to light so 'uses a white border
+    // color in dark theme' can rely on toggle() actually landing on dark, regardless of
+    // whatever color scheme the machine running these tests prefers.
+    localStorage.removeItem('theme');
+    mockMatchMedia(false);
+
     await TestBed.configureTestingModule({
       imports: [GrowthChartComponent],
       providers: [provideCharts(withDefaultRegisterables())],
@@ -83,6 +88,25 @@ describe('GrowthChartComponent', () => {
     fixture.detectChanges();
 
     expect((component.data().datasets[0] as any).borderColor).toBe('white');
+  });
+
+  it('switches the border color back when the theme toggles again', () => {
+    const themeService = TestBed.inject(ThemeService);
+    fixture.componentRef.setInput('child', {
+      name: 'Max',
+      gender: 'male',
+      dateOfBirth: new Date('2024-01-01'),
+      healthData: [],
+    } as any);
+    fixture.detectChanges();
+
+    themeService.toggle(); // light -> dark
+    expect((component.data().datasets[0] as any).borderColor).toBe('white');
+
+    themeService.toggle(); // dark -> light
+    expect((component.data().datasets[0] as any).borderColor).toBe(
+      'rgba(0,0,0,1)',
+    );
   });
 
   it('getChildData returns an empty array when no child is selected', () => {

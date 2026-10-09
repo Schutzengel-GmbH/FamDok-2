@@ -273,7 +273,8 @@ export class EditFamilyComponent implements OnInit {
       phone: this.valueIfChanged(this.phone, this.family.phone),
       additionalPhones: this.additionalPhones.value
         .replace(/\s/g, '')
-        .split(','),
+        .split(',')
+        .filter((n) => n !== ''),
       caregiver: {
         deleteMany: { id: { in: this.family.caregiver.map((c) => c.id) } },
         createMany: {
