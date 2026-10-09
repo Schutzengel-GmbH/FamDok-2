@@ -8,6 +8,7 @@ import {
 import { FullContactDocumentation } from '../../../../shared/types';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { triggerBlobDownload } from './document.service';
 
 @Injectable({
   providedIn: 'root',
@@ -82,13 +83,7 @@ export class ContactDocumentationService {
       )
       .subscribe({
         next: (blob) => {
-          const filename = `doc.pdf`;
-          const url = URL.createObjectURL(blob);
-          const anchor = document.createElement('a');
-          anchor.href = url;
-          anchor.download = filename;
-          anchor.click();
-          URL.revokeObjectURL(url);
+          triggerBlobDownload('doc.pdf', blob);
         },
         error: () => {},
       });
