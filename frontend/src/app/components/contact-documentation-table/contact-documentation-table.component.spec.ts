@@ -13,6 +13,7 @@ import { buildUser } from 'src/app/testing/fixtures';
 import { ToastService } from 'src/app/services/toast.service';
 import { environment } from 'src/environments/environment';
 import { Role } from '../../../../../shared/generated/prisma/enums';
+import { flushWarnings } from 'src/app/testing/http-helpers';
 
 describe('ContactDocumentationTable', () => {
   let component: ContactDocumentationTable;
@@ -66,7 +67,10 @@ describe('ContactDocumentationTable', () => {
       .flush(docs);
   }
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    flushWarnings(httpMock);
+    httpMock.verify();
+  });
 
   describe('role-based data source', () => {
     it('uses /documentation/my for a plain User', () => {

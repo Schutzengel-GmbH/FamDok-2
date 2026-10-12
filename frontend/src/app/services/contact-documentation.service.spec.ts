@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 
 import { ContactDocumentationService } from './contact-documentation.service';
 import { environment } from 'src/environments/environment';
+import { flushWarnings } from 'src/app/testing/http-helpers';
 
 describe('ContactDocumentationService', () => {
   let service: ContactDocumentationService;
@@ -17,7 +18,10 @@ describe('ContactDocumentationService', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    flushWarnings(httpMock);
+    httpMock.verify();
+  });
 
   it('getDocumentations GETs all documentation', () => {
     service.getDocumentations().subscribe();
@@ -99,6 +103,24 @@ describe('ContactDocumentationService', () => {
     );
     expect(req.request.method).toBe('DELETE');
     req.flush({});
+  });
+
+  it('refreshes the warnings once a documentation mutation succeeds', () => {
+    service.createDocumentation('case-1', {} as any).subscribe();
+
+    httpMock.expectOne(`${environment.apiUrl}/case/i/case-1/documentation`).flush({});
+
+    httpMock.expectOne(`${environment.apiUrl}/warnings`).flush([]);
+  });
+
+  it('does not refresh the warnings when a documentation mutation fails', () => {
+    service.updateDocumentation('case-1', 'doc-1', {} as any).subscribe({ error: () => {} });
+
+    httpMock
+      .expectOne(`${environment.apiUrl}/case/i/case-1/documentation/i/doc-1`)
+      .flush('Boom', { status: 500, statusText: 'Server Error' });
+
+    httpMock.expectNone(`${environment.apiUrl}/warnings`);
   });
 
   it('downloadContactDocumentationPDF fetches the PDF as a blob and triggers a save', () => {

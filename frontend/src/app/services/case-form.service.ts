@@ -14,12 +14,14 @@ import { HttpClient } from '@angular/common/http';
 import { FullCaseForm, FullCaseFormResponse } from '../../../../shared/types';
 import { environment } from 'src/environments/environment';
 import { AnswerModel as Answer } from '../../../../shared/generated/prisma/models';
+import { WarningsService } from './warnings.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CaseFormService {
   private http = inject(HttpClient);
+  private warningsService = inject(WarningsService);
 
   protected caseFormResponseApiUrl = environment.apiUrl + '/case-form-response';
   protected caseFormApiUrl = environment.apiUrl + '/case-form-definition';
@@ -200,10 +202,12 @@ export class CaseFormService {
   createCaseFormResponse(
     caseFormResponsedata: CaseFormResponseCreateInput,
   ): Observable<FullCaseFormResponse> {
-    return this.http.post<FullCaseFormResponse>(
-      this.caseFormResponseApiUrl,
-      caseFormResponsedata,
-    );
+    return this.http
+      .post<FullCaseFormResponse>(
+        this.caseFormResponseApiUrl,
+        caseFormResponsedata,
+      )
+      .pipe(this.warningsService.refreshAfter());
   }
 
   /**
@@ -216,10 +220,12 @@ export class CaseFormService {
     id: string,
     update: CaseFormResponseUpdateInput,
   ): Observable<FullCaseFormResponse> {
-    return this.http.put<FullCaseFormResponse>(
-      this.caseFormResponseApiUrl + '/i/' + id,
-      update,
-    );
+    return this.http
+      .put<FullCaseFormResponse>(
+        this.caseFormResponseApiUrl + '/i/' + id,
+        update,
+      )
+      .pipe(this.warningsService.refreshAfter());
   }
 
   /**
@@ -228,8 +234,8 @@ export class CaseFormService {
    * @returns {Observable<FullCaseFormResponse>} Observable emitting the deleted response or deletion result
    */
   deleteCaseFormResponse(id: string): Observable<FullCaseFormResponse> {
-    return this.http.delete<FullCaseFormResponse>(
-      this.caseFormResponseApiUrl + '/i/' + id,
-    );
+    return this.http
+      .delete<FullCaseFormResponse>(this.caseFormResponseApiUrl + '/i/' + id)
+      .pipe(this.warningsService.refreshAfter());
   }
 }

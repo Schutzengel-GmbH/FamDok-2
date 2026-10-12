@@ -11,6 +11,7 @@ import { EditCaseFormSingleResponse } from './edit-case-form-single-response.com
 import { ToastService } from 'src/app/services/toast.service';
 import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
 import { buildQuestion, buildAnswer } from 'src/app/testing/fixtures';
+import { flushWarnings } from 'src/app/testing/http-helpers';
 
 describe('EditCaseFormSingleResponse', () => {
   let component: EditCaseFormSingleResponse;
@@ -48,7 +49,10 @@ describe('EditCaseFormSingleResponse', () => {
     component = fixture.componentInstance;
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    flushWarnings(httpMock);
+    httpMock.verify();
+  });
 
   function setup(caseForm: any) {
     fixture.componentRef.setInput('caseForm', caseForm);

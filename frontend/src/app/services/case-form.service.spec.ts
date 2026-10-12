@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 
 import { CaseFormService } from './case-form.service';
 import { environment } from 'src/environments/environment';
+import { flushWarnings } from 'src/app/testing/http-helpers';
 
 describe('CaseFormService', () => {
   let service: CaseFormService;
@@ -17,7 +18,10 @@ describe('CaseFormService', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    flushWarnings(httpMock);
+    httpMock.verify();
+  });
 
   it('getCaseForms GETs form definitions', () => {
     service.getCaseForms().subscribe();
@@ -81,6 +85,24 @@ describe('CaseFormService', () => {
     const req = httpMock.expectOne(`${environment.apiUrl}/case-form-response/i/resp-1`);
     expect(req.request.method).toBe('DELETE');
     req.flush({});
+  });
+
+  it('refreshes the warnings once a response mutation succeeds', () => {
+    service.updateCaseFormResponse('resp-1', {} as any).subscribe();
+
+    httpMock.expectOne(`${environment.apiUrl}/case-form-response/i/resp-1`).flush({});
+
+    httpMock.expectOne(`${environment.apiUrl}/warnings`).flush([]);
+  });
+
+  it('does not refresh the warnings when a response mutation fails', () => {
+    service.deleteCaseFormResponse('resp-1').subscribe({ error: () => {} });
+
+    httpMock
+      .expectOne(`${environment.apiUrl}/case-form-response/i/resp-1`)
+      .flush('Boom', { status: 500, statusText: 'Server Error' });
+
+    httpMock.expectNone(`${environment.apiUrl}/warnings`);
   });
 
   describe('saveResponse', () => {
