@@ -63,9 +63,9 @@ describe('CaseService', () => {
     req.flush([]);
   });
 
-  describe('createFamily', () => {
+  describe('createCase', () => {
     it('rejects when the user has no organisation', (done) => {
-      service.createFamily({} as any, {} as any).subscribe({
+      service.createCase({} as any, {} as any).subscribe({
         error: (err) => {
           expect(err.message).toContain('nicht Teil einer Organisation');
           done();
@@ -77,7 +77,7 @@ describe('CaseService', () => {
 
     it('creates the family then the case, attaching the requesting user and derived city/plz', () => {
       service
-        .createFamily(
+        .createCase(
           { name: 'Muster', adress: { city: 'Berlin', plz: '12345' } } as any,
           { startedAt: new Date() } as any,
         )

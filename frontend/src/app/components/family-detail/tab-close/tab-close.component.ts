@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { FamilyService } from 'src/app/services/family.service';
+import { CaseService } from 'src/app/services/case.service';
 import { FullCase, Warning } from '../../../../../../shared/types';
 import { FormType, WarningType } from '../../../../../../shared/consts';
 import { Role } from '../../../../../../shared/generated/prisma/enums';
@@ -49,7 +49,7 @@ export class TabClose {
 
   private router = inject(Router);
   private settingsService = inject(SettingsService);
-  private familyService = inject(FamilyService);
+  private caseService = inject(CaseService);
   private warningsService = inject(WarningsService);
   private meService = inject(MeService);
   private dialogService = inject(ConfirmDialogService);
@@ -125,7 +125,7 @@ export class TabClose {
 
     zip([
       this.settingsService.getSettings(),
-      this.familyService.closeCase(this.selectedCase().id, this.date()),
+      this.caseService.closeCase(this.selectedCase().id, this.date()),
     ]).subscribe({
       next: ([settings, c]) => {
         const dueAt = c.personalDataDueAt;
@@ -173,7 +173,7 @@ export class TabClose {
         'Fortfahren?',
       style: 'warning',
       confirmAction: () => {
-        this.familyService.reopenCase(this.selectedCase().id).subscribe({
+        this.caseService.reopenCase(this.selectedCase().id).subscribe({
           next: () => {
             this.toast.show({
               title: 'Zurückgenommen',
@@ -204,7 +204,7 @@ export class TabClose {
         'werden.',
       style: 'danger',
       confirmAction: () => {
-        this.familyService.purgeFamily(this.selectedCase().id).subscribe({
+        this.caseService.purgeFamily(this.selectedCase().id).subscribe({
           next: () => {
             this.toast.show({
               title: 'Gelöscht',
