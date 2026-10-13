@@ -27,6 +27,14 @@ describe('ContactDocumentationService', () => {
     req.flush([]);
   });
 
+  it('getDocumentations encodes the given filter into the where param', () => {
+    service.getDocumentations({ caseId: 'case-1' }).subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.includes('/case/documentation/all'));
+    expect(decodeURIComponent(req.request.url)).toContain('"caseId":"case-1"');
+    req.flush([]);
+  });
+
   it('getMyDocumentations GETs the current user\'s documentation', () => {
     service.getMyDocumentations().subscribe();
 
@@ -50,6 +58,14 @@ describe('ContactDocumentationService', () => {
 
     const req = httpMock.expectOne((r) => r.url.includes('/case/i/case-1/documentation'));
     expect(req.request.method).toBe('GET');
+    req.flush({});
+  });
+
+  it('getDocumentationForCase encodes the given filter into the where param', () => {
+    service.getDocumentationForCase('case-1', { id: 'doc-1' }).subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.includes('/case/i/case-1/documentation'));
+    expect(decodeURIComponent(req.request.url)).toContain('"id":"doc-1"');
     req.flush({});
   });
 

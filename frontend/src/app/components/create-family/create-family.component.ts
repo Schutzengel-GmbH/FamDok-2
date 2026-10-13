@@ -229,7 +229,7 @@ export class CreateFamilyComponent {
     };
 
     // Build case create input
-    const caseInput: Parameters<typeof this.caseService.createFamily>[1] = {
+    const caseInput: Parameters<typeof this.caseService.createCase>[1] = {
       startedAt: this.startedAt.value!,
       migrationBackground: this.migrationBackground.value,
       specificMigrationBackground: this.specificMigrationBackground.value,
@@ -240,7 +240,7 @@ export class CreateFamilyComponent {
       plz: this.plz.value,
     };
 
-    this.caseService.createFamily(familyInput, caseInput).subscribe({
+    this.caseService.createCase(familyInput, caseInput).subscribe({
       next: (createdCase: FullCase) => {
         this.isLoading = false;
         this.form.reset();

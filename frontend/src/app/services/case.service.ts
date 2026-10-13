@@ -13,6 +13,10 @@ import { MeService } from './me.service';
 import { SettingsService } from './settings.service';
 import { triggerBlobDownload } from './document.service';
 import {
+  caseExportFilename,
+  stammdatenFilename,
+} from '../../../../shared/utils/filename';
+import {
   CaseCreateInput,
   CaseWhereInput,
   CaseInclude,
@@ -20,7 +24,7 @@ import {
   ZielvereinbarungCreateInput,
   ZielvereinbarungUpdateInput,
 } from '../../../../shared/generated/prisma/models';
-import { mergeMap, Observable } from 'rxjs';
+import { map, mergeMap, Observable } from 'rxjs';
 import { Status } from '../../../../shared/generated/prisma/enums';
 
 @Injectable({
@@ -117,7 +121,7 @@ export class CaseService {
    * @param {Omit<Prisma.CaseCreateInput, 'createdBy'|'responsibleUsers'|'family'|'caseformResponses'>} caseInput Case create input without server-managed relations
    * @returns {Observable<FullCase>} Observable emitting the created case
    */
-  createFamily(
+  createCase(
     familyInput: FamilyCreateInput,
     caseInput: Omit<
       CaseCreateInput,
@@ -238,6 +242,41 @@ export class CaseService {
       this.caseApiUrl + '/i/' + caseId + '/purge',
       {},
     );
+  }
+
+  /**
+   * Download the case's Stammdaten (case + family data) as a PDF
+   * @param {string} caseId UUID of the case
+   * @param {string} familyName used for the file name
+   */
+  downloadStammdatenPDF(caseId: string, familyName: string): Observable<void> {
+    return this.http
+      .get(this.caseApiUrl + '/i/' + caseId + '/export/stammdaten', {
+        responseType: 'blob',
+      })
+      .pipe(
+        map((blob) =>
+          triggerBlobDownload(stammdatenFilename(familyName), blob),
+        ),
+      );
+  }
+
+  /**
+   * Download the case's full history as a ZIP: Stammdaten PDF, all contact documentation as
+   * PDFs and all case form responses as CSVs
+   * @param {string} caseId UUID of the case
+   * @param {string} familyName used for the file name
+   */
+  downloadCaseExport(caseId: string, familyName: string): Observable<void> {
+    return this.http
+      .get(this.caseApiUrl + '/i/' + caseId + '/export', {
+        responseType: 'blob',
+      })
+      .pipe(
+        map((blob) =>
+          triggerBlobDownload(caseExportFilename(familyName), blob),
+        ),
+      );
   }
 
   /**
