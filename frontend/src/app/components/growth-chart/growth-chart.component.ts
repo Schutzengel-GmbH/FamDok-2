@@ -6,6 +6,7 @@ import {
   linkedSignal,
   model,
   signal,
+  ViewChild,
 } from '@angular/core';
 import { ChartData, ChartOptions } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
@@ -29,6 +30,8 @@ export class GrowthChartComponent {
   private themeService = inject(ThemeService);
   private theme = toSignal(this.themeService.theme, { requireSync: true });
 
+  @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
+
   child = model<Child | undefined>(undefined);
   metric = input<GrowthMetric>('weight');
   ageRange = signal<0 | 1 | 2>(0);
@@ -46,10 +49,6 @@ export class GrowthChartComponent {
     },
     ChartData
   >({
-    // `theme` has to be part of `source`, not just read inside `computation` - a linkedSignal
-    // only recomputes when its source changes, so reading an unrelated signal directly inside
-    // `computation` (as `theme` used to be) silently never retriggers it on its own, and the
-    // border color would stay stuck on whatever it was when child/ageRange/metric last changed.
     source: () => ({
       child: this.child(),
       ageRange: this.ageRange(),
@@ -112,5 +111,12 @@ export class GrowthChartComponent {
         (v): v is { x: number; y: number } =>
           v.y != null && v.x >= min && v.x <= max,
       );
+  }
+
+  downloadChart() {
+    const a = document.createElement('a');
+    a.href = this.chart!.toBase64Image()!;
+    a.download = `${this.child()?.name || '?'}-${this.child()?.lastName || '?'}-${this.metric() === 'weight' ? 'Gewicht' : 'Groesse'}-${this.ageRange()}-${this.ageRange() + 1}.png`;
+    a.click();
   }
 }
