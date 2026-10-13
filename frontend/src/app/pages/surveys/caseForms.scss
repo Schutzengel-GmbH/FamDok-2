@@ -220,7 +220,7 @@
   }
 
   .forms-card {
-    max-height: min(48vh, 560px);
+    max-height: clamp(320px, 48vh, 560px);
   }
 }
 
@@ -284,7 +284,7 @@
   }
 
   .forms-card {
-    max-height: min(50vh, 520px);
+    max-height: clamp(300px, 50vh, 520px);
   }
 
   .form-entry {
@@ -370,7 +370,7 @@
   }
 
   .forms-card {
-    max-height: min(52vh, 500px);
+    max-height: clamp(280px, 52vh, 500px);
   }
 
   .forms-list {
@@ -408,6 +408,6 @@
 
 @media (max-height: 820px) and (min-width: 768px) {
   .forms-card {
-    max-height: 44vh;
+    max-height: max(320px, 44vh);
   }
 }
