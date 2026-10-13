@@ -11,6 +11,7 @@ import { EditCaseFormResponse } from './edit-case-form-response.component';
 import { ToastService } from 'src/app/services/toast.service';
 import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
 import { buildQuestion, buildAnswer } from 'src/app/testing/fixtures';
+import { flushWarnings } from 'src/app/testing/http-helpers';
 
 describe('EditCaseFormResponse', () => {
   let component: EditCaseFormResponse;
@@ -48,7 +49,10 @@ describe('EditCaseFormResponse', () => {
     component = fixture.componentInstance;
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    flushWarnings(httpMock);
+    httpMock.verify();
+  });
 
   function setup(caseForm: any, response?: any) {
     fixture.componentRef.setInput('caseForm', caseForm);

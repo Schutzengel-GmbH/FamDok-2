@@ -9,3 +9,11 @@ import { HttpTestingController } from '@angular/common/http/testing';
 export function flushSettings(httpMock: HttpTestingController) {
   httpMock.match((r) => r.url.includes('/settings')).forEach((r) => r.flush([]));
 }
+
+/**
+ * Flushes the `/warnings` GET that `WarningsService.refreshAfter()` fires after a request that
+ * can change warnings (e.g. saving a contact documentation or case form response).
+ */
+export function flushWarnings(httpMock: HttpTestingController) {
+  httpMock.match((r) => r.url.includes('/warnings')).forEach((r) => r.flush([]));
+}

@@ -11,7 +11,7 @@ import Keycloak from 'keycloak-js';
 import { EditContactDocumentation } from './edit-contact-documentation.component';
 import { ToastService } from 'src/app/services/toast.service';
 import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
-import { flushSettings } from 'src/app/testing/http-helpers';
+import { flushSettings, flushWarnings } from 'src/app/testing/http-helpers';
 import { mockKeycloak } from 'src/app/testing/keycloak-mock';
 import { environment } from 'src/environments/environment';
 
@@ -65,7 +65,10 @@ describe('EditContactDocumentation', () => {
     component = fixture.componentInstance;
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    flushWarnings(httpMock);
+    httpMock.verify();
+  });
 
   it('builds a populated, valid form from an existing doc', () => {
     fixture.componentRef.setInput('initialCase', testCase);
