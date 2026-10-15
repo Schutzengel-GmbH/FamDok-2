@@ -1,45 +1,28 @@
-import { Component, inject, Input, OnInit } from '@angular/core';
+import { Component, inject, Input, OnInit, signal } from '@angular/core';
 import { UserService } from 'src/app/services/user.service';
 import {
+  AdminUser,
   FullOrganisation,
   FullSubOrganisation,
-  FullUser,
+  KcStatus,
 } from '../../../../../../shared/types';
-import {
-  AbstractControl,
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ToastService } from 'src/app/services/toast.service';
 import { environment } from 'src/environments/environment';
 import { MultiSelect } from 'src/app/components/multi-select/multi-select.component';
 import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
 import { userPipe } from 'src/app/util/tableTransformPipes';
-import { Role } from '../../../../../../shared/generated/prisma/enums';
-
-const ROLES_REQUIRING_ORG: Role[] = [
-  Role.OrgController,
-  Role.OrgCoordinator,
-  Role.SubOrgCoordinator,
-];
-
-function nonEmptyArray(control: AbstractControl): ValidationErrors | null {
-  return Array.isArray(control.value) && control.value.length > 0
-    ? null
-    : { required: true };
-}
+import { watchScope } from '../user-form-utils';
+import { TempPasswordComponent } from '../temp-password/temp-password.component';
 
 @Component({
   selector: 'app-user-item',
   standalone: true,
-  imports: [ReactiveFormsModule, MultiSelect],
+  imports: [ReactiveFormsModule, MultiSelect, TempPasswordComponent],
   templateUrl: './user-item.component.html',
 })
 export class UserItemComponent implements OnInit {
-  @Input() user!: FullUser;
+  @Input() user!: AdminUser;
   @Input() orgs!: FullOrganisation[];
 
   private userService = inject(UserService);
@@ -51,7 +34,14 @@ export class UserItemComponent implements OnInit {
 
   jobTitles = environment.jobTitles;
 
+  /** Keycloak account state, undefined if it couldn't be loaded */
+  kcStatus = signal<KcStatus | undefined>(undefined);
+  /** shown once after issuing a temporary password */
+  tempPassword = signal<string | undefined>(undefined);
+
   ngOnInit(): void {
+    this.kcStatus.set(this.user?.kcStatus);
+
     this.form = this.fb.group({
       firstName: this.user?.firstName,
       lastName: this.user?.lastName,
@@ -63,41 +53,7 @@ export class UserItemComponent implements OnInit {
       ],
     });
 
-    this.form.get('organisationId')?.valueChanges.subscribe((orgId) => {
-      const validIds = new Set(
-        this.availableSubOrgs(orgId).map((subOrg) => subOrg.id),
-      );
-      const selected: string[] =
-        this.form.get('subOrganisationIds')?.value ?? [];
-      const filtered = selected.filter((id) => validIds.has(id));
-      if (filtered.length !== selected.length) {
-        this.form.get('subOrganisationIds')?.setValue(filtered);
-      }
-    });
-
-    this.form
-      .get('role')
-      ?.valueChanges.subscribe(() => this.updateScopeValidators());
-    this.updateScopeValidators();
-  }
-
-  /** OrgController/OrgCoordinator need an organisation, SubOrgCoordinator additionally needs
-   * at least one suborganisation - misconfiguring these roles would silently break their
-   * org/suborg-scoped data access, so enforce it here rather than only server-side. */
-  private updateScopeValidators() {
-    const role = this.form.get('role')?.value;
-    const orgControl = this.form.get('organisationId');
-    const subOrgControl = this.form.get('subOrganisationIds');
-
-    orgControl?.setValidators(
-      ROLES_REQUIRING_ORG.includes(role) ? [Validators.required] : [],
-    );
-    orgControl?.updateValueAndValidity({ emitEvent: false });
-
-    subOrgControl?.setValidators(
-      role === Role.SubOrgCoordinator ? [nonEmptyArray] : [],
-    );
-    subOrgControl?.updateValueAndValidity({ emitEvent: false });
+    watchScope(this.form, () => this.orgs);
   }
 
   availableSubOrgs(orgId?: string): FullSubOrganisation[] {
@@ -163,6 +119,77 @@ export class UserItemComponent implements OnInit {
             severity: 'success',
           }),
         ),
+    });
+  }
+
+  hasPendingAction(action: string) {
+    return !!this.kcStatus()?.pendingActions.includes(action);
+  }
+
+  resendInvite() {
+    this.userService.resendInvite(this.user.id).subscribe(() => {
+      this.toastService.show({
+        title: 'Einladung gesendet',
+        text: `Eine neue Einladung wurde an ${this.user.email} gesendet.`,
+        severity: 'success',
+      });
+      this.kcStatus.update(
+        (s) =>
+          s && {
+            ...s,
+            pendingActions: [
+              ...new Set([...s.pendingActions, 'UPDATE_PASSWORD', 'VERIFY_EMAIL']),
+            ],
+          },
+      );
+    });
+  }
+
+  issueTempPassword() {
+    this.dialogService.open({
+      title: 'Temporäres Passwort vergeben?',
+      text: `Das bisherige Passwort von ${userPipe.transform(this.user)} wird ersetzt. Das neue Passwort muss beim nächsten Login geändert werden.`,
+      style: 'warning',
+      confirmAction: () =>
+        this.userService
+          .issueTempPassword(this.user.id)
+          .subscribe(({ tempPassword }) => {
+            this.tempPassword.set(tempPassword);
+            this.kcStatus.update(
+              (s) =>
+                s && {
+                  ...s,
+                  emailVerified: true,
+                  pendingActions: ['UPDATE_PASSWORD'],
+                },
+            );
+          }),
+    });
+  }
+
+  toggleEnabled() {
+    const enable = this.kcStatus()?.enabled === false;
+    const apply = () =>
+      this.userService.setEnabled(this.user.id, enable).subscribe((u) => {
+        this.kcStatus.set(u.kcStatus);
+        this.toastService.show({
+          title: enable ? 'Benutzer entsperrt' : 'Benutzer gesperrt',
+          text: enable
+            ? `${userPipe.transform(this.user)} kann sich wieder anmelden.`
+            : `${userPipe.transform(this.user)} kann sich nicht mehr anmelden.`,
+          severity: 'success',
+        });
+      });
+
+    if (enable) {
+      apply();
+      return;
+    }
+    this.dialogService.open({
+      title: `Benutzer ${userPipe.transform(this.user)} sperren?`,
+      text: 'Gesperrte Benutzer können sich nicht mehr anmelden. Ihre Daten bleiben erhalten.',
+      style: 'warning',
+      confirmAction: apply,
     });
   }
 }

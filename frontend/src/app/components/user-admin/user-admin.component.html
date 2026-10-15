@@ -1,3 +1,18 @@
+<div class="d-flex justify-content-end mb-2">
+  @if (!creating()) {
+    <button class="btn btn-primary" type="button" (click)="creating.set(true)">
+      <i class="bi bi-person-plus"></i> Neuer Benutzer
+    </button>
+  }
+</div>
+
+@if (creating()) {
+  <app-user-create
+    [orgs]="orgs"
+    (created)="onCreated($event)"
+    (closed)="creating.set(false)" />
+}
+
 <div class="input-group mb-2">
   <span class="input-group-text"><i class="bi bi-search"></i></span>
   <div class="form-floating">

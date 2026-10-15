@@ -1,5 +1,47 @@
 <form [formGroup]="form">
-  <h5>User: {{ user.email }}</h5>
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+    <h5 class="mb-0">User: {{ user.email }}</h5>
+    @if (kcStatus(); as status) {
+      @if (!status.enabled) {
+        <span class="badge text-bg-danger">Gesperrt</span>
+      }
+      @if (hasPendingAction('UPDATE_PASSWORD')) {
+        <span class="badge text-bg-warning">Passwort noch nicht gesetzt</span>
+      }
+      @if (!status.emailVerified) {
+        <span class="badge text-bg-secondary">E-Mail nicht bestätigt</span>
+      }
+      <div class="ms-auto d-flex gap-1">
+        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="resendInvite()">
+          <i class="bi bi-envelope"></i> Einladung senden
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="issueTempPassword()">
+          <i class="bi bi-key"></i> Temporäres Passwort
+        </button>
+        <button
+          class="btn btn-sm"
+          [class.btn-outline-warning]="status.enabled"
+          [class.btn-outline-success]="!status.enabled"
+          type="button"
+          (click)="toggleEnabled()">
+          @if (status.enabled) {
+            <i class="bi bi-lock"></i> Sperren
+          } @else {
+            <i class="bi bi-unlock"></i> Entsperren
+          }
+        </button>
+      </div>
+    } @else {
+      <span class="badge text-bg-light">Keycloak-Status nicht verfügbar</span>
+    }
+  </div>
+  @if (tempPassword(); as password) {
+    <app-temp-password
+      class="d-block mb-2"
+      [email]="user.email"
+      [password]="password"
+      (dismiss)="tempPassword.set(undefined)" />
+  }
   <div class="form-group d-flex gap-2">
     <div class="form-floating">
       <input
