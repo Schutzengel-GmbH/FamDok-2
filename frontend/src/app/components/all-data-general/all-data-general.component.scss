@@ -1,0 +1,9 @@
+@use "abstracts" as *;
+
+:host {
+  display: block;
+}
+
+:host ::ng-deep {
+  @include ngx-datatable-panel;
+}
