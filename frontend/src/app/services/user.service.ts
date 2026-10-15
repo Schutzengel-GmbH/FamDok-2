@@ -1,12 +1,16 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { FullUser } from '../../../../shared/types';
 import {
-  UserCreateInput,
+  AdminUser,
+  FullUser,
+  UserWithTempPassword,
+} from '../../../../shared/types';
+import {
   UserUpdateInput,
   UserWhereInput,
 } from '../../../../shared/generated/prisma/models';
+import type { UserCreateRequest } from '../../../../shared/zodTypes';
 
 @Injectable({
   providedIn: 'root',
@@ -20,7 +24,7 @@ export class UserService {
       where: filter ? JSON.stringify(filter) : '',
     });
 
-    return this.http.get<FullUser[]>(
+    return this.http.get<AdminUser[]>(
       this.userApiUrl + '?' + params.toString(),
     );
   }
@@ -35,8 +39,29 @@ export class UserService {
     );
   }
 
-  createUser(user: UserCreateInput) {
-    return this.http.post<FullUser>(this.userApiUrl, user);
+  /** Creates the user in Keycloak and the app. Admin only. */
+  createUser(user: UserCreateRequest) {
+    return this.http.post<UserWithTempPassword>(this.userApiUrl, user);
+  }
+
+  /** Sends (again) the Keycloak email to set a password. Admin only. */
+  resendInvite(id: string) {
+    return this.http.post<void>(this.userApiUrl + '/i/' + id + '/invite', {});
+  }
+
+  /** Sets a new temporary password, returned only in this response. Admin only. */
+  issueTempPassword(id: string) {
+    return this.http.post<{ tempPassword: string }>(
+      this.userApiUrl + '/i/' + id + '/temp-password',
+      {},
+    );
+  }
+
+  /** Locks (`false`) or unlocks (`true`) the user's Keycloak account. Admin only. */
+  setEnabled(id: string, enabled: boolean) {
+    return this.http.put<AdminUser>(this.userApiUrl + '/i/' + id + '/enabled', {
+      enabled,
+    });
   }
 
   updateUser(id: string, update: UserUpdateInput) {

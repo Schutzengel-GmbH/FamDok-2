@@ -1,0 +1,108 @@
+@if (tempPassword(); as tp) {
+  <app-temp-password
+    class="d-block mb-2"
+    [email]="tp.email"
+    [password]="tp.password"
+    (dismiss)="tempPassword.set(undefined)" />
+}
+
+<form class="card card-body mb-3" [formGroup]="form" (ngSubmit)="submit()">
+  <h5>Neuer Benutzer</h5>
+  <div class="d-flex flex-wrap gap-2 mb-2">
+    <div class="form-floating">
+      <input
+        class="form-control"
+        id="newEmail"
+        type="email"
+        autocomplete="off"
+        formControlName="email" />
+      <label for="newEmail">E-Mail</label>
+    </div>
+    <div class="form-floating">
+      <input class="form-control" id="newFirstName" type="text" formControlName="firstName" />
+      <label for="newFirstName">Vorname</label>
+    </div>
+    <div class="form-floating">
+      <input class="form-control" id="newLastName" type="text" formControlName="lastName" />
+      <label for="newLastName">Nachname</label>
+    </div>
+    <div class="form-floating">
+      <select class="form-select" id="newRole" formControlName="role">
+        @for (role of roles; track role) {
+          <option [value]="role">{{ role }}</option>
+        }
+      </select>
+      <label for="newRole">Rolle</label>
+    </div>
+    <div class="form-floating">
+      <select class="form-select" id="newJobTitle" formControlName="jobTitle">
+        <option [ngValue]="null">Keine</option>
+        @for (jobTitle of jobTitles; track $index) {
+          <option [value]="jobTitle">{{ jobTitle }}</option>
+        }
+      </select>
+      <label for="newJobTitle">Fachrichtung</label>
+    </div>
+    <div class="form-floating">
+      <select class="form-select" id="newOrganisationId" formControlName="organisationId">
+        <option [ngValue]="null">Keine Organisation</option>
+        @for (org of orgs(); track org.id) {
+          <option [value]="org.id">{{ org.name }}</option>
+        }
+      </select>
+      <label for="newOrganisationId">Organisation</label>
+    </div>
+    <div>
+      <label class="form-label" for="newSubOrgSelect">Unterorganisationen</label>
+      <app-multi-select
+        id="newSubOrgSelect"
+        [items]="availableSubOrgs()"
+        [value]="selectedSubOrgs()"
+        [compareFn]="subOrgCompareFn"
+        labelProp="name"
+        placeholder="Keine"
+        (selectChange)="onSubOrgsChange($event)" />
+    </div>
+  </div>
+
+  <fieldset class="mb-2">
+    <legend class="form-label fs-6">Erstes Passwort</legend>
+    <div class="form-check">
+      <input
+        class="form-check-input"
+        type="radio"
+        id="onboardingInvite"
+        value="invite"
+        formControlName="onboarding" />
+      <label class="form-check-label" for="onboardingInvite">
+        Einladung per E-Mail – der Benutzer setzt sein Passwort selbst
+      </label>
+    </div>
+    <div class="form-check">
+      <input
+        class="form-check-input"
+        type="radio"
+        id="onboardingTempPassword"
+        value="tempPassword"
+        formControlName="onboarding" />
+      <label class="form-check-label" for="onboardingTempPassword">
+        Temporäres Passwort – wird einmalig angezeigt und muss beim ersten Login geändert werden
+      </label>
+    </div>
+  </fieldset>
+
+  <div class="d-flex align-items-center gap-2">
+    <button class="btn btn-primary" type="submit" [disabled]="form.invalid || saving()">
+      @if (saving()) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      }
+      Anlegen
+    </button>
+    <button class="btn btn-outline-secondary" type="button" (click)="closed.emit()">
+      Schließen
+    </button>
+    @if (form.controls.organisationId.invalid || form.controls.subOrganisationIds.invalid) {
+      <span class="badge text-bg-danger">Organisation erforderlich</span>
+    }
+  </div>
+</form>

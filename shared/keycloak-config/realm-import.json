@@ -1,12 +1,36 @@
 {
   "realm": "fh-realm",
   "enabled": true,
+  "displayName": "FamDok 2.0",
+  "displayNameHtml": "FamDok 2.0",
+  "loginTheme": "famdok",
+  "emailTheme": "famdok",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "de"
+  ],
+  "defaultLocale": "de",
+  "resetPasswordAllowed": true,
+  "actionTokenGeneratedByUserLifespan": 1800,
+  "loginWithEmailAllowed": true,
   "users": [
     {
       "username": "admin-user",
       "email": "admin@fh-realm.de",
       "enabled": true,
       "emailVerified": true
+    },
+    {
+      "username": "service-account-fh-backend",
+      "enabled": true,
+      "serviceAccountClientId": "fh-backend",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "query-users"
+        ]
+      }
     }
   ],
   "smtpServer": {
@@ -17,7 +41,7 @@
     "host": "demo-mail",
     "replyTo": "",
     "from": "noreply@example.com",
-    "fromDisplayName": "",
+    "fromDisplayName": "FamDok 2.0",
     "envelopeFrom": "",
     "ssl": "false",
     "user": ""
@@ -29,8 +53,12 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": ["http://localhost:4200/*"],
-      "webOrigins": ["+"],
+      "redirectUris": [
+        "http://localhost:4200/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -65,6 +93,24 @@
         "configure": true,
         "manage": true
       }
+    },
+    {
+      "clientId": "fh-backend",
+      "name": "FamDok backend (admin API)",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "fh-backend-dev-secret",
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {},
+      "fullScopeAllowed": true
     }
   ]
 }

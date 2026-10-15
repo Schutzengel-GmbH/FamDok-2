@@ -18,6 +18,8 @@ function errorMessage(err: HttpErrorResponse): string {
       return 'Nicht erlaubt';
     case 404:
       return 'Nicht gefunden';
+    case 409:
+      return 'Konflikt';
     case 500:
       return 'Interner Serverfehler';
     case 502:

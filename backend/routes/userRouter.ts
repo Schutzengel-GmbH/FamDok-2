@@ -34,14 +34,12 @@ UserRouter.get('/org/:id', async (req, res) => {
 });
 
 UserRouter.post('/', async (req, res) => {
-  res.status(503).send();
-  // try {
-  //   const input = req.body as Prisma.UserCreateInput;
-  //   const user = await UserController.register(input);
-  //   res.status(200).send(user);
-  // } catch (e) {
-  //   handleError(e, res);
-  // }
+  try {
+    const user = await UserController.create(req.user!, req.body);
+    res.status(201).send(user);
+  } catch (e) {
+    handleError(e, res);
+  }
 });
 
 UserRouter.get('/i/:id', async (req, res) => {
@@ -70,6 +68,40 @@ UserRouter.delete('/i/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const user = await UserController.delete(req.user!, id);
+    res.send(user);
+  } catch (e) {
+    handleError(e, res);
+  }
+});
+
+UserRouter.post('/i/:id/invite', async (req, res) => {
+  try {
+    await UserController.resendInvite(req.user!, req.params.id);
+    res.status(204).send();
+  } catch (e) {
+    handleError(e, res);
+  }
+});
+
+UserRouter.post('/i/:id/temp-password', async (req, res) => {
+  try {
+    const result = await UserController.issueTempPassword(
+      req.user!,
+      req.params.id
+    );
+    res.send(result);
+  } catch (e) {
+    handleError(e, res);
+  }
+});
+
+UserRouter.put('/i/:id/enabled', async (req, res) => {
+  try {
+    const user = await UserController.setEnabled(
+      req.user!,
+      req.params.id,
+      req.body
+    );
     res.send(user);
   } catch (e) {
     handleError(e, res);
