@@ -1,4 +1,11 @@
-import { Component, effect, inject, input, OnInit } from '@angular/core';
+import {
+  Component,
+  effect,
+  inject,
+  input,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { CommonModule, NgForOf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PieChart } from '../../charts/pie-chart/pie-chart.component';
@@ -31,11 +38,11 @@ export class StatsChartCardComponent implements OnInit {
 
   update() {
     this.chartsService.updateData(
-      this.selectedChartKey,
+      this.selectedChartKey(),
       this.filter(),
       this.range(),
     );
-    this.stateService.updateState({ selectedChartKey: this.selectedChartKey });
+    this.stateService.updateState({ selectedChartKey: this.selectedChartKey() });
   }
 
   ngOnInit() {
@@ -52,6 +59,7 @@ export class StatsChartCardComponent implements OnInit {
     { key: 'ort', label: 'Aktive Fälle nach Ort' },
   ];
 
-  selectedChartKey: ChartKey =
-    this.stateService.state.selectedChartKey || 'artDerBeratung';
+  selectedChartKey = signal<ChartKey>(
+    this.stateService.state.selectedChartKey || 'artDerBeratung',
+  );
 }

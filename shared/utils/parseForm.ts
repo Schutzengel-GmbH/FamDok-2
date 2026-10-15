@@ -9,20 +9,38 @@ import {
 } from "../generated/zod/schemas";
 import { Question } from "../generated/prisma/browser";
 import { FullCaseForm, FullGeneralForm } from "../types";
+import z from "zod";
+
+/**
+ * Parses an uploaded definition and checks its outer shape, so malformed input surfaces as a
+ * ZodError rather than a raw SyntaxError/TypeError. The fields themselves are validated by
+ * the create-input schemas below.
+ */
+const FormDefinitionSchema = z
+  .string()
+  .transform((input, ctx) => {
+    try {
+      return JSON.parse(input) as unknown;
+    } catch {
+      ctx.addIssue({ code: "custom", message: "Invalid JSON" });
+      return z.NEVER;
+    }
+  })
+  .pipe(z.looseObject({ questions: z.array(z.looseObject({})) }));
 
 /**
  * Stamps each question with its `order` from its position in the definition array, so the
  * persisted sequence doesn't depend on incidental DB insertion/storage order.
  */
-function withOrder(questions: unknown[]): QuestionCreateInput[] {
-  return (questions as QuestionCreateInput[]).map((question, order) => ({
+function withOrder(questions: Record<string, unknown>[]): QuestionCreateInput[] {
+  return questions.map((question, order) => ({
     ...question,
     order,
-  }));
+  })) as QuestionCreateInput[];
 }
 
 export function parseCaseForm(formInput: string): CaseFormCreateInput {
-  const form = JSON.parse(formInput);
+  const form = FormDefinitionSchema.parse(formInput);
 
   const createInput = {
     ...form,
@@ -40,7 +58,7 @@ export function parseCaseForm(formInput: string): CaseFormCreateInput {
 }
 
 export function parseGeneralForm(formInput: string): GeneralFormCreateInput {
-  const form = JSON.parse(formInput);
+  const form = FormDefinitionSchema.parse(formInput);
 
   const createInput = {
     ...form,

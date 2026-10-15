@@ -92,8 +92,8 @@ export function buildContactDocumentation(overrides: Record<string, any> = {}) {
     beratungsThemenEltern: [],
     beratungsThemenKinder: [],
     beratungsThemenAllgemein: [],
-    zusammenfassung: null,
-    dokumentation: null,
+    zusammenfassung: 'zusammenfassung',
+    dokumentation: 'dokumentation',
     caseId: nextId('case'),
     ...overrides,
   };

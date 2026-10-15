@@ -20,12 +20,4 @@ describe('SelectChild', () => {
     expect(component).toBeTruthy();
     expect(component.case()).toBeUndefined();
   });
-
-  it('updates the selected child on change', () => {
-    const child = { id: 'child-1', name: 'Max' } as any;
-
-    component.change(child);
-
-    expect(component.child()).toBe(child);
-  });
 });

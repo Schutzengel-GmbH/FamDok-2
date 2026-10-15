@@ -1,0 +1,77 @@
+@switch (mode()) {
+  @case ('own') {
+    <h6 class="section-title">Übergabe an</h6>
+    <app-select-user
+      [users]="(ownUsers$ | async) || []"
+      (selectUser)="user.set($event)" />
+
+    <div class="form-check m-2">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        [(ngModel)]="removeMe"
+        id="handoverRemoveMe" />
+      <label class="form-check-label" for="handoverRemoveMe">
+        Mich als Verantwortlichen streichen
+      </label>
+    </div>
+  }
+  @case ('coordinator') {
+    <h6 class="section-title">Familienbetreuer entfernen</h6>
+    @for (u of selectedCase().responsibleUsers; track u.id) {
+      <div class="form-check m-2">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          [id]="'handoverRemove-' + u.id"
+          [checked]="removedIds().includes(u.id)"
+          (change)="toggleRemoved(u.id, $any($event.target).checked)" />
+        <label class="form-check-label" [for]="'handoverRemove-' + u.id">
+          {{ u | user }}
+        </label>
+      </div>
+    }
+
+    <h6 class="section-title">Familienbetreuer hinzufügen</h6>
+    <ng-select
+      class="mb-2"
+      [items]="(orgUsers$ | async) || []"
+      [multiple]="true"
+      [closeOnSelect]="false"
+      bindLabel="email"
+      [compareWith]="compareUsers"
+      [(ngModel)]="addedUsers"
+      placeholder="Bitte auswählen"
+      clearAllText="Auswahl aufheben">
+      <ng-template ng-label-tmp let-item="item" let-clear="clear">
+        <span class="ng-value-label">{{ item | user }}</span>
+        <span class="ng-value-icon right" (click)="clear(item)" aria-hidden="true"
+          >×</span
+        >
+      </ng-template>
+      <ng-template ng-option-tmp let-item="item">{{ item | user }}</ng-template>
+    </ng-select>
+  }
+}
+
+@if (mode() !== 'none') {
+  <div class="mb-2">
+    <label for="handoverNotes" class="form-label">Notizen:</label>
+    <textarea
+      class="form-control"
+      id="handoverNotes"
+      [(ngModel)]="notes"
+      rows="5"></textarea>
+  </div>
+
+  <button
+    class="btn btn-outline-primary"
+    type="button"
+    (click)="handover()"
+    [disabled]="error() || !hasChanges()">
+    Übergabe durchführen
+  </button>
+  @if (error()) {
+    <div class="alert alert-danger mt-2">{{ error() }}</div>
+  }
+}

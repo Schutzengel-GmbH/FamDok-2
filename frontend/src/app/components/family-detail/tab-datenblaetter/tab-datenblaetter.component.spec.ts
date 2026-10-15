@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideRouter, Router } from '@angular/router';
 
 import { TabDatenblaetterComponent } from './tab-datenblaetter.component';
-import { WarningType } from '../../../../../../shared/consts';
+import { FormType, WarningType } from '../../../../../../shared/consts';
 
 describe('TabDatenblaetterComponent', () => {
   let component: TabDatenblaetterComponent;
@@ -47,7 +47,7 @@ describe('TabDatenblaetterComponent', () => {
     httpMock.expectOne((r) => r.url.includes('/warnings')).flush([
       {
         type: WarningType.UNFINISHED_FORM,
-        data: { caseId: 'case-1', caseFormId: 'form-a' },
+        data: { caseId: 'case-1', formType: FormType.CASE_FORM, formId: 'form-a' },
       },
     ]);
   });

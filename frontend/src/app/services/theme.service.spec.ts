@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 
 import { ThemeService } from './theme.service';
+import { mockMatchMedia } from 'src/app/testing/matchMediaMock';
 
 describe('ThemeService', () => {
+  beforeEach(() => mockMatchMedia(false));
   afterEach(() => localStorage.removeItem('theme'));
 
   it('restores the previously saved theme from localStorage', () => {
@@ -14,6 +16,7 @@ describe('ThemeService', () => {
   });
 
   it('defaults to light when nothing is saved and the system has no preference', (done) => {
+    spyOn(window, 'matchMedia').and.returnValue({ matches: false } as MediaQueryList);
     const service = TestBed.inject(ThemeService);
 
     service.theme.subscribe((theme) => {

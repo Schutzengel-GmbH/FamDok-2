@@ -1,6 +1,7 @@
 <div class="input-group mb-3">
   <label for="select">{{ question.text }}</label>
   <ng-select
+    appendTo="body"
     #select
     class="w-100"
     [class.is-invalid]="!isAnswerValid()"
@@ -9,7 +10,7 @@
     [items]="question.selectOptions || []"
     bindLabel="text"
     [multiple]="question.multiple"
-    [(ngModel)]="model"
+    [ngModel]="model()"
     (change)="onChange($event)"
     (add)="onAdd($event)"
     [compareWith]="compareFn"

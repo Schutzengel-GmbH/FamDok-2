@@ -39,7 +39,7 @@ async function main() {
     // update the client by deleting the old one and rewriting
     const clientId = (
       await adminClient.clients.find({ realm: KC_REALM, clientId: KC_CLIENT })
-    )[0].id;
+    )[0]?.id;
 
     if (!clientId) {
       console.log('error finding client, trying to create...');
@@ -55,12 +55,20 @@ async function main() {
     });
 
     // create an admin user in the database
-    const admin = (
-      await adminClient.users.find({
+    const admins = await adminClient.users
+      .find({
         email: 'admin@fh-realm.de',
         realm: KC_REALM,
       })
-    )[0];
+      .catch((e) => {
+        console.log('error finding admin user');
+        console.log(e);
+      });
+    if (!admins) {
+      console.log('aborting...');
+      return;
+    }
+    const admin = admins[0];
 
     const preAdmin = await prisma.user.findUnique({
       where: { kcId: admin.id },
@@ -78,21 +86,32 @@ async function main() {
   } else {
     console.log('creating realm...');
 
-    await adminClient.realms
+    const realm = await adminClient.realms
       .create(
         JSON.parse(
           readFileSync('../shared/keycloak-config/realm-import.json', 'utf-8')
         )
       )
-      .catch((e) => console.log(e));
+      .catch((e) => {
+        console.log('Ream creation failed: ');
+        console.log(e);
+      });
+
+    // creating a realm failed, abort
+    console.log('aborted...');
+    if (!realm) return;
 
     // create an admin user in the database
-    const admin = (
-      await adminClient.users.find({
-        email: 'admin@fh-realm.de',
-        realm: KC_REALM,
-      })
-    )[0];
+    const admins = await adminClient.users.find({
+      email: 'admin@fh-realm.de',
+      realm: KC_REALM,
+    });
+    if (!admins || admins.length < 1) {
+      console.log('Error finding admin user');
+      console.log(admins);
+      return;
+    }
+    const admin = admins[0];
 
     const preAdmin = await prisma.user.findUnique({
       where: { kcId: admin.id },

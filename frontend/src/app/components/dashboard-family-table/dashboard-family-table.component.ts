@@ -125,12 +125,12 @@ export class DashboardFamilyTableComponent implements OnInit {
       return 'yellow';
     }
 
-    if (statuses.some((s) => s === 'red')) {
-      return 'red';
-    }
-
     if (statuses.some((s) => s === 'green')) {
       return 'yellow';
+    }
+
+    if (statuses.some((s) => s === 'red')) {
+      return 'red';
     }
 
     return 'gray';

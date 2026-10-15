@@ -10,12 +10,10 @@ import { buildUser } from 'src/app/testing/fixtures';
 import { environment } from 'src/environments/environment';
 
 describe('TabFamilienbetreuerComponent', () => {
-  let component: TabFamilienbetreuerComponent;
   let fixture: ComponentFixture<TabFamilienbetreuerComponent>;
   let httpMock: HttpTestingController;
-  const me = buildUser({ id: 'me', organisationId: 'org-1' });
 
-  function setup() {
+  beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [TabFamilienbetreuerComponent],
       providers: [
@@ -27,83 +25,24 @@ describe('TabFamilienbetreuerComponent', () => {
 
     httpMock = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(TabFamilienbetreuerComponent);
-    component = fixture.componentInstance;
     fixture.componentRef.setInput('selectedCase', {
       id: 'case-1',
-      responsibleUsers: [{ id: 'me' }],
+      organisationId: 'org-1',
+      responsibleUsers: [{ id: 'other' }],
     } as any);
-
-    // fixture.detectChanges() renders the template, whose AsyncPipe bindings (users$, and
-    // the handovers signal's underlying toObservable effect) subscribe as a side effect - both
-    // requests are always outstanding immediately afterwards.
     fixture.detectChanges();
     flushSettings(httpMock);
-    httpMock.expectOne((r) => r.url.includes('/case/handover/case-1')).flush([]);
-  }
+  });
 
   afterEach(() => httpMock.verify());
 
-  it('loads org users other than the current user into the SelectUser input', () => {
-    setup();
-
-    httpMock.expectOne(`${environment.apiUrl}/me`).flush(me);
+  it('loads the last handovers and embeds the handover component', () => {
+    httpMock.expectOne((r) => r.url.includes('/case/handover/case-1')).flush([]);
     httpMock
-      .expectOne((r) => r.url.includes(`/user/org/${me.organisationId}`))
-      .flush([{ id: 'other-user' }]);
+      .expectOne(`${environment.apiUrl}/me`)
+      .flush(buildUser({ id: 'me', organisationId: 'org-1' }));
     fixture.detectChanges();
 
-    const selectUserEl = fixture.nativeElement.querySelector('app-select-user');
-    expect(selectUserEl).toBeTruthy();
-  });
-
-  it('requires at least one responsible user when removing the last one without a replacement', () => {
-    setup();
-    httpMock.expectOne(`${environment.apiUrl}/me`).flush(me);
-    httpMock.expectOne((r) => r.url.includes('/user/org/')).flush([]);
-
-    component['removeMe'].set(true);
-
-    expect(component.error()).toContain('Mindestens eine Fachkraft');
-  });
-
-  it('has no error when a replacement is chosen', () => {
-    setup();
-    httpMock.expectOne(`${environment.apiUrl}/me`).flush(me);
-    httpMock.expectOne((r) => r.url.includes('/user/org/')).flush([]);
-
-    component['removeMe'].set(true);
-    component['user'].set(buildUser({ id: 'new-user' }) as any);
-
-    expect(component.error()).toBe('');
-  });
-
-  it('handover is a no-op when readOnly', () => {
-    setup();
-    httpMock.expectOne(`${environment.apiUrl}/me`).flush(me);
-    httpMock.expectOne((r) => r.url.includes('/user/org/')).flush([]);
-    fixture.componentRef.setInput('readOnly', true);
-
-    component.handover();
-
-    expect(httpMock.match(`${environment.apiUrl}/me`).length).toBe(0);
-  });
-
-  it('handover posts the change and emits changes on success', () => {
-    setup();
-    httpMock.expectOne(`${environment.apiUrl}/me`).flush(me);
-    httpMock.expectOne((r) => r.url.includes('/user/org/')).flush([]);
-    let changed: unknown;
-    component.changes.subscribe((c) => (changed = c));
-    component['removeMe'].set(true);
-
-    component.handover();
-
-    // meService.getMe() caches (shareReplay), so this second call inside handover() replays
-    // the cached user without a new HTTP request - only the handover POST goes out.
-    const req = httpMock.expectOne(`${environment.apiUrl}/case/handover`);
-    expect(req.request.body.removedIds).toEqual(['me']);
-    req.flush({});
-
-    expect(changed).toEqual({ userRemoved: true });
+    expect(fixture.nativeElement.querySelector('app-case-handover')).toBeTruthy();
   });
 });

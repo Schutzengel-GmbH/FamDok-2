@@ -12,6 +12,7 @@ import { ToastService } from 'src/app/services/toast.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AnswerModel as Answer } from '../../../../../shared/generated/prisma/models';
 import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
+import { HasUnsavedChanges } from 'src/app/auth/guards/unsavedChangesGuard';
 
 @Component({
   selector: 'app-general-form-page',
@@ -19,7 +20,7 @@ import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
   standalone: true,
   templateUrl: './general-form-page.html',
 })
-export class GeneralFormPage {
+export class GeneralFormPage implements HasUnsavedChanges {
   private formService = inject(GeneralFormService);
   private activatedRoute = inject(ActivatedRoute);
   private router = inject(Router);
@@ -66,6 +67,17 @@ export class GeneralFormPage {
     }
   }
 
+  private dirty = false;
+
+  hasUnsavedChanges() {
+    return !this.readOnly && this.dirty;
+  }
+
+  protected setAnswer(questionId: string, answer: Partial<Answer> | undefined) {
+    this.answers[questionId] = answer as Answer;
+    this.dirty = true;
+  }
+
   validate() {
     return this.form.questions.reduce((prev, q) => {
       return prev && validateAnswer(q, this.answers[q.id]);
@@ -91,18 +103,20 @@ export class GeneralFormPage {
             text: `Antwort zu ${this.form.name} erfolgreich gespeichert.`,
             severity: 'success',
           });
+          this.dirty = false;
           this.navigation.back();
         },
         error: (err) => {
           this.toast.show({
             title: 'Fehler',
             text:
-              'Beim Speichern ist ein Fehler aufgetreten: ' + err.message
-                ? err.message
-                : err,
+              'Beim Speichern ist ein Fehler aufgetreten: ' +
+              (err.message ? err.message : err),
             severity: 'danger',
           });
 
+          // the redirect below is deliberate, don't let the unsaved-changes guard hold it up
+          this.dirty = false;
           this.router.navigate(['error'], {
             queryParams: {
               code: err instanceof HttpErrorResponse ? err.status : 0,
@@ -124,6 +138,7 @@ export class GeneralFormPage {
     this.dialogService.open({
       title: 'Antwort löschen?',
       text: 'Soll die Antwort wirklich endgültig gelöscht werden?',
+      style: 'danger',
       confirmAction: () => {
         this.formService.deleteResponse(responseId).subscribe(() => {
           this.toast.show({
@@ -131,6 +146,7 @@ export class GeneralFormPage {
             text: `Antwort gelöscht.`,
             severity: 'success',
           });
+          this.dirty = false;
           this.navigation.back();
         });
       },

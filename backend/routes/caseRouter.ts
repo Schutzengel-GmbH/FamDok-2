@@ -6,7 +6,6 @@ import { caseAttachmentUpload, handleUpload } from '../middleware/upload';
 import { canUploadCaseAttachment } from '../controller/authFns/CaseAttachmentAuthFns';
 import { ForbiddenError, NotFoundError } from '../util/authUtils';
 import { prisma } from '../db';
-import { CASE_DEFAULT_INCLUDE } from '../../shared/consts';
 
 const CaseRouter = Router();
 
@@ -19,7 +18,7 @@ async function requireCanUploadAttachment(
   try {
     const c = await prisma.case.findUnique({
       where: { id: req.params['id'] },
-      include: CASE_DEFAULT_INCLUDE,
+      include: { responsibleUsers: true },
     });
     if (!c) throw new NotFoundError();
     if (!canUploadCaseAttachment(req.user!, c))

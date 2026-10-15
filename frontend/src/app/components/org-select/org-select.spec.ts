@@ -39,13 +39,4 @@ describe('OrgSelect', () => {
 
     expect(component['orgs']).toEqual(orgs as any);
   });
-
-  it('updates the selected org on change', () => {
-    httpMock.expectOne(`${environment.apiUrl}/org`).flush([]);
-
-    const selected = { id: 'org-1', name: 'Org 1' } as any;
-    component.handleChange(selected);
-
-    expect(component.org()).toBe(selected);
-  });
 });

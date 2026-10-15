@@ -8,12 +8,15 @@ import {
 import { FullContactDocumentation } from '../../../../shared/types';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { triggerBlobDownload } from './document.service';
+import { WarningsService } from './warnings.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ContactDocumentationService {
   private http = inject(HttpClient);
+  private warningsService = inject(WarningsService);
 
   protected caseApiUrl = environment.apiUrl + '/case';
 
@@ -82,13 +85,7 @@ export class ContactDocumentationService {
       )
       .subscribe({
         next: (blob) => {
-          const filename = `doc.pdf`;
-          const url = URL.createObjectURL(blob);
-          const anchor = document.createElement('a');
-          anchor.href = url;
-          anchor.download = filename;
-          anchor.click();
-          URL.revokeObjectURL(url);
+          triggerBlobDownload('doc.pdf', blob);
         },
         error: () => {},
       });
@@ -143,10 +140,12 @@ export class ContactDocumentationService {
     caseId: string,
     input: ContactDocumentationCreateInput,
   ): Observable<FullContactDocumentation> {
-    return this.http.post<FullContactDocumentation>(
-      this.caseApiUrl + '/i/' + caseId + '/documentation',
-      input,
-    );
+    return this.http
+      .post<FullContactDocumentation>(
+        this.caseApiUrl + '/i/' + caseId + '/documentation',
+        input,
+      )
+      .pipe(this.warningsService.refreshAfter());
   }
 
   /**
@@ -161,10 +160,12 @@ export class ContactDocumentationService {
     docId: string,
     update: ContactDocumentationUpdateInput,
   ): Observable<FullContactDocumentation> {
-    return this.http.put<FullContactDocumentation>(
-      this.caseApiUrl + '/i/' + caseId + '/documentation/i/' + docId,
-      update,
-    );
+    return this.http
+      .put<FullContactDocumentation>(
+        this.caseApiUrl + '/i/' + caseId + '/documentation/i/' + docId,
+        update,
+      )
+      .pipe(this.warningsService.refreshAfter());
   }
 
   /**
@@ -177,8 +178,10 @@ export class ContactDocumentationService {
     caseId: string,
     docId: string,
   ): Observable<FullContactDocumentation> {
-    return this.http.delete<FullContactDocumentation>(
-      this.caseApiUrl + '/i/' + caseId + '/documentation/i/' + docId,
-    );
+    return this.http
+      .delete<FullContactDocumentation>(
+        this.caseApiUrl + '/i/' + caseId + '/documentation/i/' + docId,
+      )
+      .pipe(this.warningsService.refreshAfter());
   }
 }

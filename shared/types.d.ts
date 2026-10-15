@@ -28,6 +28,7 @@ import {
 } from "./consts";
 import z from "zod";
 import { SettingsKeys, Settings as SettingsZ } from "./zodTypes";
+import { ContactDocumentationScalarFieldEnum } from "./generated/prisma/internal/prismaNamespace";
 
 export interface AuthHandlerConfig {
   overrideAsAdmin?: boolean;
@@ -126,6 +127,11 @@ declare global {
     export interface User extends FullUser {}
   }
 }
+
+type RequiredKeys<T> = {
+  [K in keyof T]-?: {} extends Pick<T, K> ? never : K;
+}[keyof T];
+
 type Warning =
   | {
       level: WarningLevel;
@@ -141,10 +147,50 @@ type Warning =
       level: WarningLevel;
       type: WarningType.UNFINISHED_FORM;
       data: {
-        formType: FormType;
+        formType: FormType.CASE_FORM;
         responseId: string;
         caseId: string;
-        caseFormId?: string;
+        formId: string;
+        unfinishedQuestions: FullQuestion[];
+      };
+    }
+  | {
+      level: WarningLevel;
+      type: WarningType.UNFINISHED_FORM;
+      data: {
+        formType: FormType.GENERAL_FORM;
+        responseId: string;
+        caseId: string;
+        formId: string;
+        unfinishedQuestions: FullQuestion[];
+      };
+    }
+  | {
+      level: WarningLevel;
+      type: WarningType.UNFINISHED_FORM;
+      data: {
+        formType: FormType.CONTACT_DOC;
+        responseId: string;
+        caseId: string;
+        formId: "CONTACT_DOC";
+        unfinishedQuestions: {
+          date: Date | null | undefined;
+          dokumentation: boolean;
+          duration: boolean;
+          zusammenfassung: boolean;
+          artDerBetreuung: boolean;
+        };
+      };
+    }
+  | {
+      level: WarningLevel;
+      type: WarningType.UNFINISHED_FORM;
+      data: {
+        formType: FormType.CLOSING_DOC;
+        responseId: string;
+        caseId: string;
+        formId: string;
+        unfinishedQuestions: FullQuestion[];
       };
     }
   | {

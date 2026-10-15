@@ -2,6 +2,7 @@
   <label for="select">{{ question.text }}</label>
   <ng-select
     #select
+    appendTo="body"
     class="w-100"
     [class.is-invalid]="!isAnswerValid()"
     [ariaLabel]="question.text"
@@ -9,7 +10,7 @@
     [items]="question.selectOptions || []"
     bindLabel="text"
     [multiple]="false"
-    [(ngModel)]="model"
+    [ngModel]="model()"
     (change)="onChange($event)"
     clearAllText="Auswahl aufheben">
     <ng-template ng-label-tmp let-item="item">

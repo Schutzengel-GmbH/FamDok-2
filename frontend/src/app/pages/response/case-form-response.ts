@@ -1,4 +1,4 @@
-import { Component, inject, model } from '@angular/core';
+import { Component, inject, model, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { SelectCaseComponent } from 'src/app/components/select-case/select-case';
@@ -7,6 +7,7 @@ import { EditCaseFormResponse } from 'src/app/components/case-form-response/edit
 import { EditCaseFormSingleResponse } from 'src/app/components/case-form-single-response/edit-case-form-single-response.component';
 import { CaseService } from 'src/app/services/case.service';
 import { CaseFormService } from 'src/app/services/case-form.service';
+import { HasUnsavedChanges } from 'src/app/auth/guards/unsavedChangesGuard';
 
 @Component({
   selector: 'app-response',
@@ -18,7 +19,7 @@ import { CaseFormService } from 'src/app/services/case-form.service';
   standalone: true,
   templateUrl: './case-form-response.html',
 })
-export class CaseFormResponsePage {
+export class CaseFormResponsePage implements HasUnsavedChanges {
   private activatedRoute = inject(ActivatedRoute);
   private caseService = inject(CaseService);
   private caseFormService = inject(CaseFormService);
@@ -26,7 +27,8 @@ export class CaseFormResponsePage {
   responseId = this.activatedRoute.snapshot.queryParamMap.get('id');
   caseId = this.activatedRoute.snapshot.queryParamMap.get('caseId');
   caseFormId = this.activatedRoute.snapshot.paramMap.get('caseFormId')!;
-  readOnly = this.activatedRoute.snapshot.queryParamMap.get('readonly') === 'true';
+  readOnly =
+    this.activatedRoute.snapshot.queryParamMap.get('readonly') === 'true';
 
   case = model<FullCase>();
   response = model<FullCaseFormResponse>();
@@ -44,5 +46,17 @@ export class CaseFormResponsePage {
           this.response.set(r);
           this.case.set(r.case);
         });
+  }
+
+  private singleEditor = viewChild(EditCaseFormSingleResponse);
+  private multipleEditor = viewChild(EditCaseFormResponse);
+
+  hasUnsavedChanges(): boolean {
+    if (!this.caseForm()) return false;
+    else if (this.caseForm()!.type === 'single')
+      return this.singleEditor()?.hasUnsavedChanges() ?? false;
+    else if (this.caseForm()!.type === 'multiple')
+      return this.multipleEditor()?.hasUnsavedChanges() ?? false;
+    else return false;
   }
 }

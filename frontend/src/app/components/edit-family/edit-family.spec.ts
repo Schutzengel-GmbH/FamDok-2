@@ -290,6 +290,18 @@ describe('EditFamily', () => {
       expect(navigation.back).toHaveBeenCalled();
     });
 
+    it('sends an empty array when the additional phones field is cleared', () => {
+      loadFamily();
+      component['additionalPhones'].setValue('0171 1234567, 0171 7654321');
+      component['additionalPhones'].setValue('');
+
+      component.onSubmit();
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/family/i/family-1`);
+      expect(req.request.body.additionalPhones).toEqual([]);
+      req.flush(family as any);
+    });
+
     it('shows an error toast when saving fails', () => {
       loadFamily();
       const toast = TestBed.inject(ToastService);

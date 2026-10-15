@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 
 import { ContactDocumentationService } from './contact-documentation.service';
 import { environment } from 'src/environments/environment';
+import { flushWarnings } from 'src/app/testing/http-helpers';
 
 describe('ContactDocumentationService', () => {
   let service: ContactDocumentationService;
@@ -17,13 +18,24 @@ describe('ContactDocumentationService', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    flushWarnings(httpMock);
+    httpMock.verify();
+  });
 
   it('getDocumentations GETs all documentation', () => {
     service.getDocumentations().subscribe();
 
     const req = httpMock.expectOne((r) => r.url.includes('/case/documentation/all'));
     expect(req.request.method).toBe('GET');
+    req.flush([]);
+  });
+
+  it('getDocumentations encodes the given filter into the where param', () => {
+    service.getDocumentations({ caseId: 'case-1' }).subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.includes('/case/documentation/all'));
+    expect(decodeURIComponent(req.request.url)).toContain('"caseId":"case-1"');
     req.flush([]);
   });
 
@@ -50,6 +62,14 @@ describe('ContactDocumentationService', () => {
 
     const req = httpMock.expectOne((r) => r.url.includes('/case/i/case-1/documentation'));
     expect(req.request.method).toBe('GET');
+    req.flush({});
+  });
+
+  it('getDocumentationForCase encodes the given filter into the where param', () => {
+    service.getDocumentationForCase('case-1', { id: 'doc-1' }).subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.includes('/case/i/case-1/documentation'));
+    expect(decodeURIComponent(req.request.url)).toContain('"id":"doc-1"');
     req.flush({});
   });
 
@@ -99,6 +119,24 @@ describe('ContactDocumentationService', () => {
     );
     expect(req.request.method).toBe('DELETE');
     req.flush({});
+  });
+
+  it('refreshes the warnings once a documentation mutation succeeds', () => {
+    service.createDocumentation('case-1', {} as any).subscribe();
+
+    httpMock.expectOne(`${environment.apiUrl}/case/i/case-1/documentation`).flush({});
+
+    httpMock.expectOne(`${environment.apiUrl}/warnings`).flush([]);
+  });
+
+  it('does not refresh the warnings when a documentation mutation fails', () => {
+    service.updateDocumentation('case-1', 'doc-1', {} as any).subscribe({ error: () => {} });
+
+    httpMock
+      .expectOne(`${environment.apiUrl}/case/i/case-1/documentation/i/doc-1`)
+      .flush('Boom', { status: 500, statusText: 'Server Error' });
+
+    httpMock.expectNone(`${environment.apiUrl}/warnings`);
   });
 
   it('downloadContactDocumentationPDF fetches the PDF as a blob and triggers a save', () => {

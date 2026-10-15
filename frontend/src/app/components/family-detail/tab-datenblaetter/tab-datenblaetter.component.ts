@@ -42,8 +42,8 @@ export class TabDatenblaetterComponent {
             (w): w is Extract<Warning, { type: WarningType.UNFINISHED_FORM }> =>
               w.type === WarningType.UNFINISHED_FORM,
           )
-          .filter((w) => w.data.caseId === caseId && !!w.data.caseFormId)
-          .map((w) => w.data.caseFormId as string),
+          .filter((w) => w.data.caseId === caseId && !!w.data.formId)
+          .map((w) => w.data.formId as string),
       );
 
       return forms

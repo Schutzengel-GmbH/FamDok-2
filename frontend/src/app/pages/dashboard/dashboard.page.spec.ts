@@ -46,6 +46,10 @@ describe('DashboardPage', () => {
     // CaseService is also injected on the page (via DashboardCasesService), whose constructor
     // fires a /settings GET through SettingsService regardless of detectChanges().
     flushSettings(httpMock);
+    // The embedded WarningsListComponent loads case forms for its messages.
+    httpMock
+      .expectOne((r) => r.url.includes('/case-form-definition'))
+      .flush([]);
   }
 
   afterEach(() => httpMock.verify());

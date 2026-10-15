@@ -13,6 +13,7 @@ import { buildUser } from 'src/app/testing/fixtures';
 import { ToastService } from 'src/app/services/toast.service';
 import { environment } from 'src/environments/environment';
 import { Role } from '../../../../../shared/generated/prisma/enums';
+import { flushWarnings } from 'src/app/testing/http-helpers';
 
 describe('ContactDocumentationTable', () => {
   let component: ContactDocumentationTable;
@@ -66,7 +67,10 @@ describe('ContactDocumentationTable', () => {
       .flush(docs);
   }
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    flushWarnings(httpMock);
+    httpMock.verify();
+  });
 
   describe('role-based data source', () => {
     it('uses /documentation/my for a plain User', () => {
@@ -376,6 +380,7 @@ describe('ContactDocumentationTable', () => {
       const row = buildDoc();
       flushDocsRequest([row]);
       component.toggleEdit('doc-1', 'date');
+      const originalDate = component['rows']()![0].date;
 
       component.saveDate(row as any, new Date('2026-05-05'));
 
@@ -385,8 +390,13 @@ describe('ContactDocumentationTable', () => {
       req.flush('boom', { status: 500, statusText: 'Server Error' });
 
       expect(component.editable['doc-1'].date).toBeFalse();
+      expect(component['rows']()![0].date).toEqual(originalDate);
       expect(toast.toasts()[0]).toEqual(
-        jasmine.objectContaining({ title: 'Fehler', severity: 'danger' }),
+        jasmine.objectContaining({
+          title: 'Fehler',
+          text: 'Änderung konnte nicht gespeichert werden',
+          severity: 'danger',
+        }),
       );
     });
   });
@@ -455,6 +465,7 @@ describe('ContactDocumentationTable', () => {
       const row = buildDoc();
       flushDocsRequest([row]);
       component.toggleEdit('doc-1', 'duration');
+      const originalDuration = component['rows']()![0].duration;
 
       component.saveResponse(row as any, 'duration', 60);
 
@@ -464,6 +475,7 @@ describe('ContactDocumentationTable', () => {
       req.flush('boom', { status: 500, statusText: 'Server Error' });
 
       expect(component.editable['doc-1'].response.duration).toBeFalse();
+      expect(component['rows']()![0].duration).toBe(originalDuration);
       expect(toast.toasts()[0].severity).toBe('danger');
     });
   });

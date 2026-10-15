@@ -71,7 +71,7 @@ export class ChartsService {
           cases.forEach((c) => {
             const cIndex = cities.findIndex((city) => c.city === city);
             if (cIndex < 0) data[data.length - 1] += 1;
-            data[cIndex] += 1;
+            else data[cIndex] += 1;
           });
           this.data.next(data);
           this.labels.next([...cities, 'Kein Ort']);

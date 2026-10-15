@@ -20,6 +20,14 @@ export const DocumentMeta = z.object({
   tagIds: z
     .string()
     .optional()
-    .transform((s) => (s ? (JSON.parse(s) as string[]) : []))
+    .transform((s, ctx) => {
+      if (!s) return [];
+      try {
+        return JSON.parse(s) as unknown;
+      } catch {
+        ctx.addIssue({ code: "custom", message: "Invalid JSON" });
+        return z.NEVER;
+      }
+    })
     .pipe(z.array(z.string())),
 });

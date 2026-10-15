@@ -11,6 +11,7 @@ import { EditCaseFormResponse } from './edit-case-form-response.component';
 import { ToastService } from 'src/app/services/toast.service';
 import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
 import { buildQuestion, buildAnswer } from 'src/app/testing/fixtures';
+import { flushWarnings } from 'src/app/testing/http-helpers';
 
 describe('EditCaseFormResponse', () => {
   let component: EditCaseFormResponse;
@@ -48,7 +49,10 @@ describe('EditCaseFormResponse', () => {
     component = fixture.componentInstance;
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    flushWarnings(httpMock);
+    httpMock.verify();
+  });
 
   function setup(caseForm: any, response?: any) {
     fixture.componentRef.setInput('caseForm', caseForm);
@@ -97,6 +101,57 @@ describe('EditCaseFormResponse', () => {
     );
 
     expect(component.answers()).toEqual({ [question.id]: answer });
+  });
+
+  describe('hasUnsavedChanges', () => {
+    const question = buildQuestion();
+    const form = { id: 'form-1', name: 'Formular', type: 'multiple', isPersonal: false, questions: [question] };
+    const answer = buildAnswer({ questionId: question.id, answerText: 'X' });
+
+    it('is false for a freshly loaded response', () => {
+      setup(form, { id: 'resp-1', answers: [answer] });
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is true once an answer was changed', () => {
+      setup(form);
+
+      component['setAnswer'](question.id, answer);
+
+      expect(component.answers()[question.id]).toEqual(answer as any);
+      expect(component.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('is true once another person was selected', () => {
+      setup(form);
+
+      component['setPerson'](undefined);
+      expect(component.hasUnsavedChanges()).toBeFalse();
+
+      component['setPerson']({ id: 'child-1' } as any);
+      expect(component.hasUnsavedChanges()).toBeTrue();
+    });
+
+    it('is false when read-only', () => {
+      setup(form);
+      component['setAnswer'](question.id, answer);
+      fixture.componentRef.setInput('readOnly', true);
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
+
+    it('is false again after a successful save', () => {
+      setup(form);
+      component['setAnswer'](question.id, answer);
+
+      component['saveResponse']();
+      httpMock
+        .expectOne((r) => r.url.includes('/case-form-response'))
+        .flush({ id: 'resp-1', case: { family: { name: 'Musterfamilie' } } });
+
+      expect(component.hasUnsavedChanges()).toBeFalse();
+    });
   });
 
   it('saves the collected answers and navigates home on success', () => {

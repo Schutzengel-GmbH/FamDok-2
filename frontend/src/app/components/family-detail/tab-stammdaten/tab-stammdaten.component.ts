@@ -21,7 +21,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import { Role } from '../../../../../../shared/generated/prisma/enums';
 import { MeService } from 'src/app/services/me.service';
-import { FamilyService } from 'src/app/services/family.service';
+import { CaseService } from 'src/app/services/case.service';
 import { ToastService } from 'src/app/services/toast.service';
 
 @Component({
@@ -34,7 +34,7 @@ import { ToastService } from 'src/app/services/toast.service';
 export class TabStammdatenComponent implements OnChanges {
   private router = inject(Router);
   private meService = inject(MeService);
-  private familyService = inject(FamilyService);
+  private caseService = inject(CaseService);
   private toast = inject(ToastService);
 
   @Input({ required: true }) selectedCase!: FullCase;
@@ -65,7 +65,7 @@ export class TabStammdatenComponent implements OnChanges {
   protected downloadStammdaten() {
     this.runDownload(
       'stammdaten',
-      this.familyService.downloadStammdatenPDF(
+      this.caseService.downloadStammdatenPDF(
         this.selectedCase.id,
         this.selectedCase.family?.name ?? '',
       ),
@@ -75,7 +75,7 @@ export class TabStammdatenComponent implements OnChanges {
   protected downloadCaseExport() {
     this.runDownload(
       'zip',
-      this.familyService.downloadCaseExport(
+      this.caseService.downloadCaseExport(
         this.selectedCase.id,
         this.selectedCase.family?.name ?? '',
       ),

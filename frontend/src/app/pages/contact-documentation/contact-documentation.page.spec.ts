@@ -13,7 +13,7 @@ import Keycloak from 'keycloak-js';
 
 import { ContactDocumentation } from './contact-documentation.page';
 import { mockKeycloak } from 'src/app/testing/keycloak-mock';
-import { flushSettings } from 'src/app/testing/http-helpers';
+import { flushSettings, flushWarnings } from 'src/app/testing/http-helpers';
 import { environment } from 'src/environments/environment';
 
 describe('ContactDocumentation', () => {
@@ -42,7 +42,10 @@ describe('ContactDocumentation', () => {
     flushSettings(httpMock);
   }
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    flushWarnings(httpMock);
+    httpMock.verify();
+  });
 
   it('fetches the case for the caseId route param', () => {
     setup('case-1');

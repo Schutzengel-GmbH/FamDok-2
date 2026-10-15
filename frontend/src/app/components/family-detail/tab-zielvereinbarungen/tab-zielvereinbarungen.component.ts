@@ -13,7 +13,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { FullCase, Warning } from '../../../../../../shared/types';
 import { WarningType } from '../../../../../../shared/consts';
-import { FamilyService } from 'src/app/services/family.service';
 import { ToastService } from 'src/app/services/toast.service';
 import { WarningsService } from 'src/app/services/warnings.service';
 import { isAfter } from 'date-fns';
@@ -188,8 +187,8 @@ export class TabZielvereinbarungenComponent {
           this.toastService.show({
             title: 'Fehler',
             text:
-              'Beim Speichern ist ein Fehler aufgetreten: ' + error.message ||
-              error,
+              'Beim Speichern ist ein Fehler aufgetreten: ' +
+              (error.message || error),
             severity: 'danger',
           });
           this.zielChange.emit();
@@ -221,8 +220,8 @@ export class TabZielvereinbarungenComponent {
           this.toastService.show({
             title: 'Fehler',
             text:
-              'Beim Speichern ist ein Fehler aufgetreten: ' + error.message ||
-              error,
+              'Beim Speichern ist ein Fehler aufgetreten: ' +
+              (error.message || error),
             severity: 'danger',
           });
           this.zielChange.emit();
@@ -234,6 +233,7 @@ export class TabZielvereinbarungenComponent {
     this.dialogService.open({
       title: 'Löschen?',
       text: 'Soll diese Zielvereinbarung wirklich gelöscht werden?',
+      style: 'danger',
       confirmAction: () => {
         this._deleteZiel(id);
       },
@@ -254,8 +254,8 @@ export class TabZielvereinbarungenComponent {
         this.toastService.show({
           title: 'Fehler',
           text:
-            'Beim Löschen ist ein Fehler aufgetreten: ' + error.message ||
-            error,
+            'Beim Löschen ist ein Fehler aufgetreten: ' +
+            (error.message || error),
           severity: 'danger',
         });
         this.zielChange.emit();

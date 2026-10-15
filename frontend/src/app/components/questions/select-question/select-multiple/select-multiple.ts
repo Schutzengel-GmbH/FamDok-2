@@ -1,11 +1,11 @@
 import {
   Component,
+  computed,
   effect,
   inject,
   Input,
   linkedSignal,
   model,
-  OnInit,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -30,7 +30,7 @@ export class SelectMultipleComponent {
 
   answer = model<Partial<Answer>>();
 
-  model = linkedSignal(() =>
+  model = computed(() =>
     this.answer()?.answerSelectId?.map((id) =>
       this.question.selectOptions.find((o) => o.id === id),
     ),

@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { ZodError, prettifyError } from 'zod';
 import {
   BadRequestError,
   ForbiddenError,
@@ -12,6 +13,8 @@ export function handleError(err: unknown, res: Response) {
 
   if (err instanceof BadRequestError)
     res.status(400).json({ message: 'Bad Request', error: err.message });
+  else if (err instanceof ZodError)
+    res.status(400).json({ message: 'Bad Request', error: prettifyError(err) });
   else if (err instanceof UnauthorizedError)
     res.status(401).json({ message: 'Unauthorized', error: err.message });
   else if (err instanceof ForbiddenError)

@@ -1,4 +1,5 @@
 import {
+  ageInMonths,
   ageString,
   getPercentileDatasets,
   getWeightForMonth,
@@ -25,12 +26,18 @@ describe('healthDataUtils', () => {
   });
 
   describe('getPercentileDatasets', () => {
-    it('returns 5 percentile datasets, each with 12 months of data', () => {
+    it('returns 5 percentile datasets, each covering months 0 to 12', () => {
       const datasets = getPercentileDatasets(Gender.male, 0);
 
       expect(datasets.length).toBe(5);
-      expect(datasets.map((d) => d.label)).toEqual(['97%', '85%', '50%', '15%', '3%']);
-      datasets.forEach((d) => expect((d.data as number[]).length).toBe(12));
+      expect(datasets.map((d) => d.label)).toEqual([
+        '97%',
+        '85%',
+        '50%',
+        '15%',
+        '3%',
+      ]);
+      datasets.forEach((d) => expect(d.data.length).toBe(13));
     });
 
     it('uses different data for male vs. other genders', () => {
@@ -41,10 +48,44 @@ describe('healthDataUtils', () => {
     });
 
     it('slices the correct 12-month window for the given ageRange', () => {
-      const range0 = getPercentileDatasets(Gender.male, 0)[0].data as number[];
-      const range1 = getPercentileDatasets(Gender.male, 1)[0].data as number[];
+      const range0 = getPercentileDatasets(Gender.male, 0)[0]
+        .data as number[];
+      const range1 = getPercentileDatasets(Gender.male, 1)[0]
+        .data as number[];
 
       expect(range0).not.toEqual(range1);
+    });
+
+    it('uses the age in months as x value', () => {
+      const range1 = getPercentileDatasets(Gender.male, 1)[0].data as {
+        x: number;
+      }[];
+
+      expect(range1.map((p) => p.x)).toEqual(
+        [...Array(13).keys()].map((n) => n + 12),
+      );
+    });
+
+    it('covers months 24 to 36 for the last age range, for both metrics', () => {
+      for (const metric of ['weight', 'height'] as const) {
+        const range2 = getPercentileDatasets(Gender.female, 2, metric)[0]
+          .data as { x: number }[];
+        expect(range2.length).toBe(13);
+        expect(range2.at(-1)!.x).toBe(36);
+      }
+    });
+  });
+
+  describe('ageInMonths', () => {
+    it('is 0 on the birthday', () => {
+      const birthday = new Date('2024-01-15');
+      expect(ageInMonths(birthday, birthday)).toBe(0);
+    });
+
+    it('is about 1 one month after the birthday', () => {
+      expect(
+        ageInMonths(new Date('2024-01-15'), new Date('2024-02-15')),
+      ).toBeCloseTo(1, 0);
     });
   });
 

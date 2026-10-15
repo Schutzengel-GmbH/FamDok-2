@@ -10,7 +10,11 @@ import Keycloak from 'keycloak-js';
 import { WarningsListComponent } from './warnings-list.component';
 import { mockKeycloak } from 'src/app/testing/keycloak-mock';
 import { environment } from 'src/environments/environment';
-import { WarningLevel, WarningType, FormType } from '../../../../../shared/consts';
+import {
+  WarningLevel,
+  WarningType,
+  FormType,
+} from '../../../../../shared/consts';
 
 describe('WarningsListComponent', () => {
   let component: WarningsListComponent;
@@ -34,6 +38,10 @@ describe('WarningsListComponent', () => {
     fixture = TestBed.createComponent(WarningsListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    // caseForms is a toSignal over CaseFormService.getCaseForms(), fired on construction.
+    httpMock
+      .expectOne((r) => r.url.includes('/case-form-definition'))
+      .flush([{ id: 'form-1', name: 'Anamnese' }]);
   }
 
   function flushWarnings(warnings: any[]) {
@@ -47,8 +55,16 @@ describe('WarningsListComponent', () => {
       setup();
       expect(component['isLoading']()).toBeTrue();
 
-      const info = { level: WarningLevel.INFO, type: WarningType.CASE_NO_CONTACT, data: { caseId: 'c1', lastContact: null } };
-      const warning = { level: WarningLevel.WARNING, type: WarningType.ZV_EXPIRED, data: { caseId: 'c2', finishBy: new Date(), zielvereinbarungsId: 'z1' } };
+      const info = {
+        level: WarningLevel.INFO,
+        type: WarningType.CASE_NO_CONTACT,
+        data: { caseId: 'c1', lastContact: null },
+      };
+      const warning = {
+        level: WarningLevel.WARNING,
+        type: WarningType.ZV_EXPIRED,
+        data: { caseId: 'c2', finishBy: new Date(), zielvereinbarungsId: 'z1' },
+      };
       flushWarnings([info, warning]);
 
       expect(component['isLoading']()).toBeFalse();
@@ -98,7 +114,9 @@ describe('WarningsListComponent', () => {
       flushWarnings([]);
       fixture.componentRef.setInput('cases', []);
 
-      expect(component['familyName']({ data: { caseId: 'unknown' } } as any)).toBeUndefined();
+      expect(
+        component['familyName']({ data: { caseId: 'unknown' } } as any),
+      ).toBeUndefined();
     });
   });
 
@@ -125,14 +143,21 @@ describe('WarningsListComponent', () => {
     it('formats ZV_EXPIRED and ZV_EXPIRING_SOON with the finishBy date', () => {
       const finishBy = new Date('2026-01-01');
       expect(
-        component['message']({ type: WarningType.ZV_EXPIRED, data: { finishBy } } as any),
-      ).toBe(`Zielvereinbarung abgelaufen seit ${finishBy.toLocaleDateString('de-DE')}.`);
+        component['message']({
+          type: WarningType.ZV_EXPIRED,
+          data: { finishBy },
+        } as any),
+      ).toBe(
+        `Zielvereinbarung abgelaufen seit ${finishBy.toLocaleDateString('de-DE')}.`,
+      );
       expect(
         component['message']({
           type: WarningType.ZV_EXPIRING_SOON,
           data: { finishBy },
         } as any),
-      ).toBe(`Zielvereinbarung läuft bald ab (${finishBy.toLocaleDateString('de-DE')}).`);
+      ).toBe(
+        `Zielvereinbarung läuft bald ab (${finishBy.toLocaleDateString('de-DE')}).`,
+      );
     });
 
     it('formats CASE_NO_CONTACT with or without a known last contact', () => {
@@ -151,21 +176,94 @@ describe('WarningsListComponent', () => {
       ).toBe('Noch kein Kontakt dokumentiert.');
     });
 
-    it('formats UNFINISHED_FORM and CLOSED_WITHOUT_DOC', () => {
+    it('formats UNFINISHED_FORM per form type', () => {
       expect(
-        component['message']({ type: WarningType.UNFINISHED_FORM, data: {} } as any),
-      ).toBe('Dokumentation ist unvollständig.');
+        component['message']({
+          type: WarningType.UNFINISHED_FORM,
+          data: {
+            formType: FormType.CASE_FORM,
+            formId: 'form-1',
+            unfinishedQuestions: [{ order: 0, text: 'Gewicht' }],
+          },
+        } as any),
+      ).toBe('Im Formular Anamnese fehlen Angaben zu: Frage 1: Gewicht');
+      expect(
+        component['message']({
+          type: WarningType.UNFINISHED_FORM,
+          data: {
+            formType: FormType.CASE_FORM,
+            formId: 'unknown',
+            unfinishedQuestions: [],
+          },
+        } as any),
+      ).toBe('Im Formular [UNBEKANNT] fehlen Angaben zu: ');
+      expect(
+        component['message']({
+          type: WarningType.UNFINISHED_FORM,
+          data: { formType: FormType.CLOSING_DOC, unfinishedQuestions: [] },
+        } as any),
+      ).toBe('Abschlussdokumentation ist unvollständig.');
+      expect(
+        component['message']({
+          type: WarningType.UNFINISHED_FORM,
+          data: { formType: FormType.GENERAL_FORM, unfinishedQuestions: [] },
+        } as any),
+      ).toBe('Allgemeines Formular unvollständig');
+    });
+
+    it('formats UNFINISHED_FORM for contact docs with or without a date', () => {
+      expect(
+        component['message']({
+          type: WarningType.UNFINISHED_FORM,
+          data: {
+            formType: FormType.CONTACT_DOC,
+            unfinishedQuestions: {
+              date: null,
+              duration: true,
+              artDerBetreuung: false,
+              zusammenfassung: false,
+              dokumentation: false,
+            },
+          },
+        } as any),
+      ).toBe('In einer Fallkontaktdokumentation fehlen Angaben zu: Datum, Dauer');
+      // Dates arrive as ISO strings over JSON, not Date instances.
+      const date = '2026-02-02T00:00:00.000Z';
+      expect(
+        component['message']({
+          type: WarningType.UNFINISHED_FORM,
+          data: {
+            formType: FormType.CONTACT_DOC,
+            unfinishedQuestions: {
+              date,
+              duration: false,
+              artDerBetreuung: true,
+              zusammenfassung: true,
+              dokumentation: true,
+            },
+          },
+        } as any),
+      ).toBe(
+        `Zum Kontakt am ${new Date(date).toLocaleDateString('de-DE')} fehlen Angaben zu: Art der Beratung, Zusammenfassung, Dokumentation`,
+      );
+    });
+
+    it('formats CLOSED_WITHOUT_DOC', () => {
       const closedAt = new Date('2026-03-03');
       expect(
         component['message']({
           type: WarningType.CLOSED_WITHOUT_DOC,
           data: { closedAt },
         } as any),
-      ).toBe(`Fall seit ${closedAt.toLocaleDateString('de-DE')} geschlossen, Abschlussdokumentation fehlt.`);
+      ).toBe(
+        `Fall seit ${closedAt.toLocaleDateString('de-DE')} geschlossen, Abschlussdokumentation fehlt.`,
+      );
     });
 
     it('falls back to a generic message for an unknown type', () => {
-      expect(component['message']({ type: 999, data: {} } as any)).toBe('Hinweis.');
+      expect(component['message']({ type: 999, data: {} } as any)).toBe(
+        'Hinweis.',
+      );
     });
   });
 
@@ -176,12 +274,27 @@ describe('WarningsListComponent', () => {
     });
 
     it('is always true for warning types other than UNFINISHED_FORM', () => {
-      expect(component['hasAction']({ type: WarningType.ZV_EXPIRED, data: {} } as any)).toBeTrue();
-      expect(component['hasAction']({ type: WarningType.CASE_NO_CONTACT, data: {} } as any)).toBeTrue();
-      expect(component['hasAction']({ type: WarningType.CLOSED_WITHOUT_DOC, data: {} } as any)).toBeTrue();
+      expect(
+        component['hasAction']({
+          type: WarningType.ZV_EXPIRED,
+          data: {},
+        } as any),
+      ).toBeTrue();
+      expect(
+        component['hasAction']({
+          type: WarningType.CASE_NO_CONTACT,
+          data: {},
+        } as any),
+      ).toBeTrue();
+      expect(
+        component['hasAction']({
+          type: WarningType.CLOSED_WITHOUT_DOC,
+          data: {},
+        } as any),
+      ).toBeTrue();
     });
 
-    it('is true for UNFINISHED_FORM only when it is a contact-doc or has a caseFormId', () => {
+    it('is true for UNFINISHED_FORM only when it is a contact-doc or has a formId', () => {
       expect(
         component['hasAction']({
           type: WarningType.UNFINISHED_FORM,
@@ -191,7 +304,7 @@ describe('WarningsListComponent', () => {
       expect(
         component['hasAction']({
           type: WarningType.UNFINISHED_FORM,
-          data: { formType: FormType.CASE_FORM, caseFormId: 'form-1' },
+          data: { formType: FormType.CASE_FORM, formId: 'form-1' },
         } as any),
       ).toBeTrue();
       expect(
@@ -203,9 +316,9 @@ describe('WarningsListComponent', () => {
     });
 
     it('returns the matching label per warning type, defaulting to "Öffnen"', () => {
-      expect(component['actionLabel']({ type: WarningType.ZV_EXPIRED } as any)).toBe(
-        'Zielvereinbarung öffnen',
-      );
+      expect(
+        component['actionLabel']({ type: WarningType.ZV_EXPIRED } as any),
+      ).toBe('Zielvereinbarung öffnen');
       expect(
         component['actionLabel']({ type: WarningType.CASE_NO_CONTACT } as any),
       ).toBe('Kontakt dokumentieren');
@@ -213,7 +326,9 @@ describe('WarningsListComponent', () => {
         component['actionLabel']({ type: WarningType.UNFINISHED_FORM } as any),
       ).toBe('Dokumentation fertigstellen');
       expect(
-        component['actionLabel']({ type: WarningType.CLOSED_WITHOUT_DOC } as any),
+        component['actionLabel']({
+          type: WarningType.CLOSED_WITHOUT_DOC,
+        } as any),
       ).toBe('Abschlussdokumentation öffnen');
       expect(component['actionLabel']({ type: 999 } as any)).toBe('Öffnen');
     });
@@ -245,7 +360,10 @@ describe('WarningsListComponent', () => {
         data: { caseId: 'case-9' },
       } as any);
 
-      expect(navigateSpy).toHaveBeenCalledWith(['contact-documentation', 'case-9']);
+      expect(navigateSpy).toHaveBeenCalledWith([
+        'contact-documentation',
+        'case-9',
+      ]);
     });
 
     it('navigates to the contact documentation editor for an unfinished contact-doc form', () => {
@@ -267,7 +385,7 @@ describe('WarningsListComponent', () => {
       ]);
     });
 
-    it('navigates to the response editor for an unfinished form with a caseFormId', () => {
+    it('navigates to the response editor for an unfinished form with a formId', () => {
       const navigateSpy = spyOn(router, 'navigate');
 
       component['takeAction']({
@@ -276,7 +394,7 @@ describe('WarningsListComponent', () => {
           formType: FormType.CASE_FORM,
           caseId: 'case-9',
           responseId: 'resp-1',
-          caseFormId: 'form-1',
+          formId: 'form-1',
         },
       } as any);
 
@@ -297,9 +415,12 @@ describe('WarningsListComponent', () => {
         .expectOne((r) => r.url.includes('/settings'))
         .flush([{ name: 'closing_doc', value: 'closing-form-1' }]);
 
-      expect(navigateSpy).toHaveBeenCalledWith(['responses', 'closing-form-1'], {
-        queryParams: { caseId: 'case-9' },
-      });
+      expect(navigateSpy).toHaveBeenCalledWith(
+        ['responses', 'closing-form-1'],
+        {
+          queryParams: { caseId: 'case-9' },
+        },
+      );
     });
 
     it('does not navigate for CLOSED_WITHOUT_DOC when no closing doc is configured', () => {

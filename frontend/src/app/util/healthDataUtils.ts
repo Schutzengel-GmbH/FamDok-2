@@ -1,5 +1,6 @@
 import {
   addMonths,
+  differenceInDays,
   differenceInMonths,
   differenceInYears,
   isSameMonth,
@@ -46,6 +47,21 @@ export function gramsToKg(g: number): number {
   return g / 1000;
 }
 
+/**
+ * Returns the fractional age in months at the given date, e.g. 3.5 for three and a half months.
+ * Counts whole calendar months first and adds the remaining days as a fraction of the current
+ * month, so a month birthday (e.g. the 1st birthday) is exactly a whole number (12).
+ * @param {Date} birthday The birthday of the child
+ * @param {Date} date The date to compute the age for
+ * @returns {number} The age in (fractional) months
+ */
+export function ageInMonths(birthday: Date, date: Date): number {
+  const months = differenceInMonths(date, birthday);
+  const monthStart = addMonths(birthday, months);
+  const monthLength = differenceInDays(addMonths(birthday, months + 1), monthStart);
+  return months + differenceInDays(date, monthStart) / monthLength;
+}
+
 const PERCENTILE_SOURCES: Record<
   GrowthMetric,
   {
@@ -73,7 +89,8 @@ const PERCENTILE_SOURCES: Record<
 };
 
 /**
- * Returns the datasets for a given percentile chart. The chart is given by the gender and ageRange of the Child
+ * Returns the datasets for a given percentile chart. The chart is given by the gender and ageRange of the Child.
+ * The x value of each data point is the age in months.
  * @param {Gender} gender The Gender of the child, defaults to female if not explicitly male
  * @param {0 | 1 | 2} ageRange The age range for the Child, 0 is 0-1, 1 is 1-2, 2 is 2-3 years
  * @param {GrowthMetric} metric Which growth metric to build percentile curves for, defaults to weight
@@ -85,17 +102,46 @@ export function getPercentileDatasets(
   metric: GrowthMetric = 'weight',
 ): ChartDataset[] {
   const source = PERCENTILE_SOURCES[metric];
+  // include the closing month (12, 24, ...) so the curves span the whole x axis
   const slice = (data: number[]) =>
-    data.slice(0 + ageRange * 12, 11 + ageRange * 12 + 1);
+    data.slice(ageRange * 12, ageRange * 12 + 13);
   const pick = (p: { boys: number[]; girls: number[] }) =>
-    slice(gender === Gender.male ? p.boys : p.girls);
+    slice(gender === Gender.male ? p.boys : p.girls).map((v, i) => ({
+      x: i + ageRange * 12,
+      y: v,
+    }));
 
   return [
-    { label: '97%', borderColor: '#ef4444', pointStyle: false, data: pick(source.p97) },
-    { label: '85%', borderColor: '#f59e0b', pointStyle: false, data: pick(source.p85) },
-    { label: '50%', borderColor: '#10b981', pointStyle: false, data: pick(source.p50) },
-    { label: '15%', borderColor: '#f59e0b', pointStyle: false, data: pick(source.p15) },
-    { label: '3%', borderColor: '#ef4444', pointStyle: false, data: pick(source.p03) },
+    {
+      label: '97%',
+      borderColor: '#ef4444',
+      pointStyle: false,
+      data: pick(source.p97),
+    },
+    {
+      label: '85%',
+      borderColor: '#f59e0b',
+      pointStyle: false,
+      data: pick(source.p85),
+    },
+    {
+      label: '50%',
+      borderColor: '#10b981',
+      pointStyle: false,
+      data: pick(source.p50),
+    },
+    {
+      label: '15%',
+      borderColor: '#f59e0b',
+      pointStyle: false,
+      data: pick(source.p15),
+    },
+    {
+      label: '3%',
+      borderColor: '#ef4444',
+      pointStyle: false,
+      data: pick(source.p03),
+    },
   ];
 }
 

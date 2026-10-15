@@ -5,7 +5,6 @@ import {
   generalFormDefinitionSchema,
   safeParseJson,
 } from 'src/app/util/validation';
-import { FamilyService } from 'src/app/services/family.service';
 import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import { ToastService } from 'src/app/services/toast.service';
 import { GeneralFormService } from 'src/app/services/general-form.service';

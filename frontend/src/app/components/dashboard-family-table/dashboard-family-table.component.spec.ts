@@ -210,15 +210,15 @@ describe('DashboardFamilyTableComponent', () => {
       expect(component.getZielStatusText(row as any)).toBe('In Arbeit');
     });
 
-    it('is red for a mix of done and failed with no in-progress item', () => {
+    it('is yellow for a mix of done and failed with no in-progress item', () => {
       setup();
       flushCases([]);
       const row = buildCase({
         zielvereinbarungen: [{ status: 'done' }, { status: 'failed' }],
       });
 
-      expect(component.getZielStatusClass(row as any)).toBe('status-dot--red');
-      expect(component.getZielStatusText(row as any)).toBe('Handlungsbedarf');
+      expect(component.getZielStatusClass(row as any)).toBe('status-dot--yellow');
+      expect(component.getZielStatusText(row as any)).toBe('In Arbeit');
     });
   });
 
