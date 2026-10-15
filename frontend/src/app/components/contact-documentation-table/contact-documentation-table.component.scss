@@ -1,7 +1,15 @@
 @use "abstracts" as *;
 
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+
+  // auf Mobile ist .app-content height:auto, 100% gäbe keine messbare Höhe
+  @include media-down("nav") {
+    height: 75dvh;
+  }
 }
 
 :host ::ng-deep {
