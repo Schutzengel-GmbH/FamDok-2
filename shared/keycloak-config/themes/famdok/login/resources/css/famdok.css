@@ -1,0 +1,244 @@
+/*
+ * FamDok look for the Keycloak login pages. Colours, radii and shadows mirror the app's design
+ * tokens (frontend/src/styles/abstracts/_tokens.scss, base/_css-variables.scss) - keep in sync.
+ * Dark mode follows the OS setting, since the app's theme toggle isn't visible to Keycloak.
+ */
+:root {
+  --famdok-primary: #2563eb;
+  --famdok-primary-2: #1d4ed8;
+  --famdok-bg: #f3f4f8;
+  --famdok-card: #ffffff;
+  --famdok-ink: #020617;
+  --famdok-ink-2: #4b5563;
+  --famdok-border: rgba(15, 23, 42, 0.12);
+  --famdok-field-bg: #ffffff;
+  --famdok-shadow: 0 18px 60px rgba(15, 23, 42, 0.12);
+  --famdok-focus: 0 0 0 3px rgba(37, 99, 235, 0.28);
+  --famdok-radius: 14px;
+  --famdok-radius-sm: 10px;
+  --famdok-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans", "Liberation Sans", Arial, sans-serif;
+
+  /* PatternFly variables used by Keycloak's markup */
+  --pf-global--primary-color--100: var(--famdok-primary);
+  --pf-global--primary-color--200: var(--famdok-primary-2);
+  --pf-global--link--Color: var(--famdok-primary);
+  --pf-global--link--Color--hover: var(--famdok-primary-2);
+  --pf-global--Color--100: var(--famdok-ink);
+  --pf-global--Color--200: var(--famdok-ink-2);
+  --pf-global--BackgroundColor--100: var(--famdok-card);
+  --pf-global--FontFamily--sans-serif: var(--famdok-font);
+  --pf-global--FontFamily--heading--sans-serif: var(--famdok-font);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --famdok-primary: #3b82f6;
+    --famdok-bg: #020617;
+    --famdok-card: #0b1120;
+    --famdok-ink: #e5e7eb;
+    --famdok-ink-2: #9ca3af;
+    --famdok-border: rgba(148, 163, 184, 0.28);
+    --famdok-field-bg: #020617;
+    --famdok-shadow: 0 24px 80px rgba(0, 0, 0, 0.75);
+    --famdok-focus: 0 0 0 3px rgba(96, 165, 250, 0.45);
+    --pf-global--link--Color: #60a5fa;
+    --pf-global--link--Color--hover: #93c5fd;
+    color-scheme: dark;
+  }
+}
+
+/* Page */
+.login-pf body {
+  background:
+    radial-gradient(900px 500px at 15% -10%, rgba(37, 99, 235, 0.14), transparent 70%),
+    radial-gradient(700px 400px at 100% 110%, rgba(37, 99, 235, 0.08), transparent 70%),
+    var(--famdok-bg);
+  background-attachment: fixed;
+  color: var(--famdok-ink);
+  font-family: var(--famdok-font);
+}
+
+.login-pf a {
+  color: var(--pf-global--link--Color);
+}
+
+.login-pf a:hover {
+  color: var(--pf-global--link--Color--hover);
+}
+
+/* Header: app name instead of the Keycloak logo */
+#kc-header,
+#kc-header-wrapper {
+  color: var(--famdok-ink);
+}
+
+#kc-header-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 56px 16px 24px;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+#kc-header-wrapper::before {
+  content: "";
+  width: 36px;
+  height: 36px;
+  border-radius: var(--famdok-radius-sm);
+  background:
+    radial-gradient(circle at 50% 50%, #fff 0 5px, transparent 6px),
+    linear-gradient(135deg, var(--famdok-primary), var(--famdok-primary-2));
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+
+/* Card */
+.login-pf-page .card-pf {
+  max-width: 440px;
+  padding: 8px 32px 24px;
+  border: 1px solid var(--famdok-border);
+  border-radius: var(--famdok-radius);
+  background: var(--famdok-card);
+  box-shadow: var(--famdok-shadow);
+  color: var(--famdok-ink);
+}
+
+@media (max-width: 767px) {
+  .login-pf-page .card-pf {
+    margin: 0 16px;
+    padding: 4px 20px 20px;
+    border: 1px solid var(--famdok-border);
+    border-radius: var(--famdok-radius);
+    box-shadow: var(--famdok-shadow);
+  }
+}
+
+h1#kc-page-title {
+  margin-top: 16px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--famdok-ink);
+}
+
+.login-pf-page .login-pf-header {
+  margin-bottom: 16px;
+}
+
+/* Forms */
+.login-pf-page .pf-c-form__label-text,
+.login-pf-page .control-label {
+  font-weight: 500;
+  color: var(--famdok-ink);
+}
+
+.login-pf-page .pf-c-form-control {
+  height: auto;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--famdok-border);
+  border-radius: var(--famdok-radius-sm);
+  background: var(--famdok-field-bg);
+  color: var(--famdok-ink);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.login-pf-page .pf-c-form-control:hover {
+  border-color: var(--famdok-border);
+}
+
+.login-pf-page .pf-c-form-control:focus {
+  padding-bottom: 8px;
+  border: 1px solid var(--famdok-primary);
+  box-shadow: var(--famdok-focus);
+  outline: none;
+}
+
+.login-pf-page .pf-c-form-control[aria-invalid="true"] {
+  border-color: #ef4444;
+}
+
+/* Password field with show/hide button */
+.login-pf-page .pf-c-input-group {
+  background: transparent;
+}
+
+.login-pf-page .pf-c-input-group > .pf-c-form-control {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.login-pf-page .pf-c-input-group > .pf-c-button.pf-m-control {
+  border: 1px solid var(--famdok-border);
+  border-left: 0;
+  border-radius: 0 var(--famdok-radius-sm) var(--famdok-radius-sm) 0;
+  background: var(--famdok-field-bg);
+  color: var(--famdok-ink-2);
+}
+
+.login-pf-page .pf-c-button.pf-m-control::after {
+  border: 0;
+}
+
+.login-pf-page .pf-c-check__label,
+#kc-form-options span {
+  color: var(--famdok-ink-2);
+}
+
+/* Buttons */
+.login-pf-page .pf-c-button {
+  border-radius: var(--famdok-radius-sm);
+  font-weight: 500;
+  transition: filter 0.12s ease, transform 0.04s ease;
+}
+
+.login-pf-page .pf-c-button::after {
+  border-radius: var(--famdok-radius-sm);
+}
+
+.login-pf-page .pf-c-button.pf-m-primary {
+  min-height: 42px;
+  border: 0;
+  background-color: var(--famdok-primary);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--famdok-primary) 94%, white 6%),
+    var(--famdok-primary)
+  );
+  color: #fff;
+}
+
+.login-pf-page .pf-c-button:hover {
+  filter: brightness(0.98);
+}
+
+.login-pf-page .pf-c-button:active {
+  transform: translateY(1px);
+  filter: brightness(0.96);
+}
+
+.login-pf-page .pf-c-button:focus-visible {
+  box-shadow: var(--famdok-focus);
+  outline: none;
+}
+
+/* Messages */
+.login-pf-page .pf-c-alert {
+  border-radius: var(--famdok-radius-sm);
+  overflow: hidden;
+}
+
+#kc-info {
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+#kc-info-wrapper {
+  padding: 16px 0 0;
+  border-top: 1px solid var(--famdok-border);
+  background: transparent;
+  color: var(--famdok-ink-2);
+}

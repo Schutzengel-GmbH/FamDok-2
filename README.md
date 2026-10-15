@@ -250,6 +250,16 @@ Admins legen Benutzer unter `/user-admin` an. Das Backend erstellt dabei das Key
 
 Einladungen lassen sich erneut senden, temporäre Passwörter neu vergeben und Konten sperren/entsperren. Rollen werden ausschließlich in der App-Datenbank (`User.role`) gepflegt, nicht in Keycloak. Wer sich mit einem Keycloak-Konto anmeldet, das nicht über die App angelegt wurde, bekommt weiterhin automatisch die Rolle `User` ohne Organisation.
 
+### Keycloak-Login & E-Mails
+
+Login-Seiten und Mails von Keycloak nutzen das Theme `famdok` aus `shared/keycloak-config/themes/famdok/` (in beiden Compose-Dateien nach `/opt/keycloak/themes` gemountet, im Realm als Login- und E-Mail-Theme gesetzt). Die Oberfläche ist auf Deutsch, „Passwort vergessen?“ ist aktiv (Link 30 Minuten gültig).
+
+- `login/resources/css/famdok.css` – Optik der Login-Seiten (Farben/Radien wie im Frontend, Dark Mode nach Systemeinstellung); Texte in `login/messages/messages_de.properties`
+- `email/html/*.ftl`, `email/text/*.ftl` – Vorlagen für Einladung (`executeActions`), Passwort-Reset und E-Mail-Bestätigung, jeweils als HTML und Text; gemeinsames Layout in `html/template.ftl`
+- `email/messages/messages_de.properties` – Betreffzeilen
+
+Im Dev-Modus (`start-dev`) cached Keycloak keine Themes – Änderungen sind nach einem Reload sichtbar. Realm-Einstellungen (Theme, Sprache, Passwort-Reset) übernimmt `npm run generate:keycloak`.
+
 Die Berechtigungen werden im Frontend über Route Guards (`roleGuard`) und im Backend über je eine `authFns`-Datei pro Ressource (`backend/controller/authFns/`) durchgesetzt, die von der Passport-Bearer-Strategie mit Keycloak-Token-Validierung aufgerufen wird.
 
 Das Dashboard (Route `/`) leitet nach dem Login automatisch rollenabhängig weiter (`Controller`/`OrgController` → `/stats`, `Admin` → `/user-admin`, alle anderen → `/dashboard`). `OrgCoordinator`/`SubOrgCoordinator` können auf ihrem Dashboard per Toggle zwischen ihren eigenen Fällen und denen ihrer Organisation/Unterorganisation wechseln.

@@ -1,6 +1,18 @@
 {
   "realm": "fh-realm",
   "enabled": true,
+  "displayName": "FamDok 2.0",
+  "displayNameHtml": "FamDok 2.0",
+  "loginTheme": "famdok",
+  "emailTheme": "famdok",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "de"
+  ],
+  "defaultLocale": "de",
+  "resetPasswordAllowed": true,
+  "actionTokenGeneratedByUserLifespan": 1800,
+  "loginWithEmailAllowed": true,
   "users": [
     {
       "username": "admin-user",
@@ -29,7 +41,7 @@
     "host": "demo-mail",
     "replyTo": "",
     "from": "noreply@example.com",
-    "fromDisplayName": "",
+    "fromDisplayName": "FamDok 2.0",
     "envelopeFrom": "",
     "ssl": "false",
     "user": ""
