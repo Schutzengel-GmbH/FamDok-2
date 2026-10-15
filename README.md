@@ -174,6 +174,8 @@ Alle Variablen werden in **einer einzigen `.env` im Projekt-Root** gesetzt (Vorl
 | `KEYCLOAK_DB_PASSWORD`  | Keycloak-DB-Passwort                                | `secret`                                            |
 | `KC_ADMIN_USER`         | Keycloak-Admin-Username (Bootstrap + Admin-Client)  | `admin`                                             |
 | `KC_ADMIN_PASSWORD`     | Keycloak-Admin-Passwort                             | `admin`                                             |
+| `KC_ADMIN_CLIENT_ID`    | Service-Account-Client, mit dem das Backend Benutzer in Keycloak verwaltet | `fh-backend` |
+| `KC_ADMIN_CLIENT_SECRET`| Secret dieses Clients; `npm run generate:keycloak` überträgt es auf den Client | `fh-backend-dev-secret` |
 | `KEYCLOAK_PORT`         | Host-Port für Keycloak (beide Compose-Dateien); nicht `8080`, da `docker-compose.yaml` den Frontend-Container ebenfalls auf Host-Port `8080` legt | `8090` |
 | `FRONTEND_PORT`         | Host-Port des Frontend-Containers (`docker-compose.yaml`) | `8080` |
 | `BACKEND_PORT`          | Host-Port des Backend-Containers (`docker-compose.yaml`) | `3000` |
@@ -316,7 +318,10 @@ FRONTEND_BASE_URL=https://your-frontend-domain.de
 POSTGRES_PASSWORD=ein-echtes-passwort
 KEYCLOAK_DB_PASSWORD=ein-echtes-passwort
 KC_ADMIN_PASSWORD=ein-echtes-passwort
+KC_ADMIN_CLIENT_SECRET=ein-echtes-secret
 ```
+
+Nach dem Ändern von `KC_ADMIN_CLIENT_SECRET` einmal `npm run generate:keycloak` (in `backend/`) ausführen, damit der Client `fh-backend` das neue Secret bekommt. Für Einladungsmails muss in Keycloak unter *Realm settings → Email* ein echter SMTP-Server eingetragen sein (die Vorgabe `demo-mail` existiert nur in der Dev-Umgebung).
 
 `KC_BASE_URL` steuert sowohl Keycloaks eigenes `KC_HOSTNAME_URL` als auch die vom Frontend/Backend verwendete URL – ein einziger Wert genügt. Beachte: `shared/keycloak-config/realm-import.json` hardcoded aktuell `redirectUris: ["http://localhost:4200/*"]` und muss für eine echte Domain manuell angepasst werden (nicht Teil der `.env`-Konsolidierung).
 

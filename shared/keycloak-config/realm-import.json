@@ -7,6 +7,18 @@
       "email": "admin@fh-realm.de",
       "enabled": true,
       "emailVerified": true
+    },
+    {
+      "username": "service-account-fh-backend",
+      "enabled": true,
+      "serviceAccountClientId": "fh-backend",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "query-users"
+        ]
+      }
     }
   ],
   "smtpServer": {
@@ -29,8 +41,12 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": ["http://localhost:4200/*"],
-      "webOrigins": ["+"],
+      "redirectUris": [
+        "http://localhost:4200/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -65,6 +81,24 @@
         "configure": true,
         "manage": true
       }
+    },
+    {
+      "clientId": "fh-backend",
+      "name": "FamDok backend (admin API)",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "fh-backend-dev-secret",
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {},
+      "fullScopeAllowed": true
     }
   ]
 }
