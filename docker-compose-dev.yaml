@@ -37,6 +37,15 @@ services:
       keycloak-db:
         condition: service_healthy
 
+  # Catches all mail Keycloak sends (invites, password resets) - UI on http://localhost:8025.
+  # The service name matches the smtpServer host in shared/keycloak-config/realm-import.json.
+  demo-mail:
+    image: axllent/mailpit:v1.27
+    container_name: demo-mail
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+
   app-db:
     image: postgres:15
     container_name: app-db

@@ -98,6 +98,21 @@ type FullGeneralFormResponse = Prisma.GeneralFormResponseGetPayload<{
 
 type FullUser = Prisma.UserGetPayload<{ include: typeof USER_DEFAULT_INCLUDE }>;
 
+/** Account state kept in Keycloak (not the app DB), merged into the admin user list. */
+type KcStatus = {
+  enabled: boolean;
+  emailVerified: boolean;
+  /** Keycloak required actions still open, e.g. UPDATE_PASSWORD after an invite */
+  pendingActions: string[];
+};
+
+/** `kcStatus` is missing when Keycloak couldn't be reached or has no matching account. */
+type AdminUser = FullUser & { kcStatus?: KcStatus };
+
+/** Response of creating a user / issuing a temporary password. The password is only ever
+ * returned here, once - it is not stored anywhere. */
+type UserWithTempPassword = AdminUser & { tempPassword?: string };
+
 /** The shape a FullUser is reduced to for Controller/OrgController - every identifying field is
  * stripped, leaving only what's needed to render an "Org1 - SubOrg2" label. */
 type AnonUser = Omit<FullUser, "firstName" | "lastName" | "email" | "kcId">;

@@ -100,6 +100,7 @@ Startet:
 
 - **PostgreSQL** für die Anwendungsdaten auf Port `5432`
 - **Keycloak** auf Port `8090` (Admin-UI: `http://localhost:8090`, User: `admin`, Passwort: `admin`)
+- **Mailpit** (`demo-mail`) fängt alle von Keycloak verschickten Mails ab (Einladungen, Passwort-Resets) – Web-UI auf `http://localhost:8025`
 
 Das Keycloak-Realm `fh-realm` wird beim Start automatisch aus `shared/keycloak-config/` importiert.
 
@@ -239,6 +240,15 @@ npx prisma generate
 | `OrgCoordinator`     | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Organisation | `/dashboard`  |
 | `SubOrgCoordinator`  | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Unterorganisation | `/dashboard`  |
 | `User`               | Standardzugriff: Familien, eigene Fälle, Formulare                           | `/dashboard`  |
+
+### Benutzerverwaltung
+
+Admins legen Benutzer unter `/user-admin` an. Das Backend erstellt dabei das Keycloak-Konto über den Service-Account-Client `fh-backend` und gleichzeitig den App-Benutzer – Rolle und Organisation stehen damit schon vor dem ersten Login fest. Existiert in Keycloak bereits ein Konto mit derselben E-Mail, wird es verknüpft statt dupliziert. Für das erste Passwort gibt es zwei Wege:
+
+- **Einladung (Standard):** Keycloak verschickt eine Mail mit einem Link (7 Tage gültig) zum Setzen des Passworts und Bestätigen der E-Mail-Adresse.
+- **Temporäres Passwort:** Das Passwort wird dem Admin einmalig angezeigt und muss beim ersten Login geändert werden. Es wird nirgends gespeichert.
+
+Einladungen lassen sich erneut senden, temporäre Passwörter neu vergeben und Konten sperren/entsperren. Rollen werden ausschließlich in der App-Datenbank (`User.role`) gepflegt, nicht in Keycloak. Wer sich mit einem Keycloak-Konto anmeldet, das nicht über die App angelegt wurde, bekommt weiterhin automatisch die Rolle `User` ohne Organisation.
 
 Die Berechtigungen werden im Frontend über Route Guards (`roleGuard`) und im Backend über je eine `authFns`-Datei pro Ressource (`backend/controller/authFns/`) durchgesetzt, die von der Passport-Bearer-Strategie mit Keycloak-Token-Validierung aufgerufen wird.
 
