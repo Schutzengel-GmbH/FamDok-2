@@ -24,7 +24,7 @@ export async function canSeeSubOrgUsers(user: FullUser, id: string) {
   return canSeeOrgUsers(user, subOrg.organisationId);
 }
 
-export async function canManageUsers(user: FullUser) {
+export function canManageUsers(user: FullUser) {
   return user.role === 'Admin';
 }
 
