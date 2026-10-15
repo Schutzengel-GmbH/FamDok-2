@@ -1,0 +1,44 @@
+@use "abstracts" as *;
+
+// App-weite Scrollbars: schmal, transparente Spur, abgerundeter Thumb.
+// Chromium/Safari über ::-webkit-scrollbar. Hier bewusst kein scrollbar-width/-color:
+// in Chromium >= 121 schalten die Standard-Properties die ::-webkit-Styles ab.
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  // Abstand zu den Enden, damit die Spur nicht in abgerundete Karten-Ecken läuft
+  margin: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--bs-secondary-color) 35%, transparent);
+  border: 2px solid transparent;
+  border-radius: $radius-pill;
+  background-clip: padding-box;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--bs-secondary-color) 55%, transparent);
+  }
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+// Firefox
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--bs-secondary-color) 35%, transparent)
+      transparent;
+  }
+}

@@ -1,4 +1,5 @@
 @use "sass:map";
+@use "sass:math";
 @use "sass:meta";
 @use "tokens" as *;
 
@@ -27,17 +28,15 @@
 // Bausteine
 // ---------------------------------------------------------------------------
 
+/// Schmalere Scrollbar für einzelne Container (Grundstil in base/_scrollbars).
 @mixin thin-scrollbar($size: 8px) {
-  scrollbar-width: thin;
-
   &::-webkit-scrollbar {
     width: $size;
     height: $size;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--bs-secondary-color) 35%, transparent);
-    border-radius: $radius-pill;
+    border-width: math.div($size, 4);
   }
 }
 
