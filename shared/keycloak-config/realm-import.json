@@ -99,7 +99,6 @@
       "name": "FamDok backend (admin API)",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "fh-backend-dev-secret",
       "bearerOnly": false,
       "consentRequired": false,
       "standardFlowEnabled": false,

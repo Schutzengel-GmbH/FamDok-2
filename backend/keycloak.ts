@@ -21,7 +21,7 @@ function readRealm(): RealmRepresentation {
     readFileSync('../shared/keycloak-config/realm-import.json', 'utf-8')
   ) as RealmRepresentation;
 
-  // the secret in the import file is a dev default, the env value wins
+  // the import file has no secret (Keycloak generates a random one), so set the configured one
   const backendClient = realm.clients?.find(
     (c) => c.clientId === KC_ADMIN_CLIENT_ID
   );

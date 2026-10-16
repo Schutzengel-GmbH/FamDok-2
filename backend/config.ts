@@ -54,11 +54,14 @@ export const KC_ADMIN_PASSWORD: string =
 export const KC_ADMIN_CLIENT_ID: string =
   process.env['KC_ADMIN_CLIENT_ID'] ?? 'fh-backend';
 
+const DEV_KC_ADMIN_CLIENT_SECRET = 'fh-backend-dev-secret';
+
 /**
- * Client secret of the service-account client, default 'fh-backend-dev-secret' (dev only!)
+ * Client secret of the service-account client, default 'fh-backend-dev-secret' (dev only,
+ * refused in production). Empty counts as unset, since docker compose passes unset vars as ''.
  */
 export const KC_ADMIN_CLIENT_SECRET: string =
-  process.env['KC_ADMIN_CLIENT_SECRET'] ?? 'fh-backend-dev-secret';
+  process.env['KC_ADMIN_CLIENT_SECRET'] || DEV_KC_ADMIN_CLIENT_SECRET;
 
 /**
  * Is Production Environment, default false
@@ -66,6 +69,12 @@ export const KC_ADMIN_CLIENT_SECRET: string =
 export const PRODUCTION: boolean =
   process.env['PRODUCTION']?.toLowerCase() === 'true' ||
   process.env['PRODUCTION'] === '1';
+
+// The dev secret is public (it's in this repo) and grants manage-users in the realm
+if (PRODUCTION && KC_ADMIN_CLIENT_SECRET === DEV_KC_ADMIN_CLIENT_SECRET)
+  throw new Error(
+    'KC_ADMIN_CLIENT_SECRET must be set to a real secret in production'
+  );
 
 /**
  * Directory where uploaded files (document library + case attachments) are stored on disk,
