@@ -57,6 +57,7 @@ import {
 @Component({
   selector: 'app-all-data',
   templateUrl: './all-data.component.html',
+  styleUrl: './all-data.component.scss',
   standalone: true,
   imports: [
     NgxDatatableModule,

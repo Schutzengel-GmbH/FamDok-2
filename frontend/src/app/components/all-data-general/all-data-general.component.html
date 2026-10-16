@@ -29,8 +29,14 @@
   [footerHeight]="50"
   rowHeight="auto"
   [scrollbarH]="true"
+  [scrollbarV]="true"
+  [virtualization]="false"
   [rows]="rows()">
-  <ngx-datatable-column prop="id" [sortable]="false" flexGrow="1">
+  <ngx-datatable-column
+    prop="id"
+    [sortable]="false"
+    flexGrow="1"
+    [minWidth]="64">
     <ng-template ngx-datatable-header-template>
       <i class="bi bi-pencil"></i>
     </ng-template>
@@ -51,7 +57,8 @@
   @for (question of form().questions; track question.id) {
     <ngx-datatable-column
       [name]="question.id.toString()"
-      [flexGrow]="question.type === 'Date' ? '3' : '2'">
+      [flexGrow]="question.type === 'Date' ? '3' : '2'"
+      [minWidth]="question.type === 'Date' ? 180 : 160">
       <ng-template ngx-datatable-header-template>
         <span
           container="body"
@@ -102,7 +109,8 @@
     name="Erstellt von"
     prop="createdBy"
     [pipe]="userWithOrgPipe"
-    flexGrow="2">
+    flexGrow="2"
+    [minWidth]="160">
     <ng-template ngx-datatable-header-template>
       Erstellt von
       <app-created-by-org-filter (filterChanged)="createdByOrgFilterChanged($event)" />

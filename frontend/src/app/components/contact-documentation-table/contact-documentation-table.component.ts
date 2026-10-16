@@ -68,6 +68,7 @@ type Editables = {
   selector: 'app-contact-documentation-table',
   standalone: true,
   templateUrl: './contact-documentation-table.component.html',
+  styleUrl: './contact-documentation-table.component.scss',
   imports: [
     AsyncPipe,
     NgbTooltip,

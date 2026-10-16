@@ -5,6 +5,7 @@ import { FullCaseForm } from '../../../../../shared/types';
 import { CaseFormService } from 'src/app/services/case-form.service';
 
 @Component({
+  host: { class: 'd-block h-100' },
   template: `@if (form) {
     <app-all-data [form]="form" />
   }`,
