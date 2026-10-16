@@ -64,6 +64,7 @@
               type="time"
               class="form-control"
               [value]="start()"
+              [disabled]="readOnly()"
               (change)="start.set($event.target.value); form.markAsDirty()" />
             <span class="input-group-text">–</span>
             <input
@@ -71,6 +72,7 @@
               type="time"
               class="form-control"
               [value]="end()"
+              [disabled]="readOnly()"
               (change)="end.set($event.target.value); form.markAsDirty()" />
           </div>
         </div>
@@ -86,14 +88,17 @@
             <div class="invalid-feedback">Angabe ist nicht optional</div>
           </div>
         </div>
-        <button
-          class="btn btn-outline-secondary"
-          type="button"
-          (click)="
-            setDurationViaTime.set(!setDurationViaTime()); form.markAsDirty()
-          ">
-          {{ setDurationViaTime() ? "von-bis" : "in Minuten" }}
-        </button>
+        @if (!readOnly()) {
+          <button
+            id="toggleDurationInput"
+            class="btn btn-outline-secondary"
+            type="button"
+            (click)="
+              setDurationViaTime.set(!setDurationViaTime()); form.markAsDirty()
+            ">
+            {{ setDurationViaTime() ? "von-bis" : "in Minuten" }}
+          </button>
+        }
       </div>
 
       <div class="mb-2">
