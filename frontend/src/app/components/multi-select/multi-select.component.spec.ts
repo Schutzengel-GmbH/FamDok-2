@@ -146,4 +146,11 @@ describe('MultiSelect', () => {
       expect(buttons[2].disabled).toBeTrue();
     });
   });
+
+  it('renders only type="button" buttons, so it never submits a surrounding form', () => {
+    const buttons: NodeListOf<HTMLButtonElement> =
+      fixture.nativeElement.querySelectorAll('button');
+    expect(buttons.length).toBe(4);
+    buttons.forEach((b) => expect(b.type).toBe('button'));
+  });
 });
