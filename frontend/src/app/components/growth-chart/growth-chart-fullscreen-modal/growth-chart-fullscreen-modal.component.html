@@ -21,11 +21,11 @@
     aria-label="Close"
     (click)="activeModal.dismiss('Cross click')"></button>
 </div>
-<div class="modal-body d-flex flex-column">
+<div class="modal-body d-flex flex-column" style="min-height: 0">
   <p class="text-muted small mb-2">
     Zoomen mit Mausrad oder zwei Fingern, verschieben durch Ziehen.
   </p>
-  <div class="position-relative flex-grow-1" style="min-height: 0">
+  <div class="position-relative flex-grow-1 overflow-hidden" style="min-height: 0">
     <canvas
       baseChart
       [data]="data()"

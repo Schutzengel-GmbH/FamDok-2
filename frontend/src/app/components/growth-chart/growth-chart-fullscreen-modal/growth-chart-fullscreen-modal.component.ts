@@ -23,6 +23,9 @@ const FULL_RANGE = ageRangeMonths('all');
   imports: [BaseChartDirective],
   standalone: true,
   templateUrl: './growth-chart-fullscreen-modal.component.html',
+  // ngb renders this host between .modal-content and header/body - make it pass the
+  // full height on so the chart can fill the screen
+  host: { class: 'd-flex flex-column h-100' },
 })
 export class GrowthChartFullscreenModalComponent {
   activeModal = inject(NgbActiveModal);
