@@ -88,26 +88,40 @@ const PERCENTILE_SOURCES: Record<
   },
 };
 
+/** 0 is 0-1, 1 is 1-2, 2 is 2-3 years; 'all' spans the whole 0-3 years of the reference tables */
+export type AgeRange = 0 | 1 | 2 | 'all';
+
+/**
+ * Returns the month window (inclusive) an age range covers on the chart's x axis.
+ * @param {AgeRange} ageRange The age range
+ * @returns {{ min: number; max: number }} First and last month of the range
+ */
+export function ageRangeMonths(ageRange: AgeRange): { min: number; max: number } {
+  return ageRange === 'all'
+    ? { min: 0, max: 36 }
+    : { min: ageRange * 12, max: ageRange * 12 + 12 };
+}
+
 /**
  * Returns the datasets for a given percentile chart. The chart is given by the gender and ageRange of the Child.
  * The x value of each data point is the age in months.
  * @param {Gender} gender The Gender of the child, defaults to female if not explicitly male
- * @param {0 | 1 | 2} ageRange The age range for the Child, 0 is 0-1, 1 is 1-2, 2 is 2-3 years
+ * @param {AgeRange} ageRange The age range for the Child, 0 is 0-1, 1 is 1-2, 2 is 2-3 years, 'all' is 0-3 years
  * @param {GrowthMetric} metric Which growth metric to build percentile curves for, defaults to weight
  * @returns {ChartDataset[]} An array of datasets
  */
 export function getPercentileDatasets(
   gender: Gender,
-  ageRange: 0 | 1 | 2,
+  ageRange: AgeRange,
   metric: GrowthMetric = 'weight',
 ): ChartDataset[] {
   const source = PERCENTILE_SOURCES[metric];
+  const { min, max } = ageRangeMonths(ageRange);
   // include the closing month (12, 24, ...) so the curves span the whole x axis
-  const slice = (data: number[]) =>
-    data.slice(ageRange * 12, ageRange * 12 + 13);
+  const slice = (data: number[]) => data.slice(min, max + 1);
   const pick = (p: { boys: number[]; girls: number[] }) =>
     slice(gender === Gender.male ? p.boys : p.girls).map((v, i) => ({
-      x: i + ageRange * 12,
+      x: i + min,
       y: v,
     }));
 

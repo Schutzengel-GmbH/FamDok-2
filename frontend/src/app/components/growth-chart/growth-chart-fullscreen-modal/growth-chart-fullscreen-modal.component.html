@@ -1,0 +1,36 @@
+<div class="modal-header gap-2">
+  <h4 class="modal-title me-auto">{{ title }}</h4>
+  <button
+    type="button"
+    class="btn btn-outline-secondary btn-sm"
+    (click)="resetZoom()">
+    <i class="bi bi-zoom-out me-1"></i>
+    Zoom zurücksetzen
+  </button>
+  <button
+    type="button"
+    class="btn btn-outline-secondary btn-sm"
+    title="Sichtbaren Ausschnitt als PNG herunterladen"
+    (click)="downloadChart()">
+    <i class="bi bi-download me-1"></i>
+    PNG exportieren
+  </button>
+  <button
+    type="button"
+    class="btn-close ms-2"
+    aria-label="Close"
+    (click)="activeModal.dismiss('Cross click')"></button>
+</div>
+<div class="modal-body d-flex flex-column">
+  <p class="text-muted small mb-2">
+    Zoomen mit Mausrad oder zwei Fingern, verschieben durch Ziehen.
+  </p>
+  <div class="position-relative flex-grow-1" style="min-height: 0">
+    <canvas
+      baseChart
+      [data]="data()"
+      [options]="options()"
+      [plugins]="plugins"
+      type="line"></canvas>
+  </div>
+</div>
