@@ -17,6 +17,7 @@
 @use "base/css-variables";
 @use "base/reset";
 @use "base/layout";
+@use "base/scrollbars";
 
 // 3. Anpassungen an Drittanbieter-Komponenten
 @use "vendors/bootstrap";

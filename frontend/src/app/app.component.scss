@@ -36,6 +36,7 @@ app-header {
 }
 
 .app-content {
+  grid-area: main;
   height: 100%;
   padding: 1rem;
   width: 100%;
@@ -73,6 +74,7 @@ app-header {
   }
 
   .app-content {
+    grid-area: auto;
     height: auto;
     overflow: visible;
   }

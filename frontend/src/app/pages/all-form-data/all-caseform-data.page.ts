@@ -5,6 +5,7 @@ import { AllDataGeneralComponent } from 'src/app/components/all-data-general/all
 import { GeneralFormService } from 'src/app/services/general-form.service';
 
 @Component({
+  host: { class: 'd-block h-100' },
   template: `@if (form) {
     <app-allgeneral-data [form]="form" />
   }`,
