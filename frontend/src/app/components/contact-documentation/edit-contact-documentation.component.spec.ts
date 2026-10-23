@@ -90,6 +90,23 @@ describe('EditContactDocumentation', () => {
     expect(component['form'].disabled).toBeTrue();
   });
 
+  it('only offers the duration input toggle when editable', () => {
+    fixture.componentRef.setInput('initialCase', testCase);
+    fixture.componentRef.setInput('doc', fullDoc);
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('#toggleDurationInput')).not.toBeNull();
+    expect(el.querySelector<HTMLInputElement>('#start')!.disabled).toBeFalse();
+
+    fixture.componentRef.setInput('readOnly', true);
+    fixture.detectChanges();
+
+    expect(el.querySelector('#toggleDurationInput')).toBeNull();
+    expect(el.querySelector<HTMLInputElement>('#start')!.disabled).toBeTrue();
+    expect(el.querySelector<HTMLInputElement>('#end')!.disabled).toBeTrue();
+  });
+
   it('builds an empty, invalid form when creating without an existing doc', () => {
     fixture.componentRef.setInput('initialCase', testCase);
     fixture.componentRef.setInput('isNew', true);
