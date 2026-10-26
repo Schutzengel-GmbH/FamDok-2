@@ -6,19 +6,24 @@ import {
   linkedSignal,
   model,
   signal,
-  ViewChild,
 } from '@angular/core';
 import { ChartData, ChartOptions } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
-import {
-  ageInMonths,
-  getPercentileDatasets,
-  GrowthMetric,
-} from 'src/app/util/healthDataUtils';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { ageRangeMonths, GrowthMetric } from 'src/app/util/healthDataUtils';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ThemeService } from 'src/app/services/theme.service';
 import { ChildModel as Child } from '../../../../../shared/generated/prisma/models';
+import {
+  buildGrowthChartData,
+  buildGrowthChartOptions,
+  downloadDataUrl,
+  getChildData,
+  metricLabel,
+  renderGrowthChartPng,
+} from './growth-chart.config';
+import { GrowthChartFullscreenModalComponent } from './growth-chart-fullscreen-modal/growth-chart-fullscreen-modal.component';
 
 @Component({
   selector: 'app-growth-chart',
@@ -28,9 +33,8 @@ import { ChildModel as Child } from '../../../../../shared/generated/prisma/mode
 })
 export class GrowthChartComponent {
   private themeService = inject(ThemeService);
+  private modalService = inject(NgbModal);
   private theme = toSignal(this.themeService.theme, { requireSync: true });
-
-  @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
 
   child = model<Child | undefined>(undefined);
   metric = input<GrowthMetric>('weight');
@@ -55,68 +59,50 @@ export class GrowthChartComponent {
       metric: this.metric(),
       theme: this.theme(),
     }),
-    computation: ({ child, ageRange, metric, theme }) => {
-      if (!child) return { datasets: [] };
-      else
-        return {
-          datasets: [
-            {
-              label: child.name,
-              borderColor: theme === 'light' ? 'rgba(0,0,0,1)' : 'white',
-              spanGaps: true,
-              data: this.getChildData(),
-            },
-            ...getPercentileDatasets(child.gender, ageRange, metric),
-          ],
-        };
-    },
+    computation: ({ child, ageRange, metric, theme }) =>
+      buildGrowthChartData(
+        child,
+        ageRange,
+        ageRangeMonths(ageRange),
+        metric,
+        theme,
+      ),
   });
 
-  options = computed<ChartOptions>(() => ({
-    scales: {
-      x: {
-        type: 'linear',
-        min: this.ageRange() * 12,
-        max: this.ageRange() * 12 + 12,
-        title: { text: 'Alter (in Monaten)', display: true },
-        ticks: { stepSize: 1 },
-      },
-    },
-    plugins: {
-      tooltip: {
-        callbacks: {
-          title: (items) => {
-            const age = (items[0]?.parsed as { x?: number } | undefined)?.x;
-            return age != null
-              ? `${age.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Monate`
-              : '';
-          },
-        },
-      },
-    },
-  }));
+  options = computed<ChartOptions>(() =>
+    buildGrowthChartOptions(ageRangeMonths(this.ageRange())),
+  );
 
   getChildData() {
-    const child = this.child();
-    if (!child) return [];
-
-    const min = this.ageRange() * 12;
-    const max = min + 12;
-    return (child.healthData ?? [])
-      .map((h) => ({
-        x: ageInMonths(new Date(child.dateOfBirth), new Date(h.date)),
-        y: this.metric() === 'height' ? h.sizeCm : h.weightKg,
-      }))
-      .filter(
-        (v): v is { x: number; y: number } =>
-          v.y != null && v.x >= min && v.x <= max,
-      );
+    return getChildData(
+      this.child(),
+      this.metric(),
+      ageRangeMonths(this.ageRange()),
+    );
   }
 
   downloadChart() {
-    const a = document.createElement('a');
-    a.href = this.chart!.toBase64Image()!;
-    a.download = `${this.child()?.name || '?'}-${this.child()?.lastName || '?'}-${this.metric() === 'weight' ? 'Gewicht' : 'Groesse'}-${this.ageRange()}-${this.ageRange() + 1}.png`;
-    a.click();
+    const child = this.child();
+    const ageRange = this.ageRange();
+    const range = ageRangeMonths(ageRange);
+    const png = renderGrowthChartPng(
+      buildGrowthChartData(child, ageRange, range, this.metric(), 'light'),
+      range,
+      `${child?.name ?? ''} ${child?.lastName ?? ''} – ${metricLabel(this.metric())}, ${ageRange}–${ageRange + 1} Jahre`,
+    );
+    downloadDataUrl(
+      png,
+      `${child?.name || '?'}-${child?.lastName || '?'}-${this.metric() === 'weight' ? 'Gewicht' : 'Groesse'}-${ageRange}-${ageRange + 1}.png`,
+    );
+  }
+
+  openFullscreen() {
+    const modalRef = this.modalService.open(
+      GrowthChartFullscreenModalComponent,
+      { fullscreen: true },
+    );
+    modalRef.componentInstance.child = this.child();
+    modalRef.componentInstance.metric = this.metric();
+    modalRef.componentInstance.ageRange = this.ageRange();
   }
 }

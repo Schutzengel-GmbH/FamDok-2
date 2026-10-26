@@ -74,6 +74,14 @@ describe('healthDataUtils', () => {
         expect(range2.at(-1)!.x).toBe(36);
       }
     });
+
+    it('covers months 0 to 36 for the full age range', () => {
+      const all = getPercentileDatasets(Gender.male, 'all')[0].data as {
+        x: number;
+      }[];
+
+      expect(all.map((p) => p.x)).toEqual([...Array(37).keys()]);
+    });
   });
 
   describe('ageInMonths', () => {

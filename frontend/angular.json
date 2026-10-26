@@ -20,6 +20,7 @@
               "browser": ""
             },
             "index": "src/index.html",
+            "allowedCommonJsDependencies": ["hammerjs"],
             "polyfills": ["src/polyfills.ts", "@angular/localize/init"],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
