@@ -38,7 +38,7 @@ services:
     volumes:
       - uploads-data:/app/dist/uploads
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      - "127.0.0.1:${BACKEND_PORT:-3000}:3000"
     restart: unless-stopped
     depends_on:
       - app-db
