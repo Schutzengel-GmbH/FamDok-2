@@ -48,6 +48,19 @@ export const KC_ADMIN_PASSWORD: string =
   process.env['KC_ADMIN_PASSWORD'] ?? 'admin';
 
 /**
+ * Client ID of the confidential service-account client the backend uses for the Keycloak admin API,
+ * default 'fh-backend'
+ */
+export const KC_ADMIN_CLIENT_ID: string =
+  process.env['KC_ADMIN_CLIENT_ID'] ?? 'fh-backend';
+
+/**
+ * Client secret of the service-account client, default 'fh-backend-dev-secret' (dev only!)
+ */
+export const KC_ADMIN_CLIENT_SECRET: string =
+  process.env['KC_ADMIN_CLIENT_SECRET'] ?? 'fh-backend-dev-secret';
+
+/**
  * Is Production Environment, default false
  */
 export const PRODUCTION: boolean =

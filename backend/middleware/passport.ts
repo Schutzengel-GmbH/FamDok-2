@@ -43,16 +43,17 @@ export const bearerStrategy = new Strategy(async (token, done) => {
   fetchUserInfo(oauth2ServerConfig, token, tokenDecoded.sub!)
     .then(async (userInfo) => {
       const user = await UserController.getUserByKC(userInfo.sub);
-      if (!user) {
-        const newUser = await UserController.register({
-          kcId: userInfo.sub,
-          email: userInfo.email!,
-          firstName: userInfo.name,
-          lastName: userInfo.family_name,
-          role: Role.User,
-        }).catch((e) => done(e));
-        done(null, newUser);
-      } else done(null, user);
+      if (user) return done(null, user);
+
+      // Keycloak accounts not created through the app get a plain user on first login
+      const newUser = await UserController.register({
+        kcId: userInfo.sub,
+        email: userInfo.email!,
+        firstName: userInfo.given_name,
+        lastName: userInfo.family_name,
+        role: Role.User,
+      });
+      done(null, newUser);
     })
     .catch((error) => done(error));
 });

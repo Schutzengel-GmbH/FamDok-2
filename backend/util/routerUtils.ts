@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { ZodError, prettifyError } from 'zod';
 import {
   BadRequestError,
+  ConflictError,
   ForbiddenError,
   InternalServerError,
   NotFoundError,
@@ -21,6 +22,8 @@ export function handleError(err: unknown, res: Response) {
     res.status(403).json({ message: 'Forbidden', error: err.message });
   else if (err instanceof NotFoundError)
     res.status(404).json({ message: 'Not Found', error: err.message });
+  else if (err instanceof ConflictError)
+    res.status(409).json({ message: 'Conflict', error: err.message });
   else if (err instanceof InternalServerError)
     res
       .status(500)

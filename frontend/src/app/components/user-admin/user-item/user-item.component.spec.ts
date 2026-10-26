@@ -222,4 +222,81 @@ describe('UserItemComponent', () => {
     expect(toastService.toasts().length).toBe(1);
     expect(toastService.toasts()[0].title).toBe('Benutzer gelöscht');
   });
+
+  describe('keycloak account', () => {
+    const kcStatus = { enabled: true, emailVerified: false, pendingActions: ['UPDATE_PASSWORD'] };
+
+    it('shows the account status badges', () => {
+      setup(buildUser({ kcStatus: { ...kcStatus, enabled: false } }));
+
+      const text = fixture.nativeElement.textContent;
+      expect(text).toContain('Gesperrt');
+      expect(text).toContain('Passwort noch nicht gesetzt');
+      expect(text).toContain('E-Mail nicht bestätigt');
+      expect(text).toContain('Entsperren');
+    });
+
+    it('hides the account actions when the status is unavailable', () => {
+      setup(buildUser());
+
+      const text = fixture.nativeElement.textContent;
+      expect(text).toContain('Keycloak-Status nicht verfügbar');
+      expect(text).not.toContain('Einladung senden');
+    });
+
+    it('resendInvite() posts to the invite endpoint', () => {
+      setup(buildUser({ id: 'user-1', kcStatus }));
+
+      component.resendInvite();
+
+      const req = httpMock.expectOne((r) => r.url.endsWith('/user/i/user-1/invite'));
+      expect(req.request.method).toBe('POST');
+      req.flush(null);
+      expect(toastService.toasts()[0].title).toBe('Einladung gesendet');
+      expect(component.kcStatus()?.pendingActions).toContain('VERIFY_EMAIL');
+    });
+
+    it('issueTempPassword() asks first, then shows the returned password', () => {
+      setup(buildUser({ id: 'user-1', kcStatus }));
+
+      component.issueTempPassword();
+      expect(httpMock.match(() => true).length).toBe(0);
+      dialogService.openDialogs()[0].confirmAction();
+
+      const req = httpMock.expectOne((r) => r.url.endsWith('/user/i/user-1/temp-password'));
+      expect(req.request.method).toBe('POST');
+      req.flush({ tempPassword: 'Secret-123' });
+      fixture.detectChanges();
+
+      expect(component.tempPassword()).toBe('Secret-123');
+      expect(fixture.nativeElement.textContent).toContain('Secret-123');
+    });
+
+    it('toggleEnabled() locks after confirmation', () => {
+      setup(buildUser({ id: 'user-1', kcStatus }));
+
+      component.toggleEnabled();
+      dialogService.openDialogs()[0].confirmAction();
+
+      const req = httpMock.expectOne((r) => r.url.endsWith('/user/i/user-1/enabled'));
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ enabled: false });
+      req.flush(buildUser({ kcStatus: { ...kcStatus, enabled: false } }));
+
+      expect(component.kcStatus()?.enabled).toBeFalse();
+    });
+
+    it('toggleEnabled() unlocks without confirmation', () => {
+      setup(buildUser({ id: 'user-1', kcStatus: { ...kcStatus, enabled: false } }));
+
+      component.toggleEnabled();
+
+      expect(dialogService.openDialogs().length).toBe(0);
+      const req = httpMock.expectOne((r) => r.url.endsWith('/user/i/user-1/enabled'));
+      expect(req.request.body).toEqual({ enabled: true });
+      req.flush(buildUser({ kcStatus }));
+
+      expect(component.kcStatus()?.enabled).toBeTrue();
+    });
+  });
 });

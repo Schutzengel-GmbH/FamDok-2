@@ -4,6 +4,10 @@ import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { GrowthChartComponent } from './growth-chart.component';
 import { ThemeService } from 'src/app/services/theme.service';
 import { mockMatchMedia } from 'src/app/testing/matchMediaMock';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { Chart } from 'chart.js';
+import { EXPORT_HEIGHT, EXPORT_WIDTH } from './growth-chart.config';
+import { GrowthChartFullscreenModalComponent } from './growth-chart-fullscreen-modal/growth-chart-fullscreen-modal.component';
 
 describe('GrowthChartComponent', () => {
   let component: GrowthChartComponent;
@@ -125,5 +129,92 @@ describe('GrowthChartComponent', () => {
     fixture.detectChanges();
 
     expect(component.getChildData()).toEqual([]);
+  });
+
+  describe('downloadChart', () => {
+    let click: jasmine.Spy;
+    let createElement: typeof document.createElement;
+    let exportCanvas: HTMLCanvasElement | undefined;
+
+    beforeEach(() => {
+      click = spyOn(HTMLAnchorElement.prototype, 'click');
+      createElement = document.createElement.bind(document);
+      exportCanvas = undefined;
+      spyOn(document, 'createElement').and.callFake(((tag: string) => {
+        const el = createElement(tag);
+        if (tag === 'canvas') exportCanvas = el as HTMLCanvasElement;
+        return el;
+      }) as typeof document.createElement);
+      fixture.componentRef.setInput('child', {
+        name: 'Max',
+        lastName: 'Muster',
+        gender: 'male',
+        dateOfBirth: new Date('2024-01-01'),
+        healthData: [{ date: new Date('2024-03-01'), weightKg: 5 }],
+      } as any);
+      fixture.detectChanges();
+    });
+
+    it('renders a fixed-size image independent of the on-screen chart', () => {
+      component.downloadChart();
+
+      expect(exportCanvas!.width).toBe(EXPORT_WIDTH);
+      expect(exportCanvas!.height).toBe(EXPORT_HEIGHT);
+      expect(click).toHaveBeenCalled();
+      const a = click.calls.mostRecent().object as HTMLAnchorElement;
+      expect(a.download).toBe('Max-Muster-Gewicht-0-1.png');
+      expect(a.href).toMatch(/^data:image\/png/);
+    });
+
+    it('paints an opaque white background', async () => {
+      component.downloadChart();
+
+      const img = new Image();
+      img.src = (click.calls.mostRecent().object as HTMLAnchorElement).href;
+      await img.decode();
+      const canvas = createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      expect(Array.from(ctx.getImageData(1, 1, 1, 1).data)).toEqual([
+        255, 255, 255, 255,
+      ]);
+    });
+
+    it('always exports the light theme', () => {
+      let exported: Chart | undefined;
+      spyOn(Chart.prototype, 'toBase64Image').and.callFake(function (
+        this: Chart,
+      ) {
+        exported = this;
+        return 'data:image/png;base64,';
+      });
+      TestBed.inject(ThemeService).toggle(); // light -> dark
+
+      component.downloadChart();
+
+      expect((exported!.data.datasets[0] as any).borderColor).toBe(
+        'rgba(0,0,0,1)',
+      );
+    });
+  });
+
+  it('opens the fullscreen view with the current child, metric and age range', () => {
+    const instance: any = {};
+    const open = spyOn(TestBed.inject(NgbModal), 'open').and.returnValue({
+      componentInstance: instance,
+    } as any);
+    const child = { name: 'Max' } as any;
+    fixture.componentRef.setInput('child', child);
+    fixture.componentRef.setInput('metric', 'height');
+    component.ageRange.set(2);
+
+    component.openFullscreen();
+
+    expect(open).toHaveBeenCalledWith(GrowthChartFullscreenModalComponent, {
+      fullscreen: true,
+    });
+    expect(instance).toEqual({ child, metric: 'height', ageRange: 2 });
   });
 });

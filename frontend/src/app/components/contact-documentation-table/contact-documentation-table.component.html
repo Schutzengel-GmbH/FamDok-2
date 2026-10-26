@@ -29,9 +29,15 @@
   [footerHeight]="50"
   rowHeight="auto"
   [scrollbarH]="true"
+  [scrollbarV]="true"
+  [virtualization]="false"
   [rows]="rows()"
   (activate)="userEvent($event)">
-  <ngx-datatable-column prop="id" [sortable]="false" flexGrow="1">
+  <ngx-datatable-column
+    prop="id"
+    [sortable]="false"
+    flexGrow="1"
+    [minWidth]="64">
     <ng-template ngx-datatable-header-template>
       <i class="bi bi-pencil"></i>
     </ng-template>
@@ -51,7 +57,11 @@
       }
     </ng-template>
   </ngx-datatable-column>
-  <ngx-datatable-column name="Fall" prop="case" [pipe]="caseIdentifierPipe">
+  <ngx-datatable-column
+    name="Fall"
+    prop="case"
+    [pipe]="caseIdentifierPipe"
+    [minWidth]="140">
     <ng-template ngx-datatable-header-template>
       Fall
       <app-case-filter
@@ -62,6 +72,7 @@
 
   <ngx-datatable-column
     [width]="columnEditable('date')"
+    [minWidth]="140"
     name="Datum"
     prop="date"
     [pipe]="datePipe">
@@ -89,7 +100,7 @@
     </ng-template>
   </ngx-datatable-column>
 
-  <ngx-datatable-column prop="response.duration">
+  <ngx-datatable-column prop="response.duration" [minWidth]="120">
     <ng-template ngx-datatable-header-template
       ><span
         ngbTooltip="Dauer der Beratung"
@@ -117,7 +128,8 @@
   <ngx-datatable-column
     name="Art der Beratung"
     prop="response.artDerBetreuung"
-    [width]="columnEditable('artDerBetreuung')">
+    [width]="columnEditable('artDerBetreuung')"
+    [minWidth]="160">
     <ng-template ngx-datatable-header-template
       ><span ngbTooltip="Art der Beratung" container="body" placement="bottom">
         {{ "Art der Beratung" | truncate: 4 }}</span
@@ -143,7 +155,8 @@
   <ngx-datatable-column
     name="Beratungsthemen Eltern"
     prop="response.beratungsThemenEltern"
-    [width]="columnEditable('beratungsThemenEltern')">
+    [width]="columnEditable('beratungsThemenEltern')"
+    [minWidth]="180">
     <ng-template ngx-datatable-header-template>
       <span
         ngbTooltip="Beratungsthemen mit Bezug auf die Eltern"
@@ -174,7 +187,8 @@
   <ngx-datatable-column
     name="Beratungsthemen Kinder"
     prop="response.beratungsThemenKinder"
-    [width]="columnEditable('beratungsThemenKinder')">
+    [width]="columnEditable('beratungsThemenKinder')"
+    [minWidth]="180">
     <ng-template ngx-datatable-header-template>
       <span
         ngbTooltip="Beratungsthemen mit Bezug auf die Kinder"
@@ -205,7 +219,8 @@
   <ngx-datatable-column
     name="Beratungsthemen Allgemein"
     prop="response.beratungsThemenAllgemein"
-    [width]="columnEditable('beratungsThemenAllgemein')">
+    [width]="columnEditable('beratungsThemenAllgemein')"
+    [minWidth]="180">
     <ng-template ngx-datatable-header-template>
       <span
         ngbTooltip="Allgemeine Beratungsthemen"
@@ -238,7 +253,10 @@
     </ng-template>
   </ngx-datatable-column>
 
-  <ngx-datatable-column name="Zusammenfassung" prop="response.zusammenfassung">
+  <ngx-datatable-column
+    name="Zusammenfassung"
+    prop="response.zusammenfassung"
+    [minWidth]="200">
     <ng-template ngx-datatable-header-template>
       <span ngbTooltip="Zusammenfassung" container="body" placement="bottom">{{
         "Zusammenfassung" | truncate: 12
@@ -263,7 +281,8 @@
   <ngx-datatable-column
     name="Erstellt von"
     prop="createdBy"
-    [pipe]="userWithOrgPipe">
+    [pipe]="userWithOrgPipe"
+    [minWidth]="160">
     <ng-template ngx-datatable-header-template>
       Erstellt von
       <app-created-by-org-filter (filterChanged)="createdByOrgFilterChanged($event)" />

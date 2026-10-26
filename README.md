@@ -100,6 +100,7 @@ Startet:
 
 - **PostgreSQL** für die Anwendungsdaten auf Port `5432`
 - **Keycloak** auf Port `8090` (Admin-UI: `http://localhost:8090`, User: `admin`, Passwort: `admin`)
+- **Mailpit** (`demo-mail`) fängt alle von Keycloak verschickten Mails ab (Einladungen, Passwort-Resets) – Web-UI auf `http://localhost:8025`
 
 Das Keycloak-Realm `fh-realm` wird beim Start automatisch aus `shared/keycloak-config/` importiert.
 
@@ -174,6 +175,8 @@ Alle Variablen werden in **einer einzigen `.env` im Projekt-Root** gesetzt (Vorl
 | `KEYCLOAK_DB_PASSWORD`  | Keycloak-DB-Passwort                                | `secret`                                            |
 | `KC_ADMIN_USER`         | Keycloak-Admin-Username (Bootstrap + Admin-Client)  | `admin`                                             |
 | `KC_ADMIN_PASSWORD`     | Keycloak-Admin-Passwort                             | `admin`                                             |
+| `KC_ADMIN_CLIENT_ID`    | Service-Account-Client, mit dem das Backend Benutzer in Keycloak verwaltet | `fh-backend` |
+| `KC_ADMIN_CLIENT_SECRET`| Secret dieses Clients; `npm run generate:keycloak` überträgt es auf den Client | `fh-backend-dev-secret` |
 | `KEYCLOAK_PORT`         | Host-Port für Keycloak (beide Compose-Dateien); nicht `8080`, da `docker-compose.yaml` den Frontend-Container ebenfalls auf Host-Port `8080` legt | `8090` |
 | `FRONTEND_PORT`         | Host-Port des Frontend-Containers (`docker-compose.yaml`) | `8080` |
 | `BACKEND_PORT`          | Host-Port des Backend-Containers (`docker-compose.yaml`) | `3000` |
@@ -237,6 +240,25 @@ npx prisma generate
 | `OrgCoordinator`     | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Organisation | `/dashboard`  |
 | `SubOrgCoordinator`  | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Unterorganisation | `/dashboard`  |
 | `User`               | Standardzugriff: Familien, eigene Fälle, Formulare                           | `/dashboard`  |
+
+### Benutzerverwaltung
+
+Admins legen Benutzer unter `/user-admin` an. Das Backend erstellt dabei das Keycloak-Konto über den Service-Account-Client `fh-backend` und gleichzeitig den App-Benutzer – Rolle und Organisation stehen damit schon vor dem ersten Login fest. Existiert in Keycloak bereits ein Konto mit derselben E-Mail, wird es verknüpft statt dupliziert. Für das erste Passwort gibt es zwei Wege:
+
+- **Einladung (Standard):** Keycloak verschickt eine Mail mit einem Link (7 Tage gültig) zum Setzen des Passworts und Bestätigen der E-Mail-Adresse.
+- **Temporäres Passwort:** Das Passwort wird dem Admin einmalig angezeigt und muss beim ersten Login geändert werden. Es wird nirgends gespeichert.
+
+Einladungen lassen sich erneut senden, temporäre Passwörter neu vergeben und Konten sperren/entsperren. Rollen werden ausschließlich in der App-Datenbank (`User.role`) gepflegt, nicht in Keycloak. Wer sich mit einem Keycloak-Konto anmeldet, das nicht über die App angelegt wurde, bekommt weiterhin automatisch die Rolle `User` ohne Organisation.
+
+### Keycloak-Login & E-Mails
+
+Login-Seiten und Mails von Keycloak nutzen das Theme `famdok` aus `shared/keycloak-config/themes/famdok/` (in beiden Compose-Dateien nach `/opt/keycloak/themes` gemountet, im Realm als Login- und E-Mail-Theme gesetzt). Die Oberfläche ist auf Deutsch, „Passwort vergessen?“ ist aktiv (Link 30 Minuten gültig).
+
+- `login/resources/css/famdok.css` – Optik der Login-Seiten (Farben/Radien wie im Frontend, Dark Mode nach Systemeinstellung); Texte in `login/messages/messages_de.properties`
+- `email/html/*.ftl`, `email/text/*.ftl` – Vorlagen für Einladung (`executeActions`), Passwort-Reset und E-Mail-Bestätigung, jeweils als HTML und Text; gemeinsames Layout in `html/template.ftl`
+- `email/messages/messages_de.properties` – Betreffzeilen
+
+Im Dev-Modus (`start-dev`) cached Keycloak keine Themes – Änderungen sind nach einem Reload sichtbar. Realm-Einstellungen (Theme, Sprache, Passwort-Reset) übernimmt `npm run generate:keycloak`.
 
 Die Berechtigungen werden im Frontend über Route Guards (`roleGuard`) und im Backend über je eine `authFns`-Datei pro Ressource (`backend/controller/authFns/`) durchgesetzt, die von der Passport-Bearer-Strategie mit Keycloak-Token-Validierung aufgerufen wird.
 
@@ -316,7 +338,10 @@ FRONTEND_BASE_URL=https://your-frontend-domain.de
 POSTGRES_PASSWORD=ein-echtes-passwort
 KEYCLOAK_DB_PASSWORD=ein-echtes-passwort
 KC_ADMIN_PASSWORD=ein-echtes-passwort
+KC_ADMIN_CLIENT_SECRET=ein-echtes-secret
 ```
+
+Nach dem Ändern von `KC_ADMIN_CLIENT_SECRET` einmal `npm run generate:keycloak` (in `backend/`) ausführen, damit der Client `fh-backend` das neue Secret bekommt. Für Einladungsmails muss in Keycloak unter *Realm settings → Email* ein echter SMTP-Server eingetragen sein (die Vorgabe `demo-mail` existiert nur in der Dev-Umgebung).
 
 `KC_BASE_URL` steuert sowohl Keycloaks eigenes `KC_HOSTNAME_URL` als auch die vom Frontend/Backend verwendete URL – ein einziger Wert genügt. Beachte: `shared/keycloak-config/realm-import.json` hardcoded aktuell `redirectUris: ["http://localhost:4200/*"]` und muss für eine echte Domain manuell angepasst werden (nicht Teil der `.env`-Konsolidierung).
 

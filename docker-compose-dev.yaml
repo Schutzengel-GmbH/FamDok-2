@@ -31,11 +31,21 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
     volumes:
       - ./shared/keycloak-config:/opt/keycloak/data/import
+      - ./shared/keycloak-config/themes:/opt/keycloak/themes
     ports:
       - "${KEYCLOAK_PORT:-8090}:8080"
     depends_on:
       keycloak-db:
         condition: service_healthy
+
+  # Catches all mail Keycloak sends (invites, password resets) - UI on http://localhost:8025.
+  # The service name matches the smtpServer host in shared/keycloak-config/realm-import.json.
+  demo-mail:
+    image: axllent/mailpit:v1.27
+    container_name: demo-mail
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
 
   app-db:
     image: postgres:15
