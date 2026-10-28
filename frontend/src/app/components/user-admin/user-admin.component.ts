@@ -31,6 +31,7 @@ function userFilter(f: string) {
 @Component({
   selector: 'app-user-admin',
   templateUrl: './user-admin.component.html',
+  styleUrl: './user-admin.component.scss',
   standalone: true,
   imports: [UserItemComponent, UserCreateComponent, FormsModule],
 })

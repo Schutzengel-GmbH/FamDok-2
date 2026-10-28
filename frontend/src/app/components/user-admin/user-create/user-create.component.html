@@ -1,14 +1,15 @@
 @if (tempPassword(); as tp) {
   <app-temp-password
-    class="d-block mb-2"
+    class="user-create__temp-password"
     [email]="tp.email"
     [password]="tp.password"
     (dismiss)="tempPassword.set(undefined)" />
 }
 
-<form class="card card-body mb-3" [formGroup]="form" (ngSubmit)="submit()">
-  <h5>Neuer Benutzer</h5>
-  <div class="d-flex flex-wrap gap-2 mb-2">
+<form class="user-create" [formGroup]="form" (ngSubmit)="submit()">
+  <h2>Neuer Benutzer</h2>
+
+  <div class="user-create__fields">
     <div class="form-floating">
       <input
         class="form-control"
@@ -19,11 +20,19 @@
       <label for="newEmail">E-Mail</label>
     </div>
     <div class="form-floating">
-      <input class="form-control" id="newFirstName" type="text" formControlName="firstName" />
+      <input
+        class="form-control"
+        id="newFirstName"
+        type="text"
+        formControlName="firstName" />
       <label for="newFirstName">Vorname</label>
     </div>
     <div class="form-floating">
-      <input class="form-control" id="newLastName" type="text" formControlName="lastName" />
+      <input
+        class="form-control"
+        id="newLastName"
+        type="text"
+        formControlName="lastName" />
       <label for="newLastName">Nachname</label>
     </div>
     <div class="form-floating">
@@ -44,7 +53,10 @@
       <label for="newJobTitle">Fachrichtung</label>
     </div>
     <div class="form-floating">
-      <select class="form-select" id="newOrganisationId" formControlName="organisationId">
+      <select
+        class="form-select"
+        id="newOrganisationId"
+        formControlName="organisationId">
         <option [ngValue]="null">Keine Organisation</option>
         @for (org of orgs(); track org.id) {
           <option [value]="org.id">{{ org.name }}</option>
@@ -52,8 +64,10 @@
       </select>
       <label for="newOrganisationId">Organisation</label>
     </div>
-    <div>
-      <label class="form-label" for="newSubOrgSelect">Unterorganisationen</label>
+    <div class="user-create__suborgs">
+      <label class="form-label" for="newSubOrgSelect">
+        Unterorganisationen
+      </label>
       <app-multi-select
         id="newSubOrgSelect"
         [items]="availableSubOrgs()"
@@ -65,44 +79,39 @@
     </div>
   </div>
 
-  <fieldset class="mb-2">
-    <legend class="form-label fs-6">Erstes Passwort</legend>
-    <div class="form-check">
-      <input
-        class="form-check-input"
-        type="radio"
-        id="onboardingInvite"
-        value="invite"
-        formControlName="onboarding" />
-      <label class="form-check-label" for="onboardingInvite">
-        Einladung per E-Mail – der Benutzer setzt sein Passwort selbst
-      </label>
-    </div>
-    <div class="form-check">
-      <input
-        class="form-check-input"
-        type="radio"
-        id="onboardingTempPassword"
-        value="tempPassword"
-        formControlName="onboarding" />
-      <label class="form-check-label" for="onboardingTempPassword">
-        Temporäres Passwort – wird einmalig angezeigt und muss beim ersten Login geändert werden
-      </label>
-    </div>
+  <fieldset class="user-create__onboarding">
+    <legend>Erstes Passwort</legend>
+    <label class="user-create__radio">
+      <input type="radio" value="invite" formControlName="onboarding" />
+      Einladung per E-Mail – der Benutzer setzt sein Passwort selbst
+    </label>
+    <label class="user-create__radio">
+      <input type="radio" value="tempPassword" formControlName="onboarding" />
+      Temporäres Passwort – wird einmalig angezeigt und muss beim ersten
+      Login geändert werden
+    </label>
   </fieldset>
 
-  <div class="d-flex align-items-center gap-2">
-    <button class="btn btn-primary" type="submit" [disabled]="form.invalid || saving()">
-      @if (saving()) {
-        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-      }
-      Anlegen
-    </button>
-    <button class="btn btn-outline-secondary" type="button" (click)="closed.emit()">
-      Schließen
-    </button>
+  <div class="user-create__footer">
     @if (form.controls.organisationId.invalid || form.controls.subOrganisationIds.invalid) {
-      <span class="badge text-bg-danger">Organisation erforderlich</span>
+      <span class="badge-soft badge-soft--red">Organisation erforderlich</span>
     }
+    <div class="user-create__footer-actions">
+      <button
+        class="btn btn-outline-secondary btn-sm"
+        type="button"
+        (click)="closed.emit()">
+        Schließen
+      </button>
+      <button
+        class="btn btn-primary btn-sm"
+        type="submit"
+        [disabled]="form.invalid || saving()">
+        @if (saving()) {
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        }
+        Anlegen
+      </button>
+    </div>
   </div>
 </form>

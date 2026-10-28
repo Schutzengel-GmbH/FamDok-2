@@ -1,0 +1,101 @@
+@use "abstracts" as *;
+
+:host {
+  display: block;
+}
+
+.user-card {
+  @include panel($padding: 1.1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.user-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.user-card__identity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.user-card__name {
+  font-weight: 700;
+  font-size: 1.02rem;
+  color: var(--bs-heading-color, var(--bs-body-color));
+}
+
+.user-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.user-card__kc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.user-card__temp-password {
+  display: block;
+}
+
+.user-card__fields {
+  @include form-field-grid;
+}
+
+.user-card__suborgs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.user-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.user-card__footer-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.user-card__footer-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+@include media-down("md") {
+  .user-card__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .user-card__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .user-card__footer-actions {
+    margin-left: 0;
+
+    .btn {
+      flex: 1 1 auto;
+    }
+  }
+}
