@@ -20,6 +20,7 @@ import { TempPasswordComponent } from '../temp-password/temp-password.component'
   standalone: true,
   imports: [ReactiveFormsModule, MultiSelect, TempPasswordComponent],
   templateUrl: './user-item.component.html',
+  styleUrl: './user-item.component.scss',
 })
 export class UserItemComponent implements OnInit {
   @Input() user!: AdminUser;

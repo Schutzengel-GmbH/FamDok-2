@@ -18,6 +18,7 @@ import { TempPasswordComponent } from '../temp-password/temp-password.component'
   standalone: true,
   imports: [ReactiveFormsModule, MultiSelect, TempPasswordComponent],
   templateUrl: './user-create.component.html',
+  styleUrl: './user-create.component.scss',
 })
 export class UserCreateComponent {
   orgs = input<FullOrganisation[]>([]);

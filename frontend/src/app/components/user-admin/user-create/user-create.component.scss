@@ -1,0 +1,98 @@
+@use "abstracts" as *;
+
+:host {
+  display: block;
+  margin-bottom: 1.25rem;
+}
+
+.user-create {
+  @include panel($padding: 1.25rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.user-create h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--bs-heading-color, var(--bs-body-color));
+}
+
+.user-create__fields {
+  @include form-field-grid;
+}
+
+.user-create__suborgs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.user-create__onboarding {
+  border: 1px solid var(--bs-border-color);
+  border-radius: $radius-control;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  legend {
+    padding: 0;
+    margin-bottom: 0.2rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--bs-secondary-color);
+  }
+}
+
+.user-create__radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+  color: var(--bs-body-color);
+
+  input {
+    margin-top: 0.2rem;
+  }
+}
+
+.user-create__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.user-create__footer-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.user-create__temp-password {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+@include media-down("md") {
+  .user-create__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .user-create__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .user-create__footer-actions {
+    margin-left: 0;
+
+    .btn {
+      flex: 1 1 auto;
+    }
+  }
+}
