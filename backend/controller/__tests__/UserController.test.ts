@@ -1,4 +1,6 @@
-jest.mock('../../db', () => ({ prisma: require('../../testUtils/prismaMock').createPrismaMock() }));
+jest.mock('../../db', () => ({
+  prisma: require('../../testUtils/prismaMock').createPrismaMock(),
+}));
 
 const mockAdminClient = {
   users: {
@@ -18,7 +20,11 @@ jest.mock('../../kcAdminClient', () => ({
 
 import { prisma } from '../../db';
 import { createPrismaMock } from '../../testUtils/prismaMock';
-import { buildUser, buildSubOrganisation } from '../../testUtils/fixtures';
+import {
+  buildUser,
+  buildSubOrganisation,
+  buildOrganisation,
+} from '../../testUtils/fixtures';
 import { generateTempPassword, UserController } from '../UserController';
 import {
   BadRequestError,
@@ -54,7 +60,12 @@ describe('UserController', () => {
       const user = buildUser();
       prismaMock.user.findMany.mockResolvedValue([user]);
       mockAdminClient.users.find.mockResolvedValue([
-        { id: user.kcId, enabled: false, emailVerified: true, requiredActions: ['UPDATE_PASSWORD'] },
+        {
+          id: user.kcId,
+          enabled: false,
+          emailVerified: true,
+          requiredActions: ['UPDATE_PASSWORD'],
+        },
       ]);
 
       const [result] = await UserController.getAll(admin);
@@ -99,16 +110,24 @@ describe('UserController', () => {
     });
 
     it('throws ForbiddenError for a different org', async () => {
-      const user = buildUser({ role: Role.OrgController, organisationId: 'org-1' });
+      const user = buildUser({
+        role: Role.OrgController,
+        organisationId: 'org-1',
+      });
 
-      await expect(UserController.getOrgUsers(user, 'org-2')).rejects.toThrow(ForbiddenError);
+      await expect(UserController.getOrgUsers(user, 'org-2')).rejects.toThrow(
+        ForbiddenError
+      );
     });
   });
 
   describe('getSubOrgUsers', () => {
     it('returns users when the requesting user can see the sub-org', async () => {
       const subOrg = buildSubOrganisation();
-      const user = buildUser({ role: Role.OrgController, organisationId: subOrg.organisationId });
+      const user = buildUser({
+        role: Role.OrgController,
+        organisationId: subOrg.organisationId,
+      });
       prismaMock.subOrganisation.findUniqueOrThrow.mockResolvedValue(subOrg);
       const users = [buildUser()];
       prismaMock.user.findMany.mockResolvedValue(users);
@@ -120,17 +139,25 @@ describe('UserController', () => {
 
     it('throws ForbiddenError when sub-org belongs to a different org', async () => {
       const subOrg = buildSubOrganisation({ organisationId: 'other-org' });
-      const user = buildUser({ role: Role.OrgController, organisationId: 'org-1' });
+      const user = buildUser({
+        role: Role.OrgController,
+        organisationId: 'org-1',
+      });
       prismaMock.subOrganisation.findUniqueOrThrow.mockResolvedValue(subOrg);
 
-      await expect(UserController.getSubOrgUsers(user, subOrg.id)).rejects.toThrow(ForbiddenError);
+      await expect(
+        UserController.getSubOrgUsers(user, subOrg.id)
+      ).rejects.toThrow(ForbiddenError);
     });
   });
 
   describe('getUser', () => {
-    it('returns the user when accessible', async () => {
+    it('returns the user but not KC user when accessible', async () => {
       const target = buildUser({ organisationId: 'org-1' });
-      const reqUser = buildUser({ role: Role.OrgController, organisationId: 'org-1' });
+      const reqUser = buildUser({
+        role: Role.User,
+        organisationId: 'org-1',
+      });
       prismaMock.user.findUnique.mockResolvedValue(target);
 
       const result = await UserController.getUser(reqUser, target.id);
@@ -139,19 +166,40 @@ describe('UserController', () => {
       expect(mockAdminClient.users.findOne).not.toHaveBeenCalled();
     });
 
+    it('returns the user and KC user data when editable', async () => {
+      const target = buildUser({ organisationId: 'org-1' });
+      const reqUser = buildUser({
+        role: Role.OrgController,
+        organisationId: 'org-1',
+      });
+      prismaMock.user.findUnique.mockResolvedValue(target);
+
+      const result = await UserController.getUser(reqUser, target.id);
+
+      expect(result).toBe(target);
+      expect(mockAdminClient.users.findOne).toHaveBeenCalled();
+    });
+
     it('throws NotFoundError when the user does not exist', async () => {
       const reqUser = buildUser({ role: Role.Admin });
       prismaMock.user.findUnique.mockResolvedValue(null);
 
-      await expect(UserController.getUser(reqUser, 'missing')).rejects.toThrow(NotFoundError);
+      await expect(UserController.getUser(reqUser, 'missing')).rejects.toThrow(
+        NotFoundError
+      );
     });
 
     it('throws ForbiddenError when requesting user cannot see the org', async () => {
       const target = buildUser({ organisationId: 'org-1' });
-      const reqUser = buildUser({ role: Role.OrgController, organisationId: 'org-2' });
+      const reqUser = buildUser({
+        role: Role.OrgController,
+        organisationId: 'org-2',
+      });
       prismaMock.user.findUnique.mockResolvedValue(target);
 
-      await expect(UserController.getUser(reqUser, target.id)).rejects.toThrow(ForbiddenError);
+      await expect(UserController.getUser(reqUser, target.id)).rejects.toThrow(
+        ForbiddenError
+      );
     });
   });
 
@@ -185,7 +233,9 @@ describe('UserController', () => {
       const updated = { ...existing, role: Role.OrgCoordinator };
       prismaMock.user.update.mockResolvedValue(updated);
 
-      const result = await UserController.update(reqUser, existing.id, { role: Role.OrgCoordinator });
+      const result = await UserController.update(reqUser, existing.id, {
+        role: Role.OrgCoordinator,
+      });
 
       expect(result).toBe(updated);
       expect(mockAdminClient.users.update).not.toHaveBeenCalled();
@@ -227,7 +277,10 @@ describe('UserController', () => {
       mockAdminClient.users.update.mockRejectedValue(new Error('kc down'));
 
       await expect(
-        UserController.update(reqUser, existing.id, { firstName: { set: 'New' }, lastName: null })
+        UserController.update(reqUser, existing.id, {
+          firstName: { set: 'New' },
+          lastName: null,
+        })
       ).rejects.toThrow('kc down');
       expect(mockAdminClient.users.update).toHaveBeenCalledWith(
         { id: existing.kcId },
@@ -241,9 +294,9 @@ describe('UserController', () => {
       const reqUser = buildUser({ role: Role.Admin });
       prismaMock.user.findUnique.mockResolvedValue(existing);
 
-      await expect(UserController.update(reqUser, existing.id, { kcId: 'other' })).rejects.toThrow(
-        BadRequestError
-      );
+      await expect(
+        UserController.update(reqUser, existing.id, { kcId: 'other' })
+      ).rejects.toThrow(BadRequestError);
       expect(prismaMock.user.update).not.toHaveBeenCalled();
     });
 
@@ -253,7 +306,9 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(existing);
 
       await expect(
-        UserController.update(reqUser, existing.id, { role: 'Superuser' } as any)
+        UserController.update(reqUser, existing.id, {
+          role: 'Superuser',
+        } as any)
       ).rejects.toThrow(ZodError);
     });
 
@@ -261,7 +316,9 @@ describe('UserController', () => {
       const reqUser = buildUser({ role: Role.Admin });
       prismaMock.user.findUnique.mockResolvedValue(null);
 
-      await expect(UserController.update(reqUser, 'missing', {})).rejects.toThrow(NotFoundError);
+      await expect(
+        UserController.update(reqUser, 'missing', {})
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('throws ForbiddenError when the requester cannot edit the user', async () => {
@@ -269,9 +326,9 @@ describe('UserController', () => {
       const reqUser = buildUser({ role: Role.User, organisationId: 'org-1' });
       prismaMock.user.findUnique.mockResolvedValue(existing);
 
-      await expect(UserController.update(reqUser, existing.id, { firstName: 'New' })).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        UserController.update(reqUser, existing.id, { firstName: 'New' })
+      ).rejects.toThrow(ForbiddenError);
       expect(prismaMock.user.update).not.toHaveBeenCalled();
     });
   });
@@ -281,7 +338,9 @@ describe('UserController', () => {
       const created = buildUser();
       prismaMock.user.create.mockResolvedValue(created);
 
-      const result = await UserController.register({ email: 'x@example.com' } as any);
+      const result = await UserController.register({
+        email: 'x@example.com',
+      } as any);
 
       expect(result).toBe(created);
     });
@@ -304,7 +363,9 @@ describe('UserController', () => {
     it('throws ForbiddenError for non-admins', async () => {
       const reqUser = buildUser({ role: Role.OrgCoordinator });
 
-      await expect(UserController.delete(reqUser, 'some-id')).rejects.toThrow(ForbiddenError);
+      await expect(UserController.delete(reqUser, 'some-id')).rejects.toThrow(
+        ForbiddenError
+      );
       expect(prismaMock.user.delete).not.toHaveBeenCalled();
       expect(mockAdminClient.users.del).not.toHaveBeenCalled();
     });
@@ -336,7 +397,11 @@ describe('UserController', () => {
       const result = await UserController.create(admin, input);
 
       expect(mockAdminClient.users.create).toHaveBeenCalledWith(
-        expect.objectContaining({ username: 'new@example.com', email: 'new@example.com', enabled: true })
+        expect.objectContaining({
+          username: 'new@example.com',
+          email: 'new@example.com',
+          enabled: true,
+        })
       );
       expect(prismaMock.user.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -350,7 +415,10 @@ describe('UserController', () => {
         })
       );
       expect(mockAdminClient.users.executeActionsEmail).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'kc-new', actions: ['UPDATE_PASSWORD', 'VERIFY_EMAIL'] })
+        expect.objectContaining({
+          id: 'kc-new',
+          actions: ['UPDATE_PASSWORD', 'VERIFY_EMAIL'],
+        })
       );
       expect(mockAdminClient.users.resetPassword).not.toHaveBeenCalled();
       expect(result).toEqual({ ...created, tempPassword: undefined });
@@ -372,38 +440,53 @@ describe('UserController', () => {
         emailVerified: false,
         pendingActions: ['UPDATE_PASSWORD', 'VERIFY_EMAIL'],
       });
-      expect(mockAdminClient.users.findOne).toHaveBeenCalledWith({ id: 'kc-new' });
+      expect(mockAdminClient.users.findOne).toHaveBeenCalledWith({
+        id: 'kc-new',
+      });
     });
 
     it('sets and returns a temporary password', async () => {
       prismaMock.user.create.mockResolvedValue(buildUser({ kcId: 'kc-new' }));
 
-      const result = await UserController.create(admin, { ...input, onboarding: 'tempPassword' });
+      const result = await UserController.create(admin, {
+        ...input,
+        onboarding: 'tempPassword',
+      });
 
       expect(result.tempPassword).toHaveLength(16);
       expect(mockAdminClient.users.resetPassword).toHaveBeenCalledWith({
         id: 'kc-new',
-        credential: { type: 'password', value: result.tempPassword, temporary: true },
+        credential: {
+          type: 'password',
+          value: result.tempPassword,
+          temporary: true,
+        },
       });
       expect(mockAdminClient.users.executeActionsEmail).not.toHaveBeenCalled();
     });
 
     it('links an existing keycloak account instead of creating one', async () => {
       mockAdminClient.users.find.mockResolvedValue([{ id: 'kc-existing' }]);
-      prismaMock.user.create.mockResolvedValue(buildUser({ kcId: 'kc-existing' }));
+      prismaMock.user.create.mockResolvedValue(
+        buildUser({ kcId: 'kc-existing' })
+      );
 
       await UserController.create(admin, input);
 
       expect(mockAdminClient.users.create).not.toHaveBeenCalled();
       expect(prismaMock.user.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ kcId: 'kc-existing' }) })
+        expect.objectContaining({
+          data: expect.objectContaining({ kcId: 'kc-existing' }),
+        })
       );
     });
 
     it('throws ConflictError when the email is already used in the app', async () => {
       prismaMock.user.findUnique.mockResolvedValue(buildUser());
 
-      await expect(UserController.create(admin, input)).rejects.toThrow(ConflictError);
+      await expect(UserController.create(admin, input)).rejects.toThrow(
+        ConflictError
+      );
       expect(mockAdminClient.users.create).not.toHaveBeenCalled();
     });
 
@@ -413,14 +496,18 @@ describe('UserController', () => {
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(buildUser({ kcId: 'kc-existing' }));
 
-      await expect(UserController.create(admin, input)).rejects.toThrow(ConflictError);
+      await expect(UserController.create(admin, input)).rejects.toThrow(
+        ConflictError
+      );
       expect(prismaMock.user.create).not.toHaveBeenCalled();
     });
 
     it('deletes the new keycloak account when creating the app user fails', async () => {
       prismaMock.user.create.mockRejectedValue(new Error('db error'));
 
-      await expect(UserController.create(admin, input)).rejects.toThrow('db error');
+      await expect(UserController.create(admin, input)).rejects.toThrow(
+        'db error'
+      );
       expect(mockAdminClient.users.del).toHaveBeenCalledWith({ id: 'kc-new' });
       expect(mockAdminClient.users.executeActionsEmail).not.toHaveBeenCalled();
     });
@@ -428,10 +515,16 @@ describe('UserController', () => {
     it('rolls back both sides when the invite fails', async () => {
       const created = buildUser({ kcId: 'kc-new' });
       prismaMock.user.create.mockResolvedValue(created);
-      mockAdminClient.users.executeActionsEmail.mockRejectedValue(new Error('smtp error'));
+      mockAdminClient.users.executeActionsEmail.mockRejectedValue(
+        new Error('smtp error')
+      );
 
-      await expect(UserController.create(admin, input)).rejects.toThrow('smtp error');
-      expect(prismaMock.user.delete).toHaveBeenCalledWith({ where: { id: created.id } });
+      await expect(UserController.create(admin, input)).rejects.toThrow(
+        'smtp error'
+      );
+      expect(prismaMock.user.delete).toHaveBeenCalledWith({
+        where: { id: created.id },
+      });
       expect(mockAdminClient.users.del).toHaveBeenCalledWith({ id: 'kc-new' });
     });
 
@@ -439,7 +532,9 @@ describe('UserController', () => {
       mockAdminClient.users.find.mockResolvedValue([{ id: 'kc-existing' }]);
       prismaMock.user.create.mockRejectedValue(new Error('db error'));
 
-      await expect(UserController.create(admin, input)).rejects.toThrow('db error');
+      await expect(UserController.create(admin, input)).rejects.toThrow(
+        'db error'
+      );
       expect(mockAdminClient.users.del).not.toHaveBeenCalled();
     });
 
@@ -450,10 +545,24 @@ describe('UserController', () => {
       expect(mockAdminClient.users.create).not.toHaveBeenCalled();
     });
 
+    it('throws ForbiddenError when creating users outside of org', async () => {
+      const reqUser = buildUser({
+        role: Role.OrgController,
+        organisationId: 'other-org',
+      });
+
+      await expect(
+        UserController.create(reqUser, { ...input, organisationId: 'org-1' })
+      ).rejects.toThrow(ForbiddenError);
+      expect(mockAdminClient.users.create).not.toHaveBeenCalled();
+    });
+
     it('throws ForbiddenError for non-admins', async () => {
       const reqUser = buildUser({ role: Role.OrgCoordinator });
 
-      await expect(UserController.create(reqUser, input)).rejects.toThrow(ForbiddenError);
+      await expect(UserController.create(reqUser, input)).rejects.toThrow(
+        ForbiddenError
+      );
       expect(mockAdminClient.users.create).not.toHaveBeenCalled();
       expect(prismaMock.user.create).not.toHaveBeenCalled();
     });
@@ -485,10 +594,16 @@ describe('UserController', () => {
       const target = buildUser();
       prismaMock.user.findUnique.mockResolvedValue(target);
 
-      const { tempPassword } = await UserController.issueTempPassword(admin, target.id);
+      const { tempPassword } = await UserController.issueTempPassword(
+        admin,
+        target.id
+      );
 
       expect(mockAdminClient.users.resetPassword).toHaveBeenCalledWith(
-        expect.objectContaining({ id: target.kcId, credential: expect.objectContaining({ value: tempPassword }) })
+        expect.objectContaining({
+          id: target.kcId,
+          credential: expect.objectContaining({ value: tempPassword }),
+        })
       );
     });
 
@@ -496,7 +611,10 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(null);
 
       await expect(
-        UserController.issueTempPassword(buildUser({ role: Role.Admin }), 'missing')
+        UserController.issueTempPassword(
+          buildUser({ role: Role.Admin }),
+          'missing'
+        )
       ).rejects.toThrow(NotFoundError);
     });
   });
@@ -509,22 +627,27 @@ describe('UserController', () => {
 
       await UserController.setEnabled(admin, target.id, { enabled: false });
 
-      expect(mockAdminClient.users.update).toHaveBeenCalledWith({ id: target.kcId }, { enabled: false });
+      expect(mockAdminClient.users.update).toHaveBeenCalledWith(
+        { id: target.kcId },
+        { enabled: false }
+      );
     });
 
     it('does not let admins lock themselves out', async () => {
       const admin = buildUser({ role: Role.Admin });
       prismaMock.user.findUnique.mockResolvedValue(admin);
 
-      await expect(UserController.setEnabled(admin, admin.id, { enabled: false })).rejects.toThrow(
-        BadRequestError
-      );
+      await expect(
+        UserController.setEnabled(admin, admin.id, { enabled: false })
+      ).rejects.toThrow(BadRequestError);
       expect(mockAdminClient.users.update).not.toHaveBeenCalled();
     });
 
     it('throws ForbiddenError for non-admins', async () => {
       await expect(
-        UserController.setEnabled(buildUser({ role: Role.User }), 'id', { enabled: true })
+        UserController.setEnabled(buildUser({ role: Role.User }), 'id', {
+          enabled: true,
+        })
       ).rejects.toThrow(ForbiddenError);
     });
   });

@@ -6,8 +6,9 @@ import { prisma } from '../db';
 
 import {
   canAccessAllUsers,
+  canCreateUser,
   canEditUser,
-  canManageUsers,
+  canManageAllUsers,
   canSeeOrgUsers,
   canSeeSubOrgUsers,
 } from './authFns/UserAuthFns';
@@ -26,10 +27,7 @@ import {
   KcStatus,
   UserWithTempPassword,
 } from '../../shared/types';
-import {
-  UserCreateRequest,
-  UserEnabledRequest,
-} from '../../shared/zodTypes';
+import { UserCreateRequest, UserEnabledRequest } from '../../shared/zodTypes';
 
 /** How long the link in an invite email stays valid */
 const INVITE_LIFESPAN_SECONDS = 7 * 24 * 60 * 60;
@@ -89,7 +87,7 @@ export class UserController {
       include: USER_DEFAULT_INCLUDE,
       where,
     });
-    if (!canManageUsers(user)) return users;
+    if (!canManageAllUsers(user)) return users;
 
     return UserController.withKcStatus(users);
   }
@@ -184,7 +182,7 @@ export class UserController {
     if (!user) throw new NotFoundError();
     if (!canSeeOrgUsers(reqUser, user.organisationId!))
       throw new ForbiddenError();
-    if (!canManageUsers(reqUser)) return user;
+    if (!canEditUser(reqUser, user)) return user;
 
     return UserController.withOwnKcStatus(user);
   }
@@ -262,20 +260,25 @@ export class UserController {
     reqUser: FullUser,
     input: unknown
   ): Promise<UserWithTempPassword> {
-    if (!canManageUsers(reqUser))
-      throw new ForbiddenError('Only admins can create users');
-
     const data = UserCreateRequest.parse(input);
+    if (!canCreateUser(reqUser, data))
+      throw new ForbiddenError(
+        'Nur Admins und OrgController können User erstellen'
+      );
 
     if (await prisma.user.findUnique({ where: { email: data.email } }))
-      throw new ConflictError('Ein Benutzer mit dieser E-Mail-Adresse existiert bereits');
+      throw new ConflictError(
+        'Ein Benutzer mit dieser E-Mail-Adresse existiert bereits'
+      );
 
     const adminClient = await getAdminClient();
     const existing = (
       await adminClient.users.find({ email: data.email, exact: true })
     )[0];
     if (existing && (await UserController.getUserByKC(existing.id!)))
-      throw new ConflictError('Dieses Keycloak-Konto ist bereits mit einem Benutzer verknüpft');
+      throw new ConflictError(
+        'Dieses Keycloak-Konto ist bereits mit einem Benutzer verknüpft'
+      );
 
     const kcId =
       existing?.id ??
@@ -320,7 +323,9 @@ export class UserController {
       if (!existing)
         await adminClient.users
           .del({ id: kcId })
-          .catch((err) => console.error('rollback of keycloak user failed', err));
+          .catch((err) =>
+            console.error('rollback of keycloak user failed', err)
+          );
       throw e;
     }
   }
@@ -366,7 +371,7 @@ export class UserController {
   }
 
   private static async getManagedUser(reqUser: FullUser, id: string) {
-    if (!canManageUsers(reqUser))
+    if (!canManageAllUsers(reqUser))
       throw new ForbiddenError('Only admins can manage users');
 
     const user = await prisma.user.findUnique({
@@ -395,7 +400,10 @@ export class UserController {
    */
   static async issueTempPassword(reqUser: FullUser, id: string) {
     const user = await UserController.getManagedUser(reqUser, id);
-    const tempPassword = await UserController.onboard(user.kcId, 'tempPassword');
+    const tempPassword = await UserController.onboard(
+      user.kcId,
+      'tempPassword'
+    );
     return { tempPassword: tempPassword! };
   }
 
@@ -437,7 +445,7 @@ export class UserController {
    * @returns void
    */
   static async delete(requestingUser: FullUser, id: string) {
-    if (!canManageUsers(requestingUser))
+    if (!canManageAllUsers(requestingUser))
       throw new ForbiddenError('Only admins can delete users');
     const adminClient = await getAdminClient();
     const user = await prisma.user.delete({
