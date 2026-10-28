@@ -581,9 +581,15 @@ describe('UserController', () => {
       );
     });
 
-    it('throws ForbiddenError for non-admins', async () => {
+    it('throws ForbiddenError if the user cant edit', async () => {
+      const user = buildUser({ organisationId: 'other-org' });
+      prismaMock.user.findUnique.mockResolvedValue(user);
+
       await expect(
-        UserController.resendInvite(buildUser({ role: Role.User }), 'id')
+        UserController.resendInvite(
+          buildUser({ role: Role.User, organisationId: 'org-1' }),
+          user.id
+        )
       ).rejects.toThrow(ForbiddenError);
     });
   });
@@ -643,9 +649,12 @@ describe('UserController', () => {
       expect(mockAdminClient.users.update).not.toHaveBeenCalled();
     });
 
-    it('throws ForbiddenError for non-admins', async () => {
+    it('throws ForbiddenError if the user cant edit', async () => {
+      const user = buildUser({ organisationId: 'other-org' });
+      prismaMock.user.findUnique.mockResolvedValue(user);
+
       await expect(
-        UserController.setEnabled(buildUser({ role: Role.User }), 'id', {
+        UserController.setEnabled(buildUser({ role: Role.User }), user.id, {
           enabled: true,
         })
       ).rejects.toThrow(ForbiddenError);

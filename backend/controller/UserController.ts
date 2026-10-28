@@ -371,14 +371,12 @@ export class UserController {
   }
 
   private static async getManagedUser(reqUser: FullUser, id: string) {
-    if (!canManageAllUsers(reqUser))
-      throw new ForbiddenError('Only admins can manage users');
-
     const user = await prisma.user.findUnique({
       where: { id },
       include: USER_DEFAULT_INCLUDE,
     });
     if (!user) throw new NotFoundError();
+    if (!canEditUser(reqUser, user)) throw new ForbiddenError();
     return user;
   }
 
