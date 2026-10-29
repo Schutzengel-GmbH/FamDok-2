@@ -9,7 +9,7 @@
             @if (!status.enabled) {
               <span class="badge-soft badge-soft--red">Gesperrt</span>
             }
-            @if (hasPendingAction('UPDATE_PASSWORD')) {
+            @if (hasPendingAction("UPDATE_PASSWORD")) {
               <span class="badge-soft badge-soft--yellow">
                 Passwort noch nicht gesetzt
               </span>
@@ -106,18 +106,20 @@
         </select>
         <label for="jobTitle">Fachrichtung</label>
       </div>
-      <div class="form-floating">
-        <select
-          class="form-select"
-          formControlName="organisationId"
-          id="organisationId">
-          <option [ngValue]="null">Keine Organisation</option>
-          @for (org of orgs; track org.id) {
-            <option [value]="org.id">{{ org.name }}</option>
-          }
-        </select>
-        <label for="organisationId">Organisation</label>
-      </div>
+      @if (withOrg) {
+        <div class="form-floating">
+          <select
+            class="form-select"
+            formControlName="organisationId"
+            id="organisationId">
+            <option [ngValue]="null">Keine Organisation</option>
+            @for (org of orgs; track org.id) {
+              <option [value]="org.id">{{ org.name }}</option>
+            }
+          </select>
+          <label for="organisationId">Organisation</label>
+        </div>
+      }
       <div class="user-card__suborgs">
         <label class="form-label" for="subOrgSelect">Unterorganisationen</label>
         <app-multi-select
@@ -138,8 +140,13 @@
             Ungespeicherte Änderungen
           </span>
         }
-        @if (form.get('organisationId')?.invalid || form.get('subOrganisationIds')?.invalid) {
-          <span class="badge-soft badge-soft--red">Organisation erforderlich</span>
+        @if (
+          form.get("organisationId")?.invalid ||
+          form.get("subOrganisationIds")?.invalid
+        ) {
+          <span class="badge-soft badge-soft--red"
+            >Organisation erforderlich</span
+          >
         }
       </div>
       <div class="user-card__footer-actions">

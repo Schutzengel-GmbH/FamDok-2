@@ -25,6 +25,7 @@ import { TempPasswordComponent } from '../temp-password/temp-password.component'
 export class UserItemComponent implements OnInit {
   @Input() user!: AdminUser;
   @Input() orgs!: FullOrganisation[];
+  @Input() withOrg!: boolean;
 
   private userService = inject(UserService);
   private toastService = inject(ToastService);
@@ -139,7 +140,11 @@ export class UserItemComponent implements OnInit {
           s && {
             ...s,
             pendingActions: [
-              ...new Set([...s.pendingActions, 'UPDATE_PASSWORD', 'VERIFY_EMAIL']),
+              ...new Set([
+                ...s.pendingActions,
+                'UPDATE_PASSWORD',
+                'VERIFY_EMAIL',
+              ]),
             ],
           },
       );

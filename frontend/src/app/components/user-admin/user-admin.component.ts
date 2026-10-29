@@ -15,6 +15,7 @@ import { UserCreateComponent } from './user-create/user-create.component';
 import { MeService } from 'src/app/services/me.service';
 import { map, mergeMap } from 'rxjs';
 import { Role } from '../../../../../shared/generated/prisma/enums';
+import { AsyncPipe } from '@angular/common';
 
 function userFilter(f: string) {
   return (user: AdminUser) => {
@@ -36,12 +37,15 @@ function userFilter(f: string) {
   templateUrl: './user-admin.component.html',
   styleUrl: './user-admin.component.scss',
   standalone: true,
-  imports: [UserItemComponent, UserCreateComponent, FormsModule],
+  imports: [AsyncPipe, UserItemComponent, UserCreateComponent, FormsModule],
 })
 export class UserAdminComponent {
   private meService = inject(MeService);
   private userService = inject(UserService);
   private orgService = inject(OrgService);
+
+  user$ = this.meService.getMe();
+
   orgs!: FullOrganisation[];
   readonly toastService = inject(ToastService);
 
@@ -53,8 +57,7 @@ export class UserAdminComponent {
   creating = signal(false);
 
   constructor() {
-    this.meService
-      .getMe()
+    this.user$
       .pipe(
         mergeMap((user) =>
           user.role === Role.Admin

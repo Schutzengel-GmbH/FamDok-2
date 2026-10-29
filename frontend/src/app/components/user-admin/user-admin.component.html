@@ -58,7 +58,10 @@
 
   <div class="user-list">
     @for (user of filteredUsers(); track user.id) {
-      <app-user-item [orgs]="orgs" [user]="user" />
+      <app-user-item
+        [orgs]="orgs"
+        [user]="user"
+        [withOrg]="(user$ | async)?.role === 'Admin'" />
     } @empty {
       <div class="empty-state">
         <h3>Keine Benutzer gefunden</h3>
