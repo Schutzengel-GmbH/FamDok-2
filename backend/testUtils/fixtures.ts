@@ -1,4 +1,28 @@
-import { Role } from '../../shared/generated/prisma/client';
+import {
+  Handover,
+  Role,
+  Setting,
+  Zielvereinbarung,
+} from '../../shared/generated/prisma/client';
+import {
+  FullCase,
+  FullCaseAttachment,
+  FullCaseForm,
+  FullCaseFormResponse,
+  FullContactDocumentation,
+  FullDocument,
+  FullFamily,
+  FullGeneralForm,
+  FullGeneralFormResponse,
+  FullOrganisation,
+  FullSubOrganisation,
+  FullTag,
+  FullUser,
+} from '../../shared/types';
+
+/** Overrides are checked against the keys of the real type, but not their values - fixtures
+ * are deliberately looser than the full types, so tests don't have to build complete objects. */
+type Overrides<T> = Partial<Record<keyof T, any>>;
 
 let counter = 0;
 function nextId(prefix: string) {
@@ -6,7 +30,7 @@ function nextId(prefix: string) {
   return `${prefix}-${counter}`;
 }
 
-export function buildUser(overrides: Record<string, any> = {}) {
+export function buildUser(overrides: Overrides<FullUser> = {}) {
   return {
     id: nextId('user'),
     kcId: nextId('kc'),
@@ -22,7 +46,7 @@ export function buildUser(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildOrganisation(overrides: Record<string, any> = {}) {
+export function buildOrganisation(overrides: Overrides<FullOrganisation> = {}) {
   return {
     id: nextId('org'),
     name: 'Test Org',
@@ -31,7 +55,7 @@ export function buildOrganisation(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildSubOrganisation(overrides: Record<string, any> = {}) {
+export function buildSubOrganisation(overrides: Overrides<FullSubOrganisation> = {}) {
   return {
     id: nextId('suborg'),
     name: 'Test SubOrg',
@@ -40,7 +64,7 @@ export function buildSubOrganisation(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildCase(overrides: Record<string, any> = {}) {
+export function buildCase(overrides: Overrides<FullCase> = {}) {
   return {
     id: nextId('case'),
     startedAt: new Date('2026-01-01'),
@@ -61,13 +85,12 @@ export function buildCase(overrides: Record<string, any> = {}) {
     closedAt: null,
     personalDataDueAt: null,
     personalDataDeletedAt: null,
-    closingDocId: null,
     createdBy: null,
     ...overrides,
   };
 }
 
-export function buildFamily(overrides: Record<string, any> = {}) {
+export function buildFamily(overrides: Overrides<FullFamily> = {}) {
   return {
     id: nextId('family'),
     organisationId: nextId('org'),
@@ -82,7 +105,7 @@ export function buildFamily(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildContactDocumentation(overrides: Record<string, any> = {}) {
+export function buildContactDocumentation(overrides: Overrides<FullContactDocumentation> = {}) {
   return {
     id: nextId('contactdoc'),
     userId: nextId('user'),
@@ -99,7 +122,7 @@ export function buildContactDocumentation(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildHandover(overrides: Record<string, any> = {}) {
+export function buildHandover(overrides: Overrides<Handover> = {}) {
   return {
     id: nextId('handover'),
     createdById: nextId('user'),
@@ -112,7 +135,7 @@ export function buildHandover(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildZielvereinbarung(overrides: Record<string, any> = {}) {
+export function buildZielvereinbarung(overrides: Overrides<Zielvereinbarung> = {}) {
   return {
     id: nextId('zv'),
     userId: nextId('user'),
@@ -126,7 +149,7 @@ export function buildZielvereinbarung(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildCaseForm(overrides: Record<string, any> = {}) {
+export function buildCaseForm(overrides: Overrides<FullCaseForm> = {}) {
   return {
     id: nextId('caseform'),
     name: 'Test CaseForm',
@@ -138,7 +161,7 @@ export function buildCaseForm(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildCaseFormResponse(overrides: Record<string, any> = {}) {
+export function buildCaseFormResponse(overrides: Overrides<FullCaseFormResponse> = {}) {
   return {
     id: nextId('cfr'),
     userId: nextId('user'),
@@ -152,7 +175,7 @@ export function buildCaseFormResponse(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildGeneralForm(overrides: Record<string, any> = {}) {
+export function buildGeneralForm(overrides: Overrides<FullGeneralForm> = {}) {
   return {
     id: nextId('genform'),
     name: 'Test GeneralForm',
@@ -161,7 +184,7 @@ export function buildGeneralForm(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildGeneralFormResponse(overrides: Record<string, any> = {}) {
+export function buildGeneralFormResponse(overrides: Overrides<FullGeneralFormResponse> = {}) {
   return {
     id: nextId('gfr'),
     userId: nextId('user'),
@@ -171,7 +194,7 @@ export function buildGeneralFormResponse(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildSetting(overrides: Record<string, any> = {}) {
+export function buildSetting(overrides: Overrides<Setting> = {}) {
   return {
     name: 'setting',
     value: 'value',
@@ -179,7 +202,7 @@ export function buildSetting(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildTag(overrides: Record<string, any> = {}) {
+export function buildTag(overrides: Overrides<FullTag> = {}) {
   return {
     id: nextId('tag'),
     name: 'Test Tag',
@@ -187,7 +210,7 @@ export function buildTag(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildDocument(overrides: Record<string, any> = {}) {
+export function buildDocument(overrides: Overrides<FullDocument> = {}) {
   return {
     id: nextId('doc'),
     title: 'Test Document',
@@ -205,7 +228,7 @@ export function buildDocument(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildCaseAttachment(overrides: Record<string, any> = {}) {
+export function buildCaseAttachment(overrides: Overrides<FullCaseAttachment> = {}) {
   return {
     id: nextId('attachment'),
     caseId: nextId('case'),

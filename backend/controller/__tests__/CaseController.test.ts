@@ -1300,13 +1300,13 @@ describe('CaseController', () => {
     const SUBORG = 'suborg-1';
 
     function exportCase(overrides: Record<string, any> = {}) {
-      return buildCase({
-        organisationId: ORG,
-        subOrganisationId: SUBORG,
+      return {
+        ...buildCase({ organisationId: ORG, subOrganisationId: SUBORG }),
+        // the export loads these relations, FullCase doesn't include them
         organisation: { id: ORG, name: 'Org' },
         subOrganisation: { id: SUBORG, name: 'SubOrg' },
         ...overrides,
-      });
+      };
     }
 
     const allowed: [string, () => { user: any; c: any }][] = [
