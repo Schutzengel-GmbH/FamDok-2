@@ -56,85 +56,101 @@ export const routes: Routes = [
   {
     path: 'surveys',
     component: CaseFormsPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'familien',
     component: Families,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     // Full detail view of a single case - former family-detail-modal, now a page of its own
     // so changes made there keep the URL (and thus back/reload) pinned to the current case.
     path: 'familien/:caseId',
     component: FamilyDetailPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     // Same page, opened directly on a given tab (e.g. from a warning link) - see TabKey.
     path: 'familien/:caseId/:tab',
     component: FamilyDetailPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'gesundheit',
     component: HealthDataPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'gesundheit/:caseId',
     component: HealthDataPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'gesundheit/:caseId/:childId',
     component: HealthDataPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'dashboard',
     component: DashboardPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'stats',
@@ -152,12 +168,14 @@ export const routes: Routes = [
   {
     path: 'formulare',
     component: CaseFormsPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'import/survey',
@@ -170,25 +188,29 @@ export const routes: Routes = [
     path: 'responses/:caseFormId',
     component: CaseFormResponsePage,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-      Role.Controller,
-      Role.OrgController,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+        Role.Controller,
+        Role.OrgController,
+      ]),
+    ],
   },
   {
     path: 'general-responses',
     component: GeneralFormPage,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     // Also reachable by Controller/OrgController in read-only ("inspect") mode - see the
@@ -196,14 +218,16 @@ export const routes: Routes = [
     path: 'general-responses/:id',
     component: GeneralFormPage,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-      Role.Controller,
-      Role.OrgController,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+        Role.Controller,
+        Role.OrgController,
+      ]),
+    ],
   },
   {
     path: 'contact-documentation-table',
@@ -213,12 +237,14 @@ export const routes: Routes = [
   {
     path: 'my-responses',
     component: MyResponsesPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'me',
@@ -237,27 +263,31 @@ export const routes: Routes = [
   {
     path: 'create-family',
     component: CreateFamilyComponent,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'edit-family/:id',
     component: EditFamilyPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'user-admin',
     component: UserAdminComponent,
-    canActivate: [roleGuard([Role.Admin])],
+    canActivate: [roleGuard([Role.Admin, Role.OrgController])],
   },
   {
     path: 'error',
@@ -267,23 +297,27 @@ export const routes: Routes = [
     path: 'contact-documentation',
     component: ContactDocumentation,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'contact-documentation/:caseId',
     component: ContactDocumentation,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     // Also reachable by Controller/OrgController in read-only ("inspect") mode from the
@@ -291,14 +325,16 @@ export const routes: Routes = [
     path: 'contact-documentation/:caseId/:docId',
     component: EditContactDocumentationPage,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-      Role.Controller,
-      Role.OrgController,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+        Role.Controller,
+        Role.OrgController,
+      ]),
+    ],
   },
   {
     path: 'all-stats',
@@ -335,29 +371,21 @@ export const routes: Routes = [
   {
     path: 'allgemeine-formulare/neu',
     component: GeneralFormEditorComponent,
-    canActivate: [
-      roleGuard([Role.Admin, Role.Controller, Role.OrgController]),
-    ],
+    canActivate: [roleGuard([Role.Admin, Role.Controller, Role.OrgController])],
   },
   {
     path: 'allgemeine-formulare/:id',
     component: GeneralFormEditorComponent,
-    canActivate: [
-      roleGuard([Role.Admin, Role.Controller, Role.OrgController]),
-    ],
+    canActivate: [roleGuard([Role.Admin, Role.Controller, Role.OrgController])],
   },
   {
     path: 'fallbezogene-formulare/neu',
     component: CaseFormEditorComponent,
-    canActivate: [
-      roleGuard([Role.Admin, Role.Controller, Role.OrgController]),
-    ],
+    canActivate: [roleGuard([Role.Admin, Role.Controller, Role.OrgController])],
   },
   {
     path: 'fallbezogene-formulare/:id',
     component: CaseFormEditorComponent,
-    canActivate: [
-      roleGuard([Role.Admin, Role.Controller, Role.OrgController]),
-    ],
+    canActivate: [roleGuard([Role.Admin, Role.Controller, Role.OrgController])],
   },
 ];

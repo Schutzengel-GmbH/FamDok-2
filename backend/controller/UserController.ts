@@ -9,6 +9,7 @@ import {
   canCreateUser,
   canEditUser,
   canManageAllUsers,
+  canManageOrgUsers,
   canSeeOrgUsers,
   canSeeSubOrgUsers,
 } from './authFns/UserAuthFns';
@@ -147,6 +148,9 @@ export class UserController {
       where: { ...where, organisationId: orgId },
       include: USER_DEFAULT_INCLUDE,
     });
+    if (canManageOrgUsers(user, orgId))
+      return UserController.withKcStatus(users);
+
     return users;
   }
 
@@ -220,7 +224,8 @@ export class UserController {
     });
 
     if (!user) throw new NotFoundError();
-    if (!canEditUser(reqUser, user)) throw new ForbiddenError();
+    if (!canEditUser(reqUser, user, data))
+      throw new ForbiddenError('Dieses Update ist nicht erlaubt');
 
     UserUpdateInputObjectSchema.parse(data);
     if (data.kcId !== undefined)

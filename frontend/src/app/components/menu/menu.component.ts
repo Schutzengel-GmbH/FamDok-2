@@ -41,7 +41,8 @@ export class MenuComponent {
       this.isController.set(user.role === Role.Controller);
       this.isOrgController.set(user.role === Role.OrgController);
       this.isCoordinator.set(
-        user.role === Role.OrgCoordinator || user.role === Role.SubOrgCoordinator,
+        user.role === Role.OrgCoordinator ||
+          user.role === Role.SubOrgCoordinator,
       );
     });
   }
@@ -54,7 +55,7 @@ export class MenuComponent {
     const adminLinks: LinkData[] = [
       {
         priority: 0,
-        icon: '',
+        icon: 'bi-people',
         label: 'Benutzerverwaltung',
         link: '/user-admin',
       },
@@ -98,6 +99,12 @@ export class MenuComponent {
       }, */
     ];
     const controllerLinks: LinkData[] = [
+      {
+        priority: 0,
+        icon: 'bi-people',
+        label: 'Benutzerverwaltung',
+        link: '/user-admin',
+      },
       {
         priority: 0,
         icon: 'bi-clipboard-data',

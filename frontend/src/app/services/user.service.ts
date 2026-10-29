@@ -11,6 +11,7 @@ import {
   UserWhereInput,
 } from '../../../../shared/generated/prisma/models';
 import type { UserCreateRequest } from '../../../../shared/zodTypes';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -37,6 +38,11 @@ export class UserService {
     return this.http.get<FullUser[]>(
       this.userApiUrl + '/org/' + orgId + '?' + params.toString(),
     );
+  }
+
+  // helper to use when we expect the user to get managed users returned, i.e. for orgControllers
+  getManagedOrgUsers(orgId: string, filter?: UserWhereInput) {
+    return this.getOrgUsers(orgId, filter) as Observable<AdminUser[]>;
   }
 
   /** Creates the user in Keycloak and the app. Admin only. */

@@ -12,6 +12,9 @@ import { OrgService } from 'src/app/services/organisation.service';
 import { ToastService } from 'src/app/services/toast.service';
 import { FormsModule } from '@angular/forms';
 import { UserCreateComponent } from './user-create/user-create.component';
+import { MeService } from 'src/app/services/me.service';
+import { map, mergeMap } from 'rxjs';
+import { Role } from '../../../../../shared/generated/prisma/enums';
 
 function userFilter(f: string) {
   return (user: AdminUser) => {
@@ -36,6 +39,7 @@ function userFilter(f: string) {
   imports: [UserItemComponent, UserCreateComponent, FormsModule],
 })
 export class UserAdminComponent {
+  private meService = inject(MeService);
   private userService = inject(UserService);
   private orgService = inject(OrgService);
   orgs!: FullOrganisation[];
@@ -49,7 +53,16 @@ export class UserAdminComponent {
   creating = signal(false);
 
   constructor() {
-    this.userService.getAllUsers().subscribe((u) => this.users.set(u));
+    this.meService
+      .getMe()
+      .pipe(
+        mergeMap((user) =>
+          user.role === Role.Admin
+            ? this.userService.getAllUsers()
+            : this.userService.getManagedOrgUsers(user.organisationId!),
+        ),
+      )
+      .subscribe((users) => this.users.set(users));
     this.orgService.getAll().subscribe((o) => (this.orgs = o));
   }
 
