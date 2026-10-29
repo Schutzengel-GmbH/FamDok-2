@@ -101,12 +101,6 @@ export class MenuComponent {
     const controllerLinks: LinkData[] = [
       {
         priority: 0,
-        icon: 'bi-people',
-        label: 'Benutzerverwaltung',
-        link: '/user-admin',
-      },
-      {
-        priority: 0,
         icon: 'bi-clipboard-data',
         label: 'Statistik-Dashboard',
         link: '/stats',
@@ -164,7 +158,17 @@ export class MenuComponent {
       }, */
     ];
     if (this.isAdmin()) return adminLinks.sort(sortByNumProperty('priority'));
-    if (this.isController() || this.isOrgController())
+    if (this.isOrgController())
+      return [
+        {
+          priority: 0,
+          icon: 'bi-people',
+          label: 'Benutzerverwaltung',
+          link: '/user-admin',
+        },
+        ...controllerLinks,
+      ].sort(sortByNumProperty('priority'));
+    if (this.isController())
       return controllerLinks.sort(sortByNumProperty('priority'));
     return baseLinks.sort(sortByNumProperty('priority'));
   });

@@ -106,7 +106,8 @@ describe('UserController', () => {
 
       const result = await UserController.getOrgUsers(user, org);
 
-      expect(result).toBe(users);
+      expect(result).toEqual(users);
+      expect(mockAdminClient.users.find).toHaveBeenCalled();
     });
 
     it('throws ForbiddenError for a different org', async () => {
@@ -226,6 +227,49 @@ describe('UserController', () => {
   });
 
   describe('update', () => {
+    it.each([Role.Admin, { set: Role.Admin }, { set: Role.Controller }])(
+      'forbids an OrgController to grant role %p',
+      async (role) => {
+        const existing = buildUser({ organisationId: 'org-1' });
+        const reqUser = buildUser({
+          role: Role.OrgController,
+          organisationId: 'org-1',
+        });
+        prismaMock.user.findUnique.mockResolvedValue(existing);
+
+        await expect(
+          UserController.update(reqUser, existing.id, { role })
+        ).rejects.toThrow(ForbiddenError);
+        expect(prismaMock.user.update).not.toHaveBeenCalled();
+      }
+    );
+
+    it('lets any user change their own name', async () => {
+      const reqUser = buildUser({ role: Role.User });
+      prismaMock.user.findUnique.mockResolvedValue(reqUser);
+      prismaMock.user.update.mockResolvedValue(reqUser);
+
+      await UserController.update(reqUser, reqUser.id, {
+        firstName: 'New',
+        lastName: 'Name',
+      });
+
+      expect(prismaMock.user.update).toHaveBeenCalled();
+    });
+
+    it('forbids users to change anything else about themselves', async () => {
+      const reqUser = buildUser({ role: Role.User });
+      prismaMock.user.findUnique.mockResolvedValue(reqUser);
+
+      await expect(
+        UserController.update(reqUser, reqUser.id, {
+          firstName: 'New',
+          role: Role.Admin,
+        })
+      ).rejects.toThrow(ForbiddenError);
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+    });
+
     it('updates the user without touching keycloak when no account fields change', async () => {
       const existing = buildUser({ organisationId: 'org-1' });
       const reqUser = buildUser({ role: Role.Admin });

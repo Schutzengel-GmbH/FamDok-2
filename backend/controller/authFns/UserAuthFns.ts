@@ -34,7 +34,12 @@ export function canManageAllUsers(user: FullUser) {
 export function canCreateUser(user: FullUser, input: UserCreateRequest) {
   if (CAN_OVERRIDE.includes(user.role)) return true;
 
-  return user.role === 'OrgController' && isSameOrg(user, input.organisationId);
+  return (
+    user.role === 'OrgController' &&
+    isSameOrg(user, input.organisationId) &&
+    input.role !== 'Admin' &&
+    input.role !== 'Controller'
+  );
 }
 
 /**
@@ -50,11 +55,32 @@ export function canEditUser(
   input?: UserUpdateInput
 ) {
   if (CAN_OVERRIDE.includes(user.role)) return true;
+  if (isOwnNameUpdate(user, userToUpdate, input)) return true;
+
+  // role may be given plainly or as a prisma `{ set }` operation
+  const role =
+    typeof input?.role === 'object' ? input.role?.set : input?.role;
 
   return (
     user.role === 'OrgController' &&
     isSameOrg(user, userToUpdate.organisationId) &&
-    !input?.organisation
+    (!input?.organisation ||
+      input?.organisation?.connect?.id === user.organisationId) &&
+    role !== 'Admin' &&
+    role !== 'Controller'
+  );
+}
+
+/** every user may change their own name, but nothing else about themselves */
+function isOwnNameUpdate(
+  user: FullUser,
+  userToUpdate: User,
+  input?: UserUpdateInput
+) {
+  return (
+    !!input &&
+    user.id === userToUpdate.id &&
+    Object.keys(input).every((key) => key === 'firstName' || key === 'lastName')
   );
 }
 

@@ -37,7 +37,7 @@
     </div>
     <div class="form-floating">
       <select class="form-select" id="newRole" formControlName="role">
-        @for (role of roles; track role) {
+        @for (role of roles(); track role) {
           <option [value]="role">{{ role }}</option>
         }
       </select>
@@ -52,18 +52,20 @@
       </select>
       <label for="newJobTitle">Fachrichtung</label>
     </div>
-    <div class="form-floating">
-      <select
-        class="form-select"
-        id="newOrganisationId"
-        formControlName="organisationId">
-        <option [ngValue]="null">Keine Organisation</option>
-        @for (org of orgs(); track org.id) {
-          <option [value]="org.id">{{ org.name }}</option>
-        }
-      </select>
-      <label for="newOrganisationId">Organisation</label>
-    </div>
+    @if (forAdmin()) {
+      <div class="form-floating">
+        <select
+          class="form-select"
+          id="newOrganisationId"
+          formControlName="organisationId">
+          <option [ngValue]="null">Keine Organisation</option>
+          @for (org of orgs(); track org.id) {
+            <option [value]="org.id">{{ org.name }}</option>
+          }
+        </select>
+        <label for="newOrganisationId">Organisation</label>
+      </div>
+    }
     <div class="user-create__suborgs">
       <label class="form-label" for="newSubOrgSelect">
         Unterorganisationen

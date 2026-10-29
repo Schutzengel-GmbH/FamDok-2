@@ -1,4 +1,12 @@
-import { Component, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService } from 'src/app/services/user.service';
 import { ToastService } from 'src/app/services/toast.service';
@@ -22,6 +30,10 @@ import { TempPasswordComponent } from '../temp-password/temp-password.component'
 })
 export class UserCreateComponent {
   orgs = input<FullOrganisation[]>([]);
+  /** admins may pick any role and organisation, others create users in their own organisation */
+  forAdmin = input(false);
+  /** organisation new users are assigned to when not `forAdmin` */
+  ownOrganisationId = input<string | null>(null);
   created = output<AdminUser>();
   closed = output<void>();
 
@@ -30,7 +42,12 @@ export class UserCreateComponent {
   private fb = inject(FormBuilder);
 
   jobTitles = environment.jobTitles;
-  roles = Object.values(Role);
+  roles = computed(() =>
+    Object.values(Role).filter(
+      (role) =>
+        this.forAdmin() || (role !== Role.Admin && role !== Role.Controller),
+    ),
+  );
 
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -51,6 +68,10 @@ export class UserCreateComponent {
 
   constructor() {
     watchScope(this.form, () => this.orgs());
+    effect(() => {
+      if (!this.forAdmin())
+        this.form.controls.organisationId.setValue(this.ownOrganisationId());
+    });
   }
 
   availableSubOrgs(): FullSubOrganisation[] {
@@ -104,6 +125,7 @@ export class UserCreateComponent {
           // stays open, so the temporary password remains visible and the next user can follow
           this.form.reset({
             role: Role.User,
+            organisationId: this.forAdmin() ? null : this.ownOrganisationId(),
             subOrganisationIds: [],
             onboarding: 'invite',
           });

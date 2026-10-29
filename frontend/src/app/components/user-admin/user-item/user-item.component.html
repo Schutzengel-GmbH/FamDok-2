@@ -88,8 +88,10 @@
       </div>
       <div class="form-floating">
         <select class="form-select" formControlName="role" id="role">
-          <option value="Admin">Admin</option>
-          <option value="Controller">Controller</option>
+          @if (forAdmin) {
+            <option value="Admin">Admin</option>
+            <option value="Controller">Controller</option>
+          }
           <option value="OrgController">OrgController</option>
           <option value="OrgCoordinator">OrgCoordinator</option>
           <option value="SubOrgCoordinator">SubOrgCoordinator</option>
@@ -106,7 +108,7 @@
         </select>
         <label for="jobTitle">Fachrichtung</label>
       </div>
-      @if (withOrg) {
+      @if (forAdmin) {
         <div class="form-floating">
           <select
             class="form-select"

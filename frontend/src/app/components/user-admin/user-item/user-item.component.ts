@@ -25,7 +25,7 @@ import { TempPasswordComponent } from '../temp-password/temp-password.component'
 export class UserItemComponent implements OnInit {
   @Input() user!: AdminUser;
   @Input() orgs!: FullOrganisation[];
-  @Input() withOrg!: boolean;
+  @Input() forAdmin!: boolean;
 
   private userService = inject(UserService);
   private toastService = inject(ToastService);
