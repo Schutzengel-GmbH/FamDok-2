@@ -73,8 +73,6 @@ export class OrgService {
    * @returns
    */
   addUser(userId: string, orgId: string) {
-    return this.userService.updateUser(userId, {
-      organisation: { connect: { id: orgId } },
-    });
+    return this.userService.updateUser(userId, { organisationId: orgId });
   }
 }

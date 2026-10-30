@@ -40,6 +40,9 @@ export const ROLES_REQUIRING_ORG = [
   "SubOrgCoordinator",
 ] as const;
 
+/** Roles that work across all organisations, so they must not be assigned to one. */
+export const ROLES_WITHOUT_ORG = ["Admin", "Controller"] as const;
+
 /**
  * How a newly created user gets their first password: an invite email sent by Keycloak
  * (set password + verify email), or a one-time temporary password handed out by the admin.
@@ -73,5 +76,21 @@ export const UserCreateRequest = z
   );
 
 export type UserCreateRequest = z.input<typeof UserCreateRequest>;
+
+/**
+ * Body of `PUT /user/i/:id`. Deliberately plain fields instead of a Prisma update input: nested
+ * writes would reach other users, cases and organisations past the checks in `canEditUser`.
+ */
+export const UserUpdateRequest = z.strictObject({
+  email: z.string().trim().toLowerCase().pipe(z.email()).optional(),
+  firstName: z.string().nullish(),
+  lastName: z.string().nullish(),
+  role: RoleSchema.optional(),
+  jobTitle: z.string().nullish(),
+  organisationId: z.string().nullish(),
+  subOrganisationIds: z.array(z.string()).optional(),
+});
+
+export type UserUpdateRequest = z.input<typeof UserUpdateRequest>;
 
 export const UserEnabledRequest = z.object({ enabled: z.boolean() });

@@ -2,8 +2,11 @@ import { FullUser } from '../../../shared/types';
 import { prisma } from '../../db';
 import { Role, User } from '../../../shared/generated/prisma/client';
 import { isSameOrg } from './scopeUtils';
-import { UserCreateRequest } from '../../../shared/zodTypes';
-import { UserUpdateInput } from '../../../shared/generated/prisma/models';
+import {
+  ROLES_WITHOUT_ORG,
+  UserCreateRequest,
+  UserUpdateRequest,
+} from '../../../shared/zodTypes';
 
 const CAN_OVERRIDE: Role[] = [Role.Admin];
 
@@ -11,6 +14,9 @@ const CAN_MANAGE_OWN_ORG_USERS: Role[] = [
   Role.OrgController,
   Role.OrgCoordinator,
 ];
+
+// org-scoped managers may neither grant these roles nor touch users that have them
+const OUTRANKS_ORG_MANAGERS: Role[] = [...ROLES_WITHOUT_ORG];
 
 export function canAccessAllUsers(user: FullUser) {
   if (CAN_OVERRIDE.includes(user.role)) return true;
@@ -42,8 +48,7 @@ export function canCreateUser(user: FullUser, input: UserCreateRequest) {
   return (
     CAN_MANAGE_OWN_ORG_USERS.includes(user.role) &&
     isSameOrg(user, input.organisationId) &&
-    input.role !== 'Admin' &&
-    input.role !== 'Controller'
+    !OUTRANKS_ORG_MANAGERS.includes(input.role)
   );
 }
 
@@ -57,22 +62,22 @@ export function canCreateUser(user: FullUser, input: UserCreateRequest) {
 export function canEditUser(
   user: FullUser,
   userToUpdate: User,
-  input?: UserUpdateInput
+  input?: UserUpdateRequest
 ) {
   if (CAN_OVERRIDE.includes(user.role)) return true;
   if (isOwnNameUpdate(user, userToUpdate, input)) return true;
 
-  // role may be given plainly or as a prisma `{ set }` operation
-  const role =
-    typeof input?.role === 'object' ? input.role?.set : input?.role;
+  const role = input?.role;
+  const organisationId = input?.organisationId;
 
   return (
     CAN_MANAGE_OWN_ORG_USERS.includes(user.role) &&
     isSameOrg(user, userToUpdate.organisationId) &&
-    (!input?.organisation ||
-      input?.organisation?.connect?.id === user.organisationId) &&
-    role !== 'Admin' &&
-    role !== 'Controller'
+    !OUTRANKS_ORG_MANAGERS.includes(userToUpdate.role) &&
+    (organisationId === undefined || organisationId === user.organisationId) &&
+    (!role || !OUTRANKS_ORG_MANAGERS.includes(role)) &&
+    // the edit form always sends the role, so only an actual change counts
+    (user.id !== userToUpdate.id || !role || role === userToUpdate.role)
   );
 }
 
@@ -80,7 +85,7 @@ export function canEditUser(
 function isOwnNameUpdate(
   user: FullUser,
   userToUpdate: User,
-  input?: UserUpdateInput
+  input?: UserUpdateRequest
 ) {
   return (
     !!input &&

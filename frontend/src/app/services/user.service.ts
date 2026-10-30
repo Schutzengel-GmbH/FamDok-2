@@ -6,11 +6,11 @@ import {
   FullUser,
   UserWithTempPassword,
 } from '../../../../shared/types';
-import {
-  UserUpdateInput,
-  UserWhereInput,
-} from '../../../../shared/generated/prisma/models';
-import type { UserCreateRequest } from '../../../../shared/zodTypes';
+import { UserWhereInput } from '../../../../shared/generated/prisma/models';
+import type {
+  UserCreateRequest,
+  UserUpdateRequest,
+} from '../../../../shared/zodTypes';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -70,7 +70,7 @@ export class UserService {
     });
   }
 
-  updateUser(id: string, update: UserUpdateInput) {
+  updateUser(id: string, update: UserUpdateRequest) {
     return this.http.put<FullUser>(this.userApiUrl + '/i/' + id, update);
   }
 
