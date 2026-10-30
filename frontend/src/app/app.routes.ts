@@ -287,7 +287,9 @@ export const routes: Routes = [
   {
     path: 'user-admin',
     component: UserAdminComponent,
-    canActivate: [roleGuard([Role.Admin, Role.OrgController])],
+    canActivate: [
+      roleGuard([Role.Admin, Role.OrgController, Role.OrgCoordinator]),
+    ],
   },
   {
     path: 'error',

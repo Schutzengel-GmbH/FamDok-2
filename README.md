@@ -236,14 +236,14 @@ npx prisma generate
 | -------------------- | ---------------------------------------------------------------------------- | ------------- |
 | `Admin`              | Vollzugriff: Familien, Fälle, Formulare, User-Admin, Statistik               | `/user-admin` |
 | `Controller`         | Anonyme Statistik über alle Organisationen; verwaltet globale Formulare      | `/stats`      |
-| `OrgController`      | Wie `Controller`, beschränkt auf die eigene Organisation                     | `/stats`      |
-| `OrgCoordinator`     | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Organisation | `/dashboard`  |
+| `OrgController`      | Wie `Controller`, beschränkt auf die eigene Organisation, zusätzlich Benutzerverwaltung der eigenen Organisation | `/stats`      |
+| `OrgCoordinator`     | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Organisation und Benutzerverwaltung der eigenen Organisation | `/dashboard`  |
 | `SubOrgCoordinator`  | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Unterorganisation | `/dashboard`  |
 | `User`               | Standardzugriff: Familien, eigene Fälle, Formulare                           | `/dashboard`  |
 
 ### Benutzerverwaltung
 
-Admins legen Benutzer unter `/user-admin` an. Das Backend erstellt dabei das Keycloak-Konto über den Service-Account-Client `fh-backend` und gleichzeitig den App-Benutzer – Rolle und Organisation stehen damit schon vor dem ersten Login fest. Existiert in Keycloak bereits ein Konto mit derselben E-Mail, wird es verknüpft statt dupliziert. Für das erste Passwort gibt es zwei Wege:
+Admins legen Benutzer unter `/user-admin` an; `OrgController` und `OrgCoordinator` verwalten dort die Benutzer ihrer eigenen Organisation (keine Rollen `Admin`/`Controller`, kein Löschen, kein Wechsel der Organisation). Das Backend erstellt dabei das Keycloak-Konto über den Service-Account-Client `fh-backend` und gleichzeitig den App-Benutzer – Rolle und Organisation stehen damit schon vor dem ersten Login fest. Existiert in Keycloak bereits ein Konto mit derselben E-Mail, wird es verknüpft statt dupliziert. Für das erste Passwort gibt es zwei Wege:
 
 - **Einladung (Standard):** Keycloak verschickt eine Mail mit einem Link (7 Tage gültig) zum Setzen des Passworts und Bestätigen der E-Mail-Adresse.
 - **Temporäres Passwort:** Das Passwort wird dem Admin einmalig angezeigt und muss beim ersten Login geändert werden. Es wird nirgends gespeichert.
@@ -286,7 +286,7 @@ Das Dashboard (Route `/`) leitet nach dem Login automatisch rollenabhängig weit
 | `/allgemeine-formulare/*`         | Formular-Editor (allgemein)    | Admin, Controller, OrgController                   |
 | `/fallbezogene-formulare/*`       | Formular-Editor (fallbezogen)  | Admin, Controller, OrgController                   |
 | `/me`                             | Eigenes Profil                 | alle Rollen                                        |
-| `/user-admin`                     | Benutzerverwaltung             | Admin                                              |
+| `/user-admin`                     | Benutzerverwaltung             | Admin, OrgController, OrgCoordinator               |
 | `/import/survey`                  | Formulardefinition importieren | Admin                                              |
 | `/all-stats`                      | Rohdaten-Ansicht               | authentifiziert                                    |
 | `/error`                          | Fehlerseite                    | –                                                   |

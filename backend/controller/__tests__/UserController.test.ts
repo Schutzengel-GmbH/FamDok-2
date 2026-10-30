@@ -602,7 +602,10 @@ describe('UserController', () => {
     });
 
     it('throws ForbiddenError for non-admins', async () => {
-      const reqUser = buildUser({ role: Role.OrgCoordinator });
+      const reqUser = buildUser({
+        role: Role.SubOrgCoordinator,
+        organisationId: 'org-1',
+      });
 
       await expect(UserController.create(reqUser, input)).rejects.toThrow(
         ForbiddenError
@@ -611,6 +614,133 @@ describe('UserController', () => {
       expect(prismaMock.user.create).not.toHaveBeenCalled();
     });
   });
+
+  describe.each([Role.OrgController, Role.OrgCoordinator])(
+    'managing users of the own org as %s',
+    (role) => {
+      const ownOrg = 'org-1';
+      const input = {
+        email: 'new@example.com',
+        firstName: 'New',
+        lastName: 'User',
+        role: Role.User,
+        organisationId: ownOrg,
+        subOrganisationIds: [],
+        onboarding: 'invite',
+      };
+      let reqUser: ReturnType<typeof buildUser>;
+
+      beforeEach(() => {
+        reqUser = buildUser({ role, organisationId: ownOrg });
+        mockAdminClient.users.create.mockResolvedValue({ id: 'kc-new' });
+      });
+
+      it('returns keycloak status with the org users', async () => {
+        prismaMock.user.findMany.mockResolvedValue([
+          buildUser({ organisationId: ownOrg }),
+        ]);
+
+        await UserController.getOrgUsers(reqUser, ownOrg);
+
+        expect(mockAdminClient.users.find).toHaveBeenCalled();
+      });
+
+      it('creates a user in the own org', async () => {
+        prismaMock.user.findUnique.mockResolvedValue(null);
+        prismaMock.user.create.mockResolvedValue(buildUser({ kcId: 'kc-new' }));
+
+        await UserController.create(reqUser, input);
+
+        expect(prismaMock.user.create).toHaveBeenCalled();
+      });
+
+      it('forbids creating a user in another org', async () => {
+        await expect(
+          UserController.create(reqUser, {
+            ...input,
+            organisationId: 'org-2',
+          })
+        ).rejects.toThrow(ForbiddenError);
+        expect(mockAdminClient.users.create).not.toHaveBeenCalled();
+      });
+
+      it.each([Role.Admin, Role.Controller])(
+        'forbids creating a user with role %s',
+        async (newRole) => {
+          await expect(
+            UserController.create(reqUser, { ...input, role: newRole })
+          ).rejects.toThrow(ForbiddenError);
+          expect(mockAdminClient.users.create).not.toHaveBeenCalled();
+        }
+      );
+
+      it('edits a user of the own org', async () => {
+        const existing = buildUser({ organisationId: ownOrg });
+        prismaMock.user.findUnique.mockResolvedValue(existing);
+        prismaMock.user.update.mockResolvedValue(existing);
+
+        await UserController.update(reqUser, existing.id, {
+          firstName: 'New',
+        });
+
+        expect(prismaMock.user.update).toHaveBeenCalled();
+      });
+
+      it('forbids editing a user of another org', async () => {
+        const existing = buildUser({ organisationId: 'org-2' });
+        prismaMock.user.findUnique.mockResolvedValue(existing);
+
+        await expect(
+          UserController.update(reqUser, existing.id, { firstName: 'New' })
+        ).rejects.toThrow(ForbiddenError);
+        expect(prismaMock.user.update).not.toHaveBeenCalled();
+      });
+
+      it('forbids moving a user to another org', async () => {
+        const existing = buildUser({ organisationId: ownOrg });
+        prismaMock.user.findUnique.mockResolvedValue(existing);
+
+        await expect(
+          UserController.update(reqUser, existing.id, {
+            organisation: { connect: { id: 'org-2' } },
+          })
+        ).rejects.toThrow(ForbiddenError);
+        expect(prismaMock.user.update).not.toHaveBeenCalled();
+      });
+
+      it.each([Role.Admin, { set: Role.Admin }, { set: Role.Controller }])(
+        'forbids granting role %p',
+        async (newRole) => {
+          const existing = buildUser({ organisationId: ownOrg });
+          prismaMock.user.findUnique.mockResolvedValue(existing);
+
+          await expect(
+            UserController.update(reqUser, existing.id, { role: newRole })
+          ).rejects.toThrow(ForbiddenError);
+          expect(prismaMock.user.update).not.toHaveBeenCalled();
+        }
+      );
+
+      it('issues a temporary password for a user of the own org', async () => {
+        const existing = buildUser({ organisationId: ownOrg });
+        prismaMock.user.findUnique.mockResolvedValue(existing);
+
+        const result = await UserController.issueTempPassword(
+          reqUser,
+          existing.id
+        );
+
+        expect(result.tempPassword).toEqual(expect.any(String));
+      });
+
+      it('forbids deleting users', async () => {
+        await expect(
+          UserController.delete(reqUser, 'some-id')
+        ).rejects.toThrow(ForbiddenError);
+        expect(prismaMock.user.delete).not.toHaveBeenCalled();
+      });
+    }
+  );
 
   describe('resendInvite', () => {
     it('sends the invite email', async () => {

@@ -34,6 +34,8 @@ export class MenuComponent {
   // page (not just their own), so it needs the same "Alle Formulardaten" label Controller/
   // OrgController get, not "Meine Eingaben".
   isCoordinator = signal(false);
+  // OrgCoordinator keeps the case-working nav, plus the user admin OrgController gets.
+  isOrgCoordinator = signal(false);
 
   constructor() {
     this.meService.getMe().subscribe((user) => {
@@ -44,6 +46,7 @@ export class MenuComponent {
         user.role === Role.OrgCoordinator ||
           user.role === Role.SubOrgCoordinator,
       );
+      this.isOrgCoordinator.set(user.role === Role.OrgCoordinator);
     });
   }
 
@@ -157,17 +160,19 @@ export class MenuComponent {
         link: '/sonstiges',
       }, */
     ];
+    const userAdminLink: LinkData = {
+      priority: 0,
+      icon: 'bi-people',
+      label: 'Benutzerverwaltung',
+      link: '/user-admin',
+    };
     if (this.isAdmin()) return adminLinks.sort(sortByNumProperty('priority'));
     if (this.isOrgController())
-      return [
-        {
-          priority: 0,
-          icon: 'bi-people',
-          label: 'Benutzerverwaltung',
-          link: '/user-admin',
-        },
-        ...controllerLinks,
-      ].sort(sortByNumProperty('priority'));
+      return [userAdminLink, ...controllerLinks].sort(
+        sortByNumProperty('priority'),
+      );
+    if (this.isOrgCoordinator())
+      return [userAdminLink, ...baseLinks].sort(sortByNumProperty('priority'));
     if (this.isController())
       return controllerLinks.sort(sortByNumProperty('priority'));
     return baseLinks.sort(sortByNumProperty('priority'));

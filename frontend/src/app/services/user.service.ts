@@ -40,7 +40,7 @@ export class UserService {
     );
   }
 
-  // helper to use when we expect the user to get managed users returned, i.e. for orgControllers
+  // helper to use when we expect the user to get managed users returned, i.e. for orgControllers and orgCoordinators
   getManagedOrgUsers(orgId: string, filter?: UserWhereInput) {
     return this.getOrgUsers(orgId, filter) as Observable<AdminUser[]>;
   }

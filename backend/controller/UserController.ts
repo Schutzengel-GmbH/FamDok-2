@@ -268,7 +268,7 @@ export class UserController {
     const data = UserCreateRequest.parse(input);
     if (!canCreateUser(reqUser, data))
       throw new ForbiddenError(
-        'Nur Admins und OrgController können User erstellen'
+        'Nur Admins, OrgController und OrgCoordinator können User erstellen'
       );
 
     if (await prisma.user.findUnique({ where: { email: data.email } }))
