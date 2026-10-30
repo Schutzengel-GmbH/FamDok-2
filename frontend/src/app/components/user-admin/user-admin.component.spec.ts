@@ -4,10 +4,34 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
+import Keycloak from 'keycloak-js';
 
 import { UserAdminComponent } from './user-admin.component';
+import { UserCreateComponent } from './user-create/user-create.component';
 import { buildUser } from 'src/app/testing/fixtures';
+import { mockKeycloak } from 'src/app/testing/keycloak-mock';
 import { Role } from '../../../../../shared/generated/prisma/enums';
+
+// The users request depends on the logged in user's role, so it is only sent once /me is flushed.
+async function setup(role: Role) {
+  await TestBed.configureTestingModule({
+    imports: [UserAdminComponent],
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: Keycloak, useValue: mockKeycloak() },
+    ],
+  }).compileComponents();
+
+  const httpMock = TestBed.inject(HttpTestingController);
+  const fixture = TestBed.createComponent(UserAdminComponent);
+  httpMock
+    .expectOne((r) => r.url.endsWith('/me'))
+    .flush(buildUser({ role, organisationId: 'org-1' }));
+
+  return { fixture, httpMock };
+}
 
 describe('UserAdminComponent', () => {
   let fixture: ComponentFixture<UserAdminComponent>;
@@ -36,17 +60,11 @@ describe('UserAdminComponent', () => {
   ];
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [UserAdminComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
-    }).compileComponents();
-
-    httpMock = TestBed.inject(HttpTestingController);
-    fixture = TestBed.createComponent(UserAdminComponent);
+    ({ fixture, httpMock } = await setup(Role.Admin));
     component = fixture.componentInstance;
 
-    httpMock.expectOne((r) => r.url.includes('/user')).flush(users);
-    httpMock.expectOne((r) => r.url.includes('/org')).flush([]);
+    httpMock.expectOne((r) => r.url.includes('/user?')).flush(users);
+    httpMock.expectOne((r) => r.url.endsWith('/org')).flush([]);
   });
 
   afterEach(() => httpMock.verify());
@@ -119,6 +137,55 @@ describe('UserAdminComponent', () => {
     expect(
       fixture.nativeElement.querySelectorAll('app-user-item').length,
     ).toBe(1);
+  });
+});
+
+[Role.OrgController, Role.OrgCoordinator].forEach((role) => {
+  describe(`UserAdminComponent as ${role}`, () => {
+    let fixture: ComponentFixture<UserAdminComponent>;
+    let httpMock: HttpTestingController;
+    const users = [buildUser({ id: 'u1', organisationId: 'org-1' })];
+
+    beforeEach(async () => {
+      ({ fixture, httpMock } = await setup(role));
+
+      httpMock
+        .expectOne((r) => r.url.includes('/user/org/org-1?'))
+        .flush(users);
+      httpMock.expectOne((r) => r.url.endsWith('/org')).flush([]);
+    });
+
+    afterEach(() => httpMock.verify());
+
+    it('loads only the users of the own organisation', () => {
+      expect(fixture.componentInstance['users']()).toEqual(users);
+    });
+
+    it('offers neither the organisation nor the Admin/Controller roles when editing', () => {
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+
+      expect(el.querySelector('app-user-item')).not.toBeNull();
+      expect(el.querySelector('#organisationId')).toBeNull();
+      expect(el.querySelector('option[value="Admin"]')).toBeNull();
+      expect(el.querySelector('option[value="Controller"]')).toBeNull();
+    });
+
+    it('creates users in the own organisation, without offering another', () => {
+      fixture.componentInstance.creating.set(true);
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      const create: UserCreateComponent = fixture.debugElement.query(
+        By.directive(UserCreateComponent),
+      ).componentInstance;
+
+      expect(create.form.controls.organisationId.value).toBe('org-1');
+      expect(el.querySelector('#newOrganisationId')).toBeNull();
+      expect(el.querySelector('#newRole option[value="Admin"]')).toBeNull();
+      expect(
+        el.querySelector('#newRole option[value="Controller"]'),
+      ).toBeNull();
+    });
   });
 });
 
