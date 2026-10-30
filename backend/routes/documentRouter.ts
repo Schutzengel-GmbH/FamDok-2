@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import { DocumentController } from '../controller/DocumentController';
-import { handleError } from '../util/routerUtils';
-import { Prisma } from '../../shared/generated/prisma/client';
+import { handleError, route } from '../util/routerUtils';
+import { DocumentMeta, TagRequest } from '../../shared/api';
 import { documentUpload, handleUpload } from '../middleware/upload';
 import { canManageDocuments } from '../controller/authFns/DocumentAuthFns';
 import { ForbiddenError } from '../util/authUtils';
@@ -16,46 +16,33 @@ function requireManageDocuments(req: Request, res: Response, next: NextFunction)
   next();
 }
 
-DocumentRouter.get('/', async (req, res) => {
-  const where = req.query['where']
-    ? (JSON.parse(req.query['where'] as string) as Prisma.DocumentWhereInput)
-    : undefined;
+DocumentRouter.get(
+  '/',
+  route(({ user }) => DocumentController.getAll(user))
+);
 
-  try {
-    const documents = await DocumentController.getAll(req.user!, where);
-    res.send(documents);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+DocumentRouter.get(
+  '/tags',
+  route(({ user }) =>
+    DocumentController.getTags(user)
+  )
+);
 
-DocumentRouter.get('/tags', async (req, res) => {
-  try {
-    const tags = await DocumentController.getTags(req.user!);
-    res.send(tags);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+DocumentRouter.post(
+  '/tags',
+  requireManageDocuments,
+  route({ body: TagRequest }, ({ user, body }) =>
+    DocumentController.createTag(user, body.name)
+  )
+);
 
-DocumentRouter.post('/tags', requireManageDocuments, async (req, res) => {
-  try {
-    const tag = await DocumentController.createTag(req.user!, req.body.name);
-    res.send(tag);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-DocumentRouter.put('/tags/i/:id', requireManageDocuments, async (req, res) => {
-  const { id } = req.params;
-  try {
-    const tag = await DocumentController.renameTag(req.user!, id, req.body.name);
-    res.send(tag);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+DocumentRouter.put(
+  '/tags/i/:id',
+  requireManageDocuments,
+  route({ body: TagRequest }, ({ user, params, body }) =>
+    DocumentController.renameTag(user, params.id, body.name)
+  )
+);
 
 DocumentRouter.delete(
   '/tags/i/:id',
@@ -71,15 +58,12 @@ DocumentRouter.delete(
   }
 );
 
-DocumentRouter.get('/i/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const doc = await DocumentController.get(req.user!, id);
-    res.send(doc);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+DocumentRouter.get(
+  '/i/:id',
+  route(({ user, params }) =>
+    DocumentController.get(user, params.id)
+  )
+);
 
 DocumentRouter.get('/i/:id/download', async (req, res) => {
   const { id } = req.params;
@@ -94,34 +78,24 @@ DocumentRouter.post(
   '/',
   requireManageDocuments,
   handleUpload(documentUpload.single('file')),
-  async (req, res) => {
-    try {
-      const doc = await DocumentController.create(req.user!, req.file, req.body);
-      res.send(doc);
-    } catch (e) {
-      handleError(e, res);
-    }
-  }
+  route({ body: DocumentMeta }, ({ user, file, body }) =>
+    DocumentController.create(user, file, body)
+  ));
+
+DocumentRouter.put(
+  '/i/:id',
+  requireManageDocuments,
+  route({ body: DocumentMeta }, ({ user, params, body }) =>
+    DocumentController.update(user, params.id, body)
+  )
 );
 
-DocumentRouter.put('/i/:id', requireManageDocuments, async (req, res) => {
-  const { id } = req.params;
-  try {
-    const doc = await DocumentController.update(req.user!, id, req.body);
-    res.send(doc);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-DocumentRouter.delete('/i/:id', requireManageDocuments, async (req, res) => {
-  const { id } = req.params;
-  try {
-    const doc = await DocumentController.delete(req.user!, id);
-    res.send(doc);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+DocumentRouter.delete(
+  '/i/:id',
+  requireManageDocuments,
+  route(({ user, params }) =>
+    DocumentController.delete(user, params.id)
+  )
+);
 
 export default DocumentRouter;

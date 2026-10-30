@@ -37,7 +37,7 @@ describe('StatsService', () => {
       (r) => r.url.includes('/stats/case') && !r.url.includes('count'),
     );
     expect(decodeURIComponent(req.request.url)).toContain('"city":"Berlin"');
-    expect(decodeURIComponent(req.request.url)).toContain('activeBetween=');
+    expect(decodeURIComponent(req.request.url)).toContain('"activeBetween":');
     req.flush([]);
   });
 
@@ -49,15 +49,6 @@ describe('StatsService', () => {
     req.flush([]);
   });
 
-  it('countGeneralFormResponses GETs the count', () => {
-    let result: unknown;
-    service.countGeneralFormResponses({} as any).subscribe((r) => (result = r));
-
-    httpMock.expectOne((r) => r.url.includes('/stats/generalFormResponses/count')).flush(5);
-
-    expect(result).toBe(5);
-  });
-
   it('getContactStats GETs anonymised contact documentation', () => {
     let result: unknown;
     service.getContactStats({} as any, {} as any).subscribe((r) => (result = r));
@@ -65,14 +56,6 @@ describe('StatsService', () => {
     httpMock.expectOne((r) => r.url.includes('/stats/contactDocumentation')).flush([]);
 
     expect(result).toEqual([]);
-  });
-
-  it('countCaseFormResponses GETs the count for a given form', () => {
-    service.countCaseFormResponses('form-1', {} as any).subscribe();
-
-    const req = httpMock.expectOne((r) => r.url.includes('/stats/caseFormResponses/count'));
-    expect(decodeURIComponent(req.request.urlWithParams)).toContain('id=form-1');
-    req.flush(3);
   });
 
   it('countCases GETs the case count', () => {
@@ -90,7 +73,7 @@ describe('StatsService', () => {
     service.countCases({} as any, { start, end }).subscribe();
 
     const req = httpMock.expectOne((r) => r.url.includes('/stats/case/count'));
-    expect(decodeURIComponent(req.request.url)).toContain('activeBetween=');
+    expect(decodeURIComponent(req.request.url)).toContain('"activeBetween":');
     req.flush(10);
   });
 
@@ -126,12 +109,11 @@ describe('StatsService', () => {
       });
     });
 
-    it('builds a family address filter for city', () => {
-      const filter = service.makeCaseFilter({ city: 'Berlin' });
+    it('builds a filter for city and plz', () => {
+      const filter = service.makeCaseFilter({ city: 'Berlin', plz: '10' });
 
-      expect(filter.family).toEqual({
-        adress: { path: ['city'], string_contains: 'Berlin' },
-      });
+      expect(filter.city).toEqual({ contains: 'Berlin' });
+      expect(filter.plz).toEqual({ contains: '10' });
     });
 
     it('builds a zielvereinbarungen range filter for hasZielvereinbarungen', () => {
@@ -141,7 +123,7 @@ describe('StatsService', () => {
       const filter = service.makeCaseFilter({ hasZielvereinbarungen: { start, end } });
 
       expect(filter.zielvereinbarungen).toEqual({
-        some: { AND: [{ startedAt: { gte: start } }, { finishBy: { lte: end } }] },
+        some: { startedAt: { gte: start }, finishBy: { lte: end } },
       });
     });
 

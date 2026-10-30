@@ -10,7 +10,7 @@ import { NumFieldFilter } from 'src/app/util/filterUtils';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { FormsModule } from '@angular/forms';
 import { NumberFilterInput } from 'src/app/components/filter-inputs/number-filter/number-filter.component';
-import { ContactDocumentationWhereInput } from '../../../../../../../shared/generated/prisma/models';
+import type { ContactDocumentationWhere } from '../../../../../../../shared/api';
 
 @Component({
   selector: 'app-dauer-filter',
@@ -25,7 +25,7 @@ import { ContactDocumentationWhereInput } from '../../../../../../../shared/gene
 })
 export class DauerFilter {
   name = input.required<string>();
-  filterChanged = output<ContactDocumentationWhereInput['duration']>();
+  filterChanged = output<ContactDocumentationWhere['duration']>();
 
   private modalService = inject(NgbModal);
   filterInput: NumFieldFilter | undefined = undefined;

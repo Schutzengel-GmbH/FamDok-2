@@ -45,58 +45,26 @@ describe('CaseService', () => {
     req.flush({});
   });
 
-  it('getCasesForUser scopes the filter to cases the user is responsible for', () => {
-    service.getCasesForUser('user-1').subscribe();
-
-    const req = httpMock.expectOne((r) => r.url.includes('/case?'));
-    expect(decodeURIComponent(req.request.url)).toContain(
-      '"responsibleUsers":{"some":{"OR":[{"id":"user-1"},{"kcId":"user-1"}]}}',
-    );
-    req.flush([]);
-  });
-
-  it('getMyCases defaults the scope to "own"', () => {
-    service.getMyCases({}).subscribe();
+  it('getMyCases sends the query', () => {
+    service.getMyCases({ scope: 'own' }).subscribe();
 
     const req = httpMock.expectOne((r) => r.url.includes('/case/my'));
-    expect(decodeURIComponent(req.request.url)).toContain('scope=own');
+    expect(decodeURIComponent(req.request.url)).toContain('"scope":"own"');
     req.flush([]);
   });
 
-  describe('createCase', () => {
-    it('rejects when the user has no organisation', (done) => {
-      service.createCase({} as any, {} as any).subscribe({
-        error: (err) => {
-          expect(err.message).toContain('nicht Teil einer Organisation');
-          done();
-        },
-      });
+  it('createCase POSTs the case together with its family', () => {
+    const request = {
+      startedAt: new Date(),
+      family: { name: 'Muster', adress: { city: 'Berlin', plz: '12345' } },
+    };
 
-      httpMock.expectOne(`${environment.apiUrl}/me`).flush(buildUser({ organisationId: null }));
-    });
+    service.createCase(request).subscribe();
 
-    it('creates the family then the case, attaching the requesting user and derived city/plz', () => {
-      service
-        .createCase(
-          { name: 'Muster', adress: { city: 'Berlin', plz: '12345' } } as any,
-          { startedAt: new Date() } as any,
-        )
-        .subscribe();
-
-      const user = buildUser({ id: 'user-1', organisationId: 'org-1' });
-      httpMock.expectOne(`${environment.apiUrl}/me`).flush(user);
-
-      const familyReq = httpMock.expectOne(`${environment.apiUrl}/family`);
-      expect(familyReq.request.body.organisation).toEqual({ connect: { id: 'org-1' } });
-      familyReq.flush({ id: 'family-1' });
-
-      const caseReq = httpMock.expectOne(`${environment.apiUrl}/case`);
-      expect(caseReq.request.body.family).toEqual({ connect: { id: 'family-1' } });
-      expect(caseReq.request.body.responsibleUsers).toEqual({ connect: { id: 'user-1' } });
-      expect(caseReq.request.body.city).toBe('Berlin');
-      expect(caseReq.request.body.plz).toBe('12345');
-      caseReq.flush({});
-    });
+    const req = httpMock.expectOne(`${environment.apiUrl}/case`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(request);
+    req.flush({});
   });
 
   it('addZiel POSTs the new zielvereinbarung', () => {

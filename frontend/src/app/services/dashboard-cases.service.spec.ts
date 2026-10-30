@@ -74,7 +74,7 @@ describe('DashboardCasesService', () => {
     setup(Role.OrgCoordinator);
 
     service.setScope('org');
-    httpMock.expectOne((r) => r.url.includes('/case/my') && r.url.includes('scope=org')).flush([]);
+    httpMock.expectOne((r) => r.url.includes('/case/my') && decodeURIComponent(r.url).includes('"scope":"org"')).flush([]);
     expect(service.scope()).toBe('org');
 
     service.setScope('org');

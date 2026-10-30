@@ -30,10 +30,11 @@ import {
 import {
   ROLES_REQUIRING_ORG,
   ROLES_WITHOUT_ORG,
+  OrgUsersQuery,
   UserCreateRequest,
   UserEnabledRequest,
   UserUpdateRequest,
-} from '../../shared/zodTypes';
+} from '../../shared/api';
 
 /** How long the link in an invite email stays valid */
 const INVITE_LIFESPAN_SECONDS = 7 * 24 * 60 * 60;
@@ -72,18 +73,13 @@ export class UserController {
   /**
    * Get all users
    * @param user requesting user
-   * @param where [Optional] Prisma UserWhereInput
    * @returns User[]
    */
-  static async getAll(
-    user: FullUser,
-    where?: Prisma.UserWhereInput
-  ): Promise<AdminUser[]> {
+  static async getAll(user: FullUser): Promise<AdminUser[]> {
     if (!canAccessAllUsers(user)) throw new ForbiddenError();
 
     const users = await prisma.user.findMany({
       include: USER_DEFAULT_INCLUDE,
-      where,
     });
     if (!canManageAllUsers(user)) return users;
 
@@ -131,13 +127,13 @@ export class UserController {
    * Get all users in organisation
    * @param user requesting user
    * @param orgId ID of the organisation
-   * @param where [Optional] Prisma UserWhereInput
+   * @param where [Optional] filter
    * @returns User[]
    */
   static async getOrgUsers(
     user: FullUser,
     orgId: string,
-    where?: Prisma.UserWhereInput
+    where?: OrgUsersQuery['where']
   ) {
     if (!canSeeOrgUsers(user, orgId)) throw new ForbiddenError();
 
@@ -207,11 +203,10 @@ export class UserController {
    * Name and email are synced to Keycloak first, so a failing sync leaves both sides unchanged.
    * @param reqUser requesting user
    * @param id user ID
-   * @param input UserUpdateRequest
+   * @param data the update
    * @returns User
    */
-  static async update(reqUser: FullUser, id: string, input: unknown) {
-    const data = UserUpdateRequest.parse(input);
+  static async update(reqUser: FullUser, id: string, data: UserUpdateRequest) {
     const user = await prisma.user.findUnique({
       where: { id },
       include: USER_DEFAULT_INCLUDE,
@@ -305,14 +300,13 @@ export class UserController {
    * first login. An existing Keycloak account with the same email (e.g. created in the Keycloak
    * console) is linked instead of duplicated.
    * @param reqUser requesting user, must be allowed to manage users
-   * @param input UserCreateRequest
+   * @param data the new user
    * @returns the new user, plus the temporary password if that onboarding was chosen
    */
   static async create(
     reqUser: FullUser,
-    input: unknown
+    data: UserCreateRequest
   ): Promise<UserWithTempPassword> {
-    const data = UserCreateRequest.parse(input);
     if (!canCreateUser(reqUser, data))
       throw new ForbiddenError(
         'Nur Admins, OrgController und OrgCoordinator können User erstellen'
@@ -466,10 +460,13 @@ export class UserController {
    * Locks or unlocks the user's Keycloak account. Locked users can't log in.
    * @param reqUser requesting user, must be allowed to manage users
    * @param id user ID
-   * @param input UserEnabledRequest
+   * @param request whether the account should be enabled
    */
-  static async setEnabled(reqUser: FullUser, id: string, input: unknown) {
-    const { enabled } = UserEnabledRequest.parse(input);
+  static async setEnabled(
+    reqUser: FullUser,
+    id: string,
+    { enabled }: UserEnabledRequest
+  ) {
     const user = await UserController.getManagedUser(reqUser, id);
     if (!enabled && user.id === reqUser.id)
       throw new BadRequestError('Das eigene Konto kann nicht gesperrt werden');

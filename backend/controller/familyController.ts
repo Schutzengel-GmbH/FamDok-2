@@ -7,9 +7,9 @@ import {
   canSeeAllFamilies,
   canSeeFamilies,
   canSeeFamily,
-  canCreateFamily,
   canEditFamily,
 } from './authFns/FamilyAuthFn';
+import { ChildHealthDataRequest, FamilyUpdateRequest } from '../../shared/api';
 
 export class FamilyController {
   static async getAll(
@@ -105,19 +105,7 @@ export class FamilyController {
     return family;
   }
 
-  static create(user: FullUser, data: Prisma.FamilyCreateInput) {
-    if (!canCreateFamily(user, data)) throw new ForbiddenError();
-    return prisma.family.create({
-      data,
-      include: FAMILY_DEFAULT_INCLUDE,
-    });
-  }
-
-  static async update(
-    user: FullUser,
-    id: string,
-    data: Prisma.FamilyUpdateInput
-  ) {
+  static async update(user: FullUser, id: string, data: FamilyUpdateRequest) {
     const family = await prisma.family.findUniqueOrThrow({
       where: { id },
       include: FAMILY_DEFAULT_INCLUDE,
@@ -126,9 +114,10 @@ export class FamilyController {
     if (!family) throw new NotFoundError();
     if (!canEditFamily(user, family)) throw new ForbiddenError();
 
-    const adress = data.adress as PrismaJson.Address | undefined;
+    const { children, caregivers, case: caseFields, adress, ...fields } = data;
+
     if (adress?.city || adress?.plz) {
-      const up = await prisma.case.updateMany({
+      await prisma.case.updateMany({
         where: { familyId: id },
         data: { city: adress.city, plz: adress.plz },
       });
@@ -136,7 +125,48 @@ export class FamilyController {
 
     return prisma.family.update({
       where: { id },
-      data,
+      data: {
+        ...fields,
+        adress: adress as PrismaJson.Address | undefined,
+        children: children && {
+          deleteMany: {},
+          createMany: {
+            data: children as Prisma.ChildCreateManyFamilyInput[],
+          },
+        },
+        caregiver: caregivers && {
+          deleteMany: {},
+          createMany: { data: caregivers },
+        },
+        case: caseFields && { update: caseFields },
+      },
+      include: FAMILY_DEFAULT_INCLUDE,
+    });
+  }
+
+  static async updateChildHealthData(
+    user: FullUser,
+    id: string,
+    childId: string,
+    { healthData }: ChildHealthDataRequest
+  ) {
+    const family = await prisma.family.findUniqueOrThrow({
+      where: { id },
+      include: FAMILY_DEFAULT_INCLUDE,
+    });
+
+    if (!canEditFamily(user, family)) throw new ForbiddenError();
+
+    return prisma.family.update({
+      where: { id },
+      data: {
+        children: {
+          update: {
+            where: { id: childId },
+            data: { healthData: healthData as PrismaJson.HealthDataPointChild[] },
+          },
+        },
+      },
       include: FAMILY_DEFAULT_INCLUDE,
     });
   }

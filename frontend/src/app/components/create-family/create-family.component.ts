@@ -21,12 +21,12 @@ import { ChildModalComponent } from './modals/child-modal/child-modal';
 import { CaregiverModalComponent } from './modals/caregiver-modal/caregiver-modal';
 import { ToastService } from 'src/app/services/toast.service';
 import { MeService } from 'src/app/services/me.service';
-import {
-  CaregiverCreateInput,
-  CaseCreateInput,
-  ChildCreateInput,
-  FamilyCreateInput,
-} from '../../../../../shared/generated/prisma/models';
+import type {
+  CaregiverRequest,
+  CaseCreateRequest,
+  ChildRequest,
+  FamilyCreateRequest,
+} from '../../../../../shared/api';
 import { Familienstand } from '../../../../../shared/generated/prisma/enums';
 import { CaseService } from 'src/app/services/case.service';
 
@@ -59,8 +59,8 @@ export class CreateFamilyComponent {
   protected isLoading = false;
   protected errorMessage: string | null = null;
 
-  protected children: ChildCreateInput[] = [];
-  protected caregivers: CaregiverCreateInput[] = [];
+  protected children: ChildRequest[] = [];
+  protected caregivers: CaregiverRequest[] = [];
 
   // Family fields
   protected name = new FormControl('', {
@@ -155,7 +155,7 @@ export class CreateFamilyComponent {
     modalRef.closed.subscribe(
       (
         result:
-          { reason: 'cancel' } | { reason: 'save'; value: ChildCreateInput },
+          { reason: 'cancel' } | { reason: 'save'; value: ChildRequest },
       ) =>
         result.reason === 'save'
           ? !isNew
@@ -182,7 +182,7 @@ export class CreateFamilyComponent {
       (
         result:
           | { reason: 'cancel' }
-          | { reason: 'save'; value: CaregiverCreateInput },
+          | { reason: 'save'; value: CaregiverRequest },
       ) =>
         result.reason === 'save'
           ? !isNew
@@ -210,8 +210,7 @@ export class CreateFamilyComponent {
 
     const formValue = this.form.getRawValue();
 
-    // Build family create input
-    const familyInput: FamilyCreateInput = {
+    const family: FamilyCreateRequest = {
       name: formValue.name,
       note: formValue.note,
       adress: {
@@ -220,27 +219,25 @@ export class CreateFamilyComponent {
         plz: formValue.plz,
         city: formValue.city,
       },
-      children: { createMany: { data: this.children } },
-      caregiver: { createMany: { data: this.caregivers } },
+      children: this.children,
+      caregivers: this.caregivers,
       phone: formValue.phone || undefined,
       additionalPhones: formValue.additionalPhones
         ? formValue.additionalPhones.replace(/\s/g, '').split(',')
         : [],
     };
 
-    // Build case create input
-    const caseInput: Parameters<typeof this.caseService.createCase>[1] = {
+    const request: CaseCreateRequest = {
+      family,
       startedAt: this.startedAt.value!,
       migrationBackground: this.migrationBackground.value,
       specificMigrationBackground: this.specificMigrationBackground.value,
       familienstand: this.familienstand.value,
       partnerInvolved: this.partnerInvolved.value,
       bekanntJA: this.bekanntJA.value,
-      city: this.city.value,
-      plz: this.plz.value,
     };
 
-    this.caseService.createCase(familyInput, caseInput).subscribe({
+    this.caseService.createCase(request).subscribe({
       next: (createdCase: FullCase) => {
         this.isLoading = false;
         this.form.reset();

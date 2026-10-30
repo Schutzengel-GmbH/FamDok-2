@@ -37,7 +37,7 @@
     "passport-http-bearer": "^1.0.1",
     "pdfmake": "^0.3.8",
     "superjson": "^2.2.6",
-    "zod": "^4.1.13"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.4",

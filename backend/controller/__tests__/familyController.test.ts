@@ -161,29 +161,6 @@ describe('FamilyController', () => {
     });
   });
 
-  describe('create', () => {
-    it('creates a family when the org matches the user', async () => {
-      const user = buildUser({ role: Role.User, organisationId: 'org-1' });
-      const created = buildFamily();
-      prismaMock.family.create.mockResolvedValue(created);
-
-      const result = await FamilyController.create(user, {
-        organisation: { connect: { id: 'org-1' } },
-      } as any);
-
-      expect(result).toBe(created);
-    });
-
-    it('throws ForbiddenError when the org does not match', () => {
-      const user = buildUser({ role: Role.User, organisationId: 'org-1' });
-
-      expect(() =>
-        FamilyController.create(user, { organisation: { connect: { id: 'org-2' } } } as any)
-      ).toThrow(ForbiddenError);
-      expect(prismaMock.family.create).not.toHaveBeenCalled();
-    });
-  });
-
   describe('update', () => {
     it('updates the family and syncs case city/plz when adress changes', async () => {
       const user = buildUser({ role: Role.Admin });

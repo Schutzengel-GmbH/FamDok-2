@@ -27,14 +27,6 @@ describe('DocumentService', () => {
     req.flush([]);
   });
 
-  it('getDocuments encodes the given filter into the where param', () => {
-    service.getDocuments({ title: { contains: 'Formular' } }).subscribe();
-
-    const req = httpMock.expectOne((r) => r.url.includes('/document'));
-    expect(decodeURIComponent(req.request.url)).toContain('"title":{"contains":"Formular"}');
-    req.flush([]);
-  });
-
   it('getTags GETs the tag list', () => {
     service.getTags().subscribe();
 

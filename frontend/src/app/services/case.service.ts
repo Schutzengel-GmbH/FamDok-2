@@ -16,16 +16,17 @@ import {
   caseExportFilename,
   stammdatenFilename,
 } from '../../../../shared/utils/filename';
-import {
-  CaseCreateInput,
-  CaseWhereInput,
-  CaseInclude,
-  FamilyCreateInput,
-  ZielvereinbarungCreateInput,
-  ZielvereinbarungUpdateInput,
-} from '../../../../shared/generated/prisma/models';
-import { map, mergeMap, Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { Status } from '../../../../shared/generated/prisma/enums';
+import type {
+  CaseCreateRequest,
+  CaseWhere,
+  HandoverRequest,
+  MyCasesQuery,
+  ZielCreateRequest,
+  ZielUpdateRequest,
+} from '../../../../shared/api';
+import { toQuery } from '../util/apiUtils';
 
 @Injectable({
   providedIn: 'root',
@@ -36,7 +37,6 @@ export class CaseService {
   private settingsService = inject(SettingsService);
 
   protected caseApiUrl = environment.apiUrl + '/case';
-  protected familyApiUrl = environment.apiUrl + '/family';
 
   protected settings!: Settings;
 
@@ -46,14 +46,13 @@ export class CaseService {
 
   /**
    * Fetches cases from the API.
-   * @param {CaseWhereInput} [filter] Optional Prisma where filter
+   * @param {CaseWhere} [filter] Optional Prisma where filter
    * @returns {Observable<FullCase[]>} Observable emitting an array of cases
    */
-  getCases(filter?: CaseWhereInput): Observable<FullCase[]> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
-    return this.http.get<FullCase[]>(this.caseApiUrl + '?' + params.toString());
+  getCases(filter?: CaseWhere): Observable<FullCase[]> {
+    return this.http.get<FullCase[]>(
+      this.caseApiUrl + toQuery({ where: filter }),
+    );
   }
 
   /**
@@ -66,117 +65,38 @@ export class CaseService {
   }
 
   /**
-   * Fetches cases where the provided user is responsible.
-   * @param {string} userId UUID of the user, can be either the User Id or the User's Keycloak ID
-   * @param {CaseWhereInput} [filter] Optional additional Prisma where filter
-   * @returns {Observable<FullCase[]>} Observable emitting matching cases
-   */
-  getCasesForUser(
-    userId: string,
-    filter?: CaseWhereInput,
-  ): Observable<FullCase[]> {
-    return this.getCases({
-      ...filter,
-      responsibleUsers: { some: { OR: [{ id: userId }, { kcId: userId }] } },
-    });
-  }
-
-  /**
    * Fetches cases for the current authenticated user's dashboard. `scope` picks which cases
    * count as "mine": 'own' (default) only ever returns cases the user is responsible for;
    * 'org'/'subOrg' additionally let an OrgCoordinator/SubOrgCoordinator browse their whole
    * org's/suborg's cases - the backend derives the actual org/suborg from the requesting user
    * and rejects the scope for anyone not permitted to use it.
-   * @param {CaseWhereInput} [filter] Optional Prisma where filter
+   * @param {MyCasesQuery} query Optional filter, scope and preset
    * @returns {Observable<FullCase[]>} Observable emitting the matching cases
    */
-  getMyCases(input: {
-    filter?: CaseWhereInput;
-    include?: CaseInclude;
-    scope?: 'own' | 'org' | 'subOrg';
-  }): Observable<FullCase[]> {
-    const { filter, include, scope } = input;
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-      include: include ? JSON.stringify(include) : '',
-      scope: scope ?? 'own',
-    });
+  getMyCases(query: MyCasesQuery = {}): Observable<FullCase[]> {
     return this.http.get<FullCase[]>(
-      this.caseApiUrl + '/my' + '?' + params.toString(),
+      this.caseApiUrl + '/my' + toQuery(query),
     );
   }
 
   /**
-   * Creates a family and a related case.
-   * The request first creates the family then creates a case that connects to the newly created family.
-   *
-   * It also makes sure that the family and case are created for the requesting user and attaches the requesting user as
-   * the sole responsibleUser for the case as well as attaching family and case to the user's organisation.
-   *
-   * The `caseInput` parameter is an `Omit<Prisma.CaseCreateInput, 'createdBy' | 'responsibleUsers' | 'family' | 'caseformResponses'>` —
-   * callers should provide all case fields except those managed by the server (createdBy, responsibleUsers, family relation and case form responses).
-   * Typically `startedAt` will be provided by callers.
-   *
-   * @param {Prisma.FamilyCreateInput} familyInput Family create input
-   * @param {Omit<Prisma.CaseCreateInput, 'createdBy'|'responsibleUsers'|'family'|'caseformResponses'>} caseInput Case create input without server-managed relations
+   * Creates a new case together with its family, in the user's own organisation.
+   * @param {CaseCreateRequest} request The case and its family
    * @returns {Observable<FullCase>} Observable emitting the created case
    */
-  createCase(
-    familyInput: FamilyCreateInput,
-    caseInput: Omit<
-      CaseCreateInput,
-      | 'createdBy'
-      | 'responsibleUsers'
-      | 'organisation'
-      | 'family'
-      | 'caseformResponses'
-      | 'closedAt'
-      | 'closingDocId'
-    >,
-  ): Observable<FullCase> {
-    return this.meService.getMe().pipe(
-      mergeMap((user) => {
-        if (!user.organisationId)
-          throw new Error(
-            'Sie sind nicht Teil einer Organisation, Familien/Fälle müssen einer Organisation zugewiesen sein. Kontaktieren sie einen Administrator, falls sie Teil einer Organisation sein sollten.',
-          );
-        familyInput = {
-          ...familyInput,
-          organisation: { connect: { id: user.organisationId } },
-        };
-        caseInput = {
-          ...caseInput,
-          responsibleUsers: { connect: { id: user.id } },
-          createdBy: { connect: { id: user.id } },
-          organisation: { connect: { id: user.organisationId } },
-          city: (familyInput.adress as PrismaJson.Address).city,
-          plz: (familyInput.adress as PrismaJson.Address).plz,
-        } as CaseCreateInput;
-        return this.http
-          .post<FullFamily>(this.familyApiUrl, {
-            ...familyInput,
-          } as FamilyCreateInput)
-          .pipe(
-            mergeMap((_family) =>
-              this.http.post<FullCase>(this.caseApiUrl, {
-                ...caseInput,
-                family: { connect: { id: _family.id } },
-              }),
-            ),
-          );
-      }),
-    );
+  createCase(request: CaseCreateRequest): Observable<FullCase> {
+    return this.http.post<FullCase>(this.caseApiUrl, request);
   }
 
   /**
    * Adds a Zielvereinbarung to a case.
    * @param {string} caseId UUID of the case
-   * @param {ZielvereinbarungCreateInput} ziel Zielvereinbarung create input
+   * @param {ZielCreateRequest} ziel Zielvereinbarung to create
    * @returns {Observable<FullCase>} Observable emitting the updated case
    */
   addZiel(
     caseId: string,
-    ziel: ZielvereinbarungCreateInput,
+    ziel: ZielCreateRequest,
   ): Observable<FullCase> {
     return this.http.post<FullCase>(
       this.caseApiUrl + '/i/' + caseId + '/ziel',
@@ -188,13 +108,13 @@ export class CaseService {
    * Updates a Zielvereinbarung on a case.
    * @param {string} caseId UUID of the case
    * @param {string} zielId UUID of the Zielvereinbarung
-   * @param {ZielvereinbarungUpdateInput} update Update input
+   * @param {ZielUpdateRequest} update Update input
    * @returns {Observable<FullCase>} Observable emitting the updated case
    */
   updateZiel(
     caseId: string,
     zielId: string,
-    update: ZielvereinbarungUpdateInput,
+    update: ZielUpdateRequest,
   ): Observable<FullCase> {
     return this.http.put<FullCase>(
       this.caseApiUrl + '/i/' + caseId + '/ziel/' + zielId,
@@ -294,10 +214,10 @@ export class CaseService {
 
   /**
    * Perform a handover of a case.
-   * @param {Handover} handover Handover to perform
+   * @param {HandoverRequest} handover Handover to perform
    * @returns {Observable<FullCase>} Observable emitting the updated case
    */
-  handover(handover: Handover): Observable<FullCase> {
+  handover(handover: HandoverRequest): Observable<FullCase> {
     return this.http.post<FullCase>(this.caseApiUrl + '/handover', handover);
   }
 

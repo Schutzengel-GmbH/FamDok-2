@@ -1,142 +1,84 @@
 import { Router } from 'express';
 import { GeneralFormController } from '../controller/GeneralFormController';
-import { Prisma } from '../../shared/generated/prisma/client';
-import { handleError } from '../util/routerUtils';
+import { route } from '../util/routerUtils';
+import {
+  GeneralFormCreateRequest,
+  GeneralFormListQuery,
+  GeneralFormResponseCreateRequest,
+  GeneralFormResponseListQuery,
+  GeneralFormResponseUpdateRequest,
+  GeneralFormUpdateRequest,
+} from '../../shared/api';
 
 const GeneralFormRouter = Router();
 
-GeneralFormRouter.get('/definitions', async (req, res) => {
-  const where = req.query['where']
-    ? (JSON.parse(req.query['where'] as string) as Prisma.GeneralFormWhereInput)
-    : undefined;
+GeneralFormRouter.get(
+  '/definitions',
+  route({ query: GeneralFormListQuery }, ({ user, query }) =>
+    GeneralFormController.getDefinitions(user, query.where)
+  )
+);
 
-  try {
-    const definitions = await GeneralFormController.getDefinitions(
-      req.user!,
-      where
-    );
-    res.status(200).json(definitions);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+GeneralFormRouter.get(
+  '/definitions/i/:id',
+  route(({ user, params }) =>
+    GeneralFormController.getDefinition(user, params.id)
+  )
+);
 
-GeneralFormRouter.get('/definitions/i/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const definition = await GeneralFormController.getDefinition(
-      req.user!,
-      id
-    );
-    res.status(200).json(definition);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+GeneralFormRouter.post(
+  '/definitions',
+  route({ body: GeneralFormCreateRequest }, ({ user, body }) =>
+    GeneralFormController.createDefinition(user, body)
+  )
+);
 
-GeneralFormRouter.post('/definitions', async (req, res) => {
-  const data = req.body as Prisma.GeneralFormCreateInput;
+GeneralFormRouter.put(
+  '/definitions/i/:id',
+  route({ body: GeneralFormUpdateRequest }, ({ user, params, body }) =>
+    GeneralFormController.updateDefinition(user, params.id, body)
+  )
+);
 
-  try {
-    const definition = await GeneralFormController.createDefinition(
-      req.user!,
-      data
-    );
-    res.status(201).json(definition);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+GeneralFormRouter.delete(
+  '/definitions/i/:id',
+  route(({ user, params }) =>
+    GeneralFormController.deleteDefinition(user, params.id)
+  )
+);
 
-GeneralFormRouter.put('/definitions/i/:id', async (req, res) => {
-  const { id } = req.params;
-  const data = req.body as Prisma.GeneralFormUpdateInput;
-  try {
-    const definition = await GeneralFormController.updateDefinition(
-      req.user!,
-      id,
-      data
-    );
-    res.status(201).json(definition);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+GeneralFormRouter.get(
+  '/responses',
+  route({ query: GeneralFormResponseListQuery }, ({ user, query }) =>
+    GeneralFormController.getResponses(user, query.where)
+  )
+);
 
-GeneralFormRouter.delete('/definitions/i/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const definition = await GeneralFormController.deleteDefinition(
-      req.user!,
-      id
-    );
-    res.status(200).json(definition);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+GeneralFormRouter.get(
+  '/responses/i/:id',
+  route(({ user, params }) =>
+    GeneralFormController.getResponse(user, params.id)
+  )
+);
 
-GeneralFormRouter.get('/responses', async (req, res) => {
-  const where = req.query['where']
-    ? JSON.parse(req.query['where'] as string)
-    : undefined;
+GeneralFormRouter.post(
+  '/responses',
+  route({ body: GeneralFormResponseCreateRequest }, ({ user, body }) =>
+    GeneralFormController.createResponse(user, body)
+  )
+);
+GeneralFormRouter.put(
+  '/responses/i/:id',
+  route({ body: GeneralFormResponseUpdateRequest }, ({ user, params, body }) =>
+    GeneralFormController.updateResponse(user, params.id, body)
+  )
+);
 
-  try {
-    const responses = await GeneralFormController.getResponses(
-      req.user!,
-      where
-    );
-    res.status(200).json(responses);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-GeneralFormRouter.get('/responses/i/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const response = await GeneralFormController.getResponse(req.user!, id);
-    res.status(200).json(response);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-GeneralFormRouter.post('/responses', async (req, res) => {
-  const data = req.body as Prisma.GeneralFormResponseCreateInput;
-  try {
-    const response = await GeneralFormController.createResponse(
-      req.user!,
-      data
-    );
-    res.status(201).json(response);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-GeneralFormRouter.put('/responses/i/:id', async (req, res) => {
-  const { id } = req.params;
-  const data = req.body as Prisma.GeneralFormResponseUpdateInput;
-  try {
-    const response = await GeneralFormController.updateResponse(
-      req.user!,
-      id,
-      data
-    );
-    res.status(201).json(response);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-GeneralFormRouter.delete('/responses/i/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const response = await GeneralFormController.deleteResponse(req.user!, id);
-    res.status(200).json(response);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+GeneralFormRouter.delete(
+  '/responses/i/:id',
+  route(({ user, params }) =>
+    GeneralFormController.deleteResponse(user, params.id)
+  )
+);
 
 export default GeneralFormRouter;

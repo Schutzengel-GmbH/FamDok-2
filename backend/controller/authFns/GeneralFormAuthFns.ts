@@ -15,16 +15,12 @@ export function canEditGeneralFormDefinition(user: FullUser) {
 }
 
 /**
- * Whether the user can create a new GeneralForm with the given data - OrgController may only
- * create forms scoped to their own organisation, never global ones or another org's.
+ * Whether the user can create a new GeneralForm - for an OrgController, it is always scoped to
+ * their own organisation, never global or another org's.
  */
-export function canCreateGeneralForm(
-  user: FullUser,
-  data: Prisma.GeneralFormCreateInput
-) {
+export function canCreateGeneralForm(user: FullUser) {
   if (canEditGeneralFormDefinition(user)) return true;
-  if (user.role !== Role.OrgController) return false;
-  return data.organisation?.connect?.id === user.organisationId;
+  return user.role === Role.OrgController && !!user.organisationId;
 }
 
 /**
@@ -63,6 +59,24 @@ export function canSeeGeneralFormResponse(
   if (user.role === Role.SubOrgCoordinator)
     return sharesSubOrg(user, response.createdBy);
   return false;
+}
+
+/** {@link canSeeGeneralFormResponse} as a filter, see `visibleCaseWhere`. */
+export function visibleGeneralFormResponseWhere(
+  user: FullUser
+): Prisma.GeneralFormResponseWhereInput {
+  if (CAN_SEEALL.includes(user.role)) return {};
+
+  const OR: Prisma.GeneralFormResponseWhereInput[] = [{ userId: user.id }];
+
+  if (ORG_SCOPED_ROLES.includes(user.role) && user.organisationId)
+    OR.push({ createdBy: { organisationId: user.organisationId } });
+  if (user.role === Role.SubOrgCoordinator) {
+    const id = { in: user.subOrganisations.map((so) => so.id) };
+    OR.push({ createdBy: { subOrganisations: { some: { id } } } });
+  }
+
+  return { OR };
 }
 
 export function canSeeGeneralFormResponses(

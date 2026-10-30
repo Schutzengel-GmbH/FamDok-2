@@ -1,6 +1,5 @@
 import {
   Case,
-  Handover,
   Prisma,
   Role,
   User,
@@ -12,6 +11,11 @@ import {
   USER_DEFAULT_INCLUDE,
 } from '../../../shared/consts';
 import { isSameOrg, isSameSubOrg } from './scopeUtils';
+import {
+  CaseWhere,
+  ContactDocumentationWhere,
+  HandoverRequest,
+} from '../../../shared/api';
 import {
   allInOrg,
   isOrgCoordinatorFor,
@@ -60,6 +64,26 @@ export function canExportCase(user: FullUser, c: CaseWithScope): boolean {
   return false;
 }
 
+/**
+ * {@link canSeeCase} as a filter. Lists always apply it, so a client-supplied filter can only ever
+ * match what the user may see, and can't be used to probe the rest.
+ */
+export function visibleCaseWhere(user: FullUser): Prisma.CaseWhereInput {
+  if (READ_OVERRIDE_ROLES.includes(user.role)) return {};
+  if (user.role === Role.OrgController || user.role === Role.OrgCoordinator)
+    return orgCaseWhere(user);
+  if (user.role === Role.SubOrgCoordinator) return subOrgCaseWhere(user);
+  return { responsibleUsers: { some: { id: user.id } } };
+}
+
+export function orgCaseWhere(user: FullUser): Prisma.CaseWhereInput {
+  return { organisationId: { in: user.organisationId ? [user.organisationId] : [] } };
+}
+
+export function subOrgCaseWhere(user: FullUser): Prisma.CaseWhereInput {
+  return { subOrganisationId: { in: user.subOrganisations.map((so) => so.id) } };
+}
+
 export function canEditCase(
   user: User,
   c: Case & { responsibleUsers: { id: string }[] }
@@ -103,17 +127,10 @@ export function myCasesScopeFilter(
   }
 }
 
-export function canCreate(user: User, input: Prisma.CaseCreateInput): boolean {
-  if (WRITE_OVERRIDE_ROLES.includes(user.role)) return true;
-  if (input.organisation?.connect?.id != user.organisationId) return false;
-  if (input.createdBy?.connect?.id != user.id) return false;
-  return true;
-}
-
 export async function canHandover(
   user: FullUser,
   c: Case & { responsibleUsers: { id: string }[] },
-  handover: Handover
+  handover: HandoverRequest
 ) {
   const canAccess =
     isResponsibleFor(user, c) ||
@@ -203,111 +220,25 @@ export function contactDocumentationQueryArgsFor(user: FullUser): {
 }
 
 /**
- * Sanitizes a Case `where` filter for a given user - for Controller/OrgController, strips
- * `family` (they can't see it, so they must not be able to filter/search by it either - e.g.
- * probing family names via `family: { name: { contains: "..." } }` and observing which cases
- * match would leak the same data through a side channel) and recurses into AND/OR/NOT and the
- * nested `contactDocumentation` relation (which could otherwise be used to reach the same
- * restriction from the other side, or to filter contact docs by their personal-data fields).
- * No-op for every other role.
+ * Drops what Controller/OrgController must not filter by: they can't see a case's family, so
+ * probing names via `family: { name: { contains: "..." } }` and observing which cases match
+ * would leak the same data through a side channel. No-op for every other role.
  */
 export function caseWhereFor(
   user: FullUser,
-  where?: Prisma.CaseWhereInput
-): Prisma.CaseWhereInput | undefined {
+  where?: CaseWhere
+): CaseWhere | undefined {
   if (!where || !ANONYMIZED_ROLES.includes(user.role)) return where;
-  return sanitizeCaseWhere(where);
+  const { family, ...rest } = where;
+  return rest;
 }
 
-/**
- * Sanitizes a ContactDocumentation `where` filter for a given user - for Controller/
- * OrgController, strips `zusammenfassung`/`dokumentation` and recurses into AND/OR/NOT and the
- * nested `case` relation (so a case's family can't be reached by filtering contact docs through
- * it either). No-op for every other role.
- */
+/** Same as {@link caseWhereFor}, for the personal-data fields of contact documentation. */
 export function contactDocWhereFor(
   user: FullUser,
-  where?: Prisma.ContactDocumentationWhereInput
-): Prisma.ContactDocumentationWhereInput | undefined {
+  where?: ContactDocumentationWhere
+): ContactDocumentationWhere | undefined {
   if (!where || !ANONYMIZED_ROLES.includes(user.role)) return where;
-  return sanitizeContactDocWhere(where);
-}
-
-function sanitizeCaseWhere(
-  where: Prisma.CaseWhereInput
-): Prisma.CaseWhereInput {
-  const { family, AND, OR, NOT, contactDocumentation, ...rest } = where;
-
-  return {
-    ...rest,
-    ...(AND !== undefined && { AND: mapWhereList(AND, sanitizeCaseWhere) }),
-    ...(OR !== undefined && { OR: OR.map(sanitizeCaseWhere) }),
-    ...(NOT !== undefined && { NOT: mapWhereList(NOT, sanitizeCaseWhere) }),
-    ...(contactDocumentation !== undefined && {
-      contactDocumentation: sanitizeListRelationFilter(
-        contactDocumentation,
-        sanitizeContactDocWhere
-      ),
-    }),
-  };
-}
-
-function sanitizeContactDocWhere(
-  where: Prisma.ContactDocumentationWhereInput
-): Prisma.ContactDocumentationWhereInput {
-  const {
-    zusammenfassung,
-    dokumentation,
-    AND,
-    OR,
-    NOT,
-    case: caseFilter,
-    ...rest
-  } = where;
-
-  return {
-    ...rest,
-    ...(AND !== undefined && {
-      AND: mapWhereList(AND, sanitizeContactDocWhere),
-    }),
-    ...(OR !== undefined && { OR: OR.map(sanitizeContactDocWhere) }),
-    ...(NOT !== undefined && {
-      NOT: mapWhereList(NOT, sanitizeContactDocWhere),
-    }),
-    ...(caseFilter !== undefined && {
-      case: sanitizeScalarRelationFilter(caseFilter, sanitizeCaseWhere),
-    }),
-  };
-}
-
-function mapWhereList<T>(value: T | T[], fn: (v: T) => T): T | T[] {
-  return Array.isArray(value) ? value.map(fn) : fn(value);
-}
-
-/** Sanitizes the `every`/`some`/`none` where-inputs of a to-many relation filter. */
-function sanitizeListRelationFilter<Filter extends Record<string, unknown>>(
-  filter: Filter,
-  sanitize: (w: any) => any
-): Filter {
-  const sanitized: Record<string, unknown> = { ...filter };
-  for (const key of ['every', 'some', 'none'] as const) {
-    if (sanitized[key] !== undefined) sanitized[key] = sanitize(sanitized[key]);
-  }
-  return sanitized as Filter;
-}
-
-/** Sanitizes a required to-one relation filter, which may be a plain where-input, or `{is}`/`{isNot}`. */
-function sanitizeScalarRelationFilter<Filter extends Record<string, unknown>>(
-  filter: Filter,
-  sanitize: (w: any) => any
-): Filter {
-  if ('is' in filter || 'isNot' in filter) {
-    const sanitized: Record<string, unknown> = { ...filter };
-    if (sanitized['is'] !== undefined)
-      sanitized['is'] = sanitize(sanitized['is']);
-    if (sanitized['isNot'] !== undefined)
-      sanitized['isNot'] = sanitize(sanitized['isNot']);
-    return sanitized as Filter;
-  }
-  return sanitize(filter);
+  const { zusammenfassung, dokumentation, ...rest } = where;
+  return { ...rest, case: caseWhereFor(user, where.case) };
 }

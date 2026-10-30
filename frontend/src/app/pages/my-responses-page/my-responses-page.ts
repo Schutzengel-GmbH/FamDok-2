@@ -24,7 +24,7 @@ export class MyResponsesPage {
       .pipe(
         mergeMap((me) =>
           this.caseFormService.getCaseFormResponses({
-            createdBy: { id: me.id },
+            userId: me.id,
           }),
         ),
       )

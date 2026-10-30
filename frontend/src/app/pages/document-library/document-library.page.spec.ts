@@ -56,7 +56,7 @@ describe('DocumentLibraryPage', () => {
     component = fixture.componentInstance;
 
     httpMock
-      .expectOne((r) => r.url.includes(`${environment.apiUrl}/document?`))
+      .expectOne((r) => r.method === 'GET' && r.url === `${environment.apiUrl}/document`)
       .flush([doc1, doc2]);
     httpMock
       .expectOne(`${environment.apiUrl}/document/tags`)
@@ -120,7 +120,7 @@ describe('DocumentLibraryPage', () => {
       req.flush(doc1);
 
       httpMock
-        .expectOne((r) => r.url.includes(`${environment.apiUrl}/document?`))
+        .expectOne((r) => r.method === 'GET' && r.url === `${environment.apiUrl}/document`)
         .flush([doc1]);
 
       expect(toast.toasts()[0].severity).toBe('success');
@@ -167,7 +167,7 @@ describe('DocumentLibraryPage', () => {
       req.flush({ ...doc1, title: 'Neuer Titel' });
 
       httpMock
-        .expectOne((r) => r.url.includes(`${environment.apiUrl}/document?`))
+        .expectOne((r) => r.method === 'GET' && r.url === `${environment.apiUrl}/document`)
         .flush([{ ...doc1, title: 'Neuer Titel' }]);
 
       expect(toast.toasts()[0].severity).toBe('success');
@@ -188,7 +188,7 @@ describe('DocumentLibraryPage', () => {
       req.flush({});
 
       httpMock
-        .expectOne((r) => r.url.includes(`${environment.apiUrl}/document?`))
+        .expectOne((r) => r.method === 'GET' && r.url === `${environment.apiUrl}/document`)
         .flush([]);
 
       expect(toast.toasts()[0].severity).toBe('success');
@@ -235,7 +235,7 @@ describe('DocumentLibraryPage', () => {
         .expectOne(`${environment.apiUrl}/document/tags`)
         .flush([{ id: 'tag-1', name: 'Umbenannt' }]);
       httpMock
-        .expectOne((r) => r.url.includes(`${environment.apiUrl}/document?`))
+        .expectOne((r) => r.method === 'GET' && r.url === `${environment.apiUrl}/document`)
         .flush([doc1, doc2]);
 
       expect(toast.toasts()[0].severity).toBe('success');
@@ -257,7 +257,7 @@ describe('DocumentLibraryPage', () => {
 
       httpMock.expectOne(`${environment.apiUrl}/document/tags`).flush([]);
       httpMock
-        .expectOne((r) => r.url.includes(`${environment.apiUrl}/document?`))
+        .expectOne((r) => r.method === 'GET' && r.url === `${environment.apiUrl}/document`)
         .flush([]);
 
       expect(toast.toasts()[0].severity).toBe('success');

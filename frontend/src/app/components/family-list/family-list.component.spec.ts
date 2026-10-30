@@ -84,31 +84,15 @@ describe('Families', () => {
     expect(component.canEditCase(undefined)).toBeFalse();
   });
 
-  it("scopes the query to the org for an OrgCoordinator", () => {
+  it('only fetches open cases for a coordinator, the backend limits them to their org', () => {
     fixture.detectChanges();
     flushBootstrapRequests(
       buildUser({ role: Role.OrgCoordinator, organisationId: 'org-1' }),
     );
 
-    const casesReq = httpMock.expectOne((r) => r.url.includes('/case?'));
+    const casesReq = httpMock.expectOne((r) => /\/case(\?|\/my|$)/.test(r.url));
     expect(decodeURIComponent(casesReq.request.url)).toContain(
-      '"organisation":{"id":"org-1"}',
-    );
-    casesReq.flush([]);
-  });
-
-  it('scopes the query to the sub-organisations for a SubOrgCoordinator', () => {
-    fixture.detectChanges();
-    flushBootstrapRequests(
-      buildUser({
-        role: Role.SubOrgCoordinator,
-        subOrganisations: [{ id: 'sub-1' }, { id: 'sub-2' }],
-      }),
-    );
-
-    const casesReq = httpMock.expectOne((r) => r.url.includes('/case?'));
-    expect(decodeURIComponent(casesReq.request.url)).toContain(
-      '"subOrganisationId":{"in":["sub-1","sub-2"]}',
+      '"closedAt":null',
     );
     casesReq.flush([]);
   });
@@ -117,8 +101,8 @@ describe('Families', () => {
     fixture.detectChanges();
     flushBootstrapRequests(buildUser({ role: Role.Admin }));
 
-    const casesReq = httpMock.expectOne((r) => r.url.includes('/case?'));
-    expect(decodeURIComponent(casesReq.request.url)).toContain('where=');
+    const casesReq = httpMock.expectOne((r) => /\/case(\?|\/my|$)/.test(r.url));
+    expect(decodeURIComponent(casesReq.request.url)).not.toContain('closedAt');
     casesReq.flush([]);
   });
 
@@ -126,7 +110,7 @@ describe('Families', () => {
     function loadCases(count: number) {
       fixture.detectChanges();
       flushBootstrapRequests();
-      const casesReq = httpMock.expectOne((r) => r.url.includes('/case?'));
+      const casesReq = httpMock.expectOne((r) => /\/case(\?|\/my|$)/.test(r.url));
       casesReq.flush(
         Array.from({ length: count }, (_, i) => ({
           id: `case-${i}`,
@@ -199,7 +183,7 @@ describe('Families', () => {
     it('edit navigates to edit-family when the user may edit the case', () => {
       fixture.detectChanges();
       const user = flushBootstrapRequests(buildUser({ id: 'me', role: Role.Admin }));
-      const casesReq = httpMock.expectOne((r) => r.url.includes('/case?'));
+      const casesReq = httpMock.expectOne((r) => /\/case(\?|\/my|$)/.test(r.url));
       casesReq.flush([
         { id: 'case-1', familyId: 'family-1', responsibleUsers: [{ id: user.id }] },
       ]);
@@ -214,7 +198,7 @@ describe('Families', () => {
     it('edit does nothing when the user may not edit the case', () => {
       fixture.detectChanges();
       flushBootstrapRequests(buildUser({ id: 'me', role: Role.User }));
-      const casesReq = httpMock.expectOne((r) => r.url.includes('/case?'));
+      const casesReq = httpMock.expectOne((r) => /\/case(\?|\/my|$)/.test(r.url));
       casesReq.flush([
         { id: 'case-1', familyId: 'family-1', responsibleUsers: [{ id: 'other' }] },
       ]);
@@ -229,7 +213,7 @@ describe('Families', () => {
     it('inspect navigates to edit-family in read-only mode', () => {
       fixture.detectChanges();
       flushBootstrapRequests();
-      httpMock.expectOne((r) => r.url.includes('/case?')).flush([]);
+      httpMock.expectOne((r) => /\/case(\?|\/my|$)/.test(r.url)).flush([]);
       const router = TestBed.inject(Router);
       spyOn(router, 'navigate');
 

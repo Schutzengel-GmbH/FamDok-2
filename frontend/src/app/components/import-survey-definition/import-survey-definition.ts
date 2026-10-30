@@ -8,10 +8,10 @@ import {
 import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import { ToastService } from 'src/app/services/toast.service';
 import { GeneralFormService } from 'src/app/services/general-form.service';
-import {
-  CaseFormCreateInput,
-  GeneralFormCreateInput,
-} from '../../../../../shared/generated/prisma/models';
+import type {
+  CaseFormCreateRequest,
+  GeneralFormCreateRequest,
+} from '../../../../../shared/api';
 import {
   parseGeneralForm,
   parseCaseForm,
@@ -32,7 +32,7 @@ export class ImportSurveyDefinitionComponent {
   private toast = inject(ToastService);
 
   files!: FileList;
-  input!: CaseFormCreateInput | GeneralFormCreateInput | undefined;
+  input!: CaseFormCreateRequest | GeneralFormCreateRequest | undefined;
   fileValid = signal<boolean>(false);
   classNames = signal<string>('bi bi-square');
   importGeneralForm = signal<boolean>(false);
@@ -80,7 +80,7 @@ export class ImportSurveyDefinitionComponent {
   save() {
     if (this.importGeneralForm()) {
       this.formService
-        .createDefinition(this.input! as GeneralFormCreateInput)
+        .createDefinition(this.input! as GeneralFormCreateRequest)
         .subscribe((res) => {
           this.toast.show({
             title: 'Erfolg',
@@ -90,7 +90,7 @@ export class ImportSurveyDefinitionComponent {
         });
     } else {
       this.caseFormService
-        .createCaseFormDefinition(this.input! as CaseFormCreateInput)
+        .createCaseFormDefinition(this.input! as CaseFormCreateRequest)
         .subscribe((res) => {
           this.toast.show({
             title: 'Erfolg',

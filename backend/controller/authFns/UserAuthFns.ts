@@ -6,7 +6,7 @@ import {
   ROLES_WITHOUT_ORG,
   UserCreateRequest,
   UserUpdateRequest,
-} from '../../../shared/zodTypes';
+} from '../../../shared/api';
 
 const CAN_OVERRIDE: Role[] = [Role.Admin];
 

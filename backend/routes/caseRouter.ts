@@ -1,7 +1,20 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import { CaseController } from '../controller/CaseController';
-import { handleError } from '../util/routerUtils';
-import { Handover, Prisma } from '../../shared/generated/prisma/client';
+import { handleError, route } from '../util/routerUtils';
+import {
+  CaseAttachmentRequest,
+  CaseCloseRequest,
+  CaseCreateRequest,
+  CaseListQuery,
+  ContactDocumentationCreateRequest,
+  ContactDocumentationListQuery,
+  ContactDocumentationUpdateRequest,
+  HandoverRequest,
+  LatestQuery,
+  MyCasesQuery,
+  ZielCreateRequest,
+  ZielUpdateRequest,
+} from '../../shared/api';
 import { caseAttachmentUpload, handleUpload } from '../middleware/upload';
 import { canUploadCaseAttachment } from '../controller/authFns/CaseAttachmentAuthFns';
 import { ForbiddenError, NotFoundError } from '../util/authUtils';
@@ -29,174 +42,83 @@ async function requireCanUploadAttachment(
   }
 }
 
-CaseRouter.get('/', async (req, res) => {
-  const where = req.query['where']
-    ? (JSON.parse(req.query['where'] as string) as Prisma.CaseWhereInput)
-    : {};
+CaseRouter.get(
+  '/',
+  route({ query: CaseListQuery }, ({ user, query }) =>
+    CaseController.getAll(user, query.where)
+  )
+);
 
-  try {
-    const cases = await CaseController.getAll(req.user!, where);
-    res.status(200).send(cases);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.get(
+  '/my',
+  route({ query: MyCasesQuery }, ({ user, query }) =>
+    CaseController.getMyCases(user, query)
+  )
+);
 
-const MY_CASES_SCOPES = ['own', 'org', 'subOrg'] as const;
+CaseRouter.get(
+  '/i/:id',
+  route(({ user, params }) =>
+    CaseController.get(user, params.id)
+  )
+);
 
-CaseRouter.get('/my', async (req, res) => {
-  const where = req.query['where']
-    ? (JSON.parse(req.query['where'] as string) as Prisma.CaseWhereInput)
-    : {};
+CaseRouter.post(
+  '/',
+  route({ body: CaseCreateRequest }, ({ user, body }) =>
+    CaseController.create(user, body)
+  )
+);
 
-  const include = req.query['include']
-    ? (JSON.parse(req.query['include'] as string) as Prisma.CaseInclude)
-    : {};
 
-  const rawScope = (req.query['scope'] as string) ?? 'own';
-  if (!MY_CASES_SCOPES.includes(rawScope as (typeof MY_CASES_SCOPES)[number])) {
-    res.status(400).json({ message: 'Bad Request', error: 'Invalid scope' });
-    return;
-  }
-  const scope = rawScope as (typeof MY_CASES_SCOPES)[number];
+CaseRouter.delete(
+  '/i/:id',
+  route(({ user, params }) =>
+    CaseController.delete(user, params.id)
+  )
+);
 
-  try {
-    const cases = await CaseController.getMyCases(
-      req.user!,
-      scope,
-      where,
-      include
-    );
-    res.status(200).send(cases);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.post(
+  '/i/:id/ziel',
+  route({ body: ZielCreateRequest }, ({ user, params, body }) =>
+    CaseController.addZiel(user, params.id, body)
+  )
+);
 
-CaseRouter.get('/i/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const Case = await CaseController.get(req.user!, id);
-    res.send(Case);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.put(
+  '/i/:id/ziel/:ziel',
+  route({ body: ZielUpdateRequest }, ({ user, params, body }) =>
+    CaseController.updateZiel(user, params.ziel, body)
+  )
+);
 
-CaseRouter.post('/', async (req, res) => {
-  const data = req.body as Prisma.CaseCreateInput;
-  try {
-    const Case = await CaseController.create(req.user!, {
-      ...data,
-      createdBy: { connect: { id: req.user!.id } },
-      responsibleUsers: { connect: { id: req.user!.id } },
-    });
-    res.send(Case);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.delete(
+  '/i/:id/ziel/:ziel',
+  route(({ user, params }) =>
+    CaseController.deleteZiel(user, params.ziel)
+  )
+);
 
-CaseRouter.put('/i/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const update = await CaseController.updateCase(req.user!, id, req.body);
-    res.send(update);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.get(
+  '/i/:id/documentation',
+  route({ query: ContactDocumentationListQuery }, ({ user, params, query }) =>
+    CaseController.getContactDocumentationForCase(user, params.id, query.where)
+  )
+);
 
-CaseRouter.delete('/i/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await CaseController.delete(req.user!, id);
-    res.send(result);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.get(
+  '/i/:id/documentation/latest',
+  route({ query: LatestQuery }, ({ user, params, query }) =>
+    CaseController.getLatestContactDocumentation(user, params.id, query.n)
+  )
+);
 
-CaseRouter.post('/i/:id/ziel', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const result = await CaseController.addZiel(req.user!, id, req.body);
-    res.json(result);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-CaseRouter.put('/i/:id/ziel/:ziel', async (req, res) => {
-  const { ziel } = req.params;
-
-  try {
-    const result = await CaseController.updateZiel(req.user!, ziel, req.body);
-    res.json(result);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-CaseRouter.delete('/i/:id/ziel/:ziel', async (req, res) => {
-  const { ziel } = req.params;
-
-  try {
-    const result = await CaseController.deleteZiel(req.user!, ziel);
-    res.json(result);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-CaseRouter.get('/i/:id/documentation', async (req, res) => {
-  const { id } = req.params;
-
-  const where = req.query['where']
-    ? (JSON.parse(
-        req.query['where'] as string
-      ) as Prisma.ContactDocumentationWhereInput)
-    : {};
-
-  try {
-    const doc = await CaseController.getContactDocumentationForCase(
-      req.user!,
-      id,
-      where
-    );
-    res.send(doc);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-CaseRouter.get('/i/:id/documentation/latest', async (req, res) => {
-  const { id } = req.params;
-  const { n } = req.query;
-  const number = parseInt(n as string) || undefined;
-
-  try {
-    const doc = await CaseController.getLatestContactDocumentation(
-      req.user!,
-      id,
-      number
-    );
-    res.send(doc);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-CaseRouter.get('/i/:id/documentation/i/:docId', async (req, res) => {
-  const { id, docId } = req.params;
-  try {
-    const doc = await CaseController.getContactDocumentation(req.user!, docId);
-    res.send(doc);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.get(
+  '/i/:id/documentation/i/:docId',
+  route(({ user, params }) =>
+    CaseController.getContactDocumentation(user, params.docId)
+  )
+);
 
 CaseRouter.get('/i/:id/documentation/i/:docId/download', async (req, res) => {
   const { id, docId } = req.params;
@@ -213,79 +135,40 @@ CaseRouter.get('/i/:id/documentation/i/:docId/download', async (req, res) => {
   }
 });
 
-CaseRouter.post('/i/:id/documentation', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const doc = await CaseController.createContactDocumentation(
-      req.user!,
-      id,
-      req.body
-    );
-    res.send(doc);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.post(
+  '/i/:id/documentation',
+  route({ body: ContactDocumentationCreateRequest }, ({ user, params, body }) =>
+    CaseController.createContactDocumentation(user, params.id, body)
+  )
+);
 
-CaseRouter.put('/i/:id/documentation/i/:docId', async (req, res) => {
-  const { docId } = req.params;
-  try {
-    const doc = await CaseController.updateContactDocumentation(
-      req.user!,
-      docId,
-      req.body
-    );
-    res.send(doc);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.put(
+  '/i/:id/documentation/i/:docId',
+  route({ body: ContactDocumentationUpdateRequest }, ({ user, params, body }) =>
+    CaseController.updateContactDocumentation(user, params.docId, body)
+  )
+);
 
-CaseRouter.delete('/i/:id/documentation/i/:docId', async (req, res) => {
-  const { docId } = req.params;
-  try {
-    const doc = await CaseController.deleteContactDocumentation(
-      req.user!,
-      docId
-    );
-    res.send(doc);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.delete(
+  '/i/:id/documentation/i/:docId',
+  route(({ user, params }) =>
+    CaseController.deleteContactDocumentation(user, params.docId)
+  )
+);
 
-CaseRouter.get('/documentation/all', async (req, res) => {
-  const where = req.query['where']
-    ? (JSON.parse(
-        req.query['where'] as string
-      ) as Prisma.ContactDocumentationWhereInput)
-    : {};
+CaseRouter.get(
+  '/documentation/all',
+  route({ query: ContactDocumentationListQuery }, ({ user, query }) =>
+    CaseController.getContactDocumentations(user, query.where)
+  )
+);
 
-  try {
-    const doc = await CaseController.getContactDocumentations(req.user!, where);
-    res.send(doc);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-CaseRouter.get('/documentation/my', async (req, res) => {
-  const where = req.query['where']
-    ? (JSON.parse(
-        req.query['where'] as string
-      ) as Prisma.ContactDocumentationWhereInput)
-    : {};
-
-  try {
-    const doc = await CaseController.getMyContactDocumentations(
-      req.user!,
-      where
-    );
-    res.send(doc);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.get(
+  '/documentation/my',
+  route({ query: ContactDocumentationListQuery }, ({ user, query }) =>
+    CaseController.getMyContactDocumentations(user, query.where)
+  )
+);
 
 CaseRouter.get('/i/:id/export/stammdaten', async (req, res) => {
   const { id } = req.params;
@@ -323,15 +206,12 @@ CaseRouter.get('/i/:id/export', async (req, res) => {
   }
 });
 
-CaseRouter.get('/i/:id/attachment', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const attachments = await CaseController.getCaseAttachments(req.user!, id);
-    res.send(attachments);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.get(
+  '/i/:id/attachment',
+  route(({ user, params }) =>
+    CaseController.getCaseAttachments(user, params.id)
+  )
+);
 
 CaseRouter.get('/i/:id/attachment/i/:attId/download', async (req, res) => {
   const { attId } = req.params;
@@ -346,90 +226,50 @@ CaseRouter.post(
   '/i/:id/attachment',
   requireCanUploadAttachment,
   handleUpload(caseAttachmentUpload.single('file')),
-  async (req, res) => {
-    const { id } = req.params;
-    try {
-      const attachment = await CaseController.createCaseAttachment(
-        req.user!,
-        id,
-        req.file,
-        req.body?.note
-      );
-      res.send(attachment);
-    } catch (e) {
-      handleError(e, res);
-    }
-  }
+  route({ body: CaseAttachmentRequest }, ({ user, params, file, body }) =>
+    CaseController.createCaseAttachment(user, params.id, file, body.note)
+  ));
+
+CaseRouter.delete(
+  '/i/:id/attachment/i/:attId',
+  route(({ user, params }) =>
+    CaseController.deleteCaseAttachment(user, params.attId)
+  )
 );
 
-CaseRouter.delete('/i/:id/attachment/i/:attId', async (req, res) => {
-  const { attId } = req.params;
-  try {
-    const attachment = await CaseController.deleteCaseAttachment(
-      req.user!,
-      attId
-    );
-    res.send(attachment);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.get(
+  '/handover/:caseId',
+  route({ query: LatestQuery }, ({ user, params, query }) =>
+    CaseController.getHandovers(user, params.caseId, query.n)
+  )
+);
 
-CaseRouter.get('/handover/:caseId', async (req, res) => {
-  const { caseId } = req.params;
-  const n = req.query['n'] ? parseInt(req.query['n'] as string) : undefined;
+CaseRouter.post(
+  '/handover',
+  route({ body: HandoverRequest }, ({ user, body }) =>
+    CaseController.handover(user, body)
+  )
+);
 
-  try {
-    const handovers = await CaseController.getHandovers(req.user!, caseId, n);
-    res.send(handovers);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.post(
+  '/close/:caseId',
+  route({ body: CaseCloseRequest }, ({ user, params, body }) =>
+    CaseController.closeCase(user, params.caseId, body.date)
+  )
+);
 
-CaseRouter.post('/handover', async (req, res) => {
-  const handover = req.body as Handover;
+CaseRouter.post(
+  '/reopen/:caseId',
+  route(({ user, params }) =>
+    CaseController.reopenCase(user, params.id)
+  )
+);
 
-  try {
-    const update = await CaseController.handover(req.user!, handover);
-    res.send(update);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-CaseRouter.post('/close/:caseId', async (req, res) => {
-  const { caseId: id } = req.params;
-  const date = req.body.date as Date;
-
-  try {
-    const result = await CaseController.closeCase(req.user!, id, date);
-    res.send(result);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-CaseRouter.post('/reopen/:caseId', async (req, res) => {
-  const { caseId: id } = req.params;
-
-  try {
-    const result = await CaseController.reopenCase(req.user!, id);
-    res.send(result);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-CaseRouter.post('/i/:id/purge', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const result = await CaseController.purgeFamily(req.user!, id);
-    res.send(result);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+CaseRouter.post(
+  '/i/:id/purge',
+  route(({ user, params }) =>
+    CaseController.purgeFamily(user, params.id)
+  )
+);
 
 export default CaseRouter;

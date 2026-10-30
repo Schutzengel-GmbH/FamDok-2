@@ -94,29 +94,12 @@ describe('ContactDocumentationTable', () => {
       req.flush([]);
     });
 
-    it('scopes to the organisation for OrgController/OrgCoordinator', () => {
+    it('leaves what the user may see to the backend', () => {
       setup(
         buildUser({ role: Role.OrgCoordinator, id: 'me', organisationId: 'org-9' }),
       );
       const req = httpMock.expectOne((r) => r.url.includes('/documentation/all'));
-      expect(decodeURIComponent(req.request.url)).toContain(
-        '"organisation":{"id":"org-9"}',
-      );
-      req.flush([]);
-    });
-
-    it('scopes to sub-organisations for a SubOrgCoordinator', () => {
-      setup(
-        buildUser({
-          role: Role.SubOrgCoordinator,
-          id: 'me',
-          subOrganisations: [{ id: 'sub-1' }],
-        }),
-      );
-      const req = httpMock.expectOne((r) => r.url.includes('/documentation/all'));
-      expect(decodeURIComponent(req.request.url)).toContain(
-        '"subOrganisationId":{"in":["sub-1"]}',
-      );
+      expect(decodeURIComponent(req.request.url)).not.toContain('org-9');
       req.flush([]);
     });
   });

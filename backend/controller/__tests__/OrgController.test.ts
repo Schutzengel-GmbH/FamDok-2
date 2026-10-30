@@ -210,10 +210,11 @@ describe('OrgController', () => {
       const created = buildSubOrganisation();
       prismaMock.subOrganisation.create.mockResolvedValue(created);
 
-      const result = await OrgController.createSubOrg(admin, {
-        name: 'Sub',
-        organisation: { connect: { id: created.organisationId } },
-      } as any);
+      const result = await OrgController.createSubOrg(
+        admin,
+        created.organisationId,
+        { name: 'Sub' }
+      );
 
       expect(result).toBe(created);
     });
@@ -222,10 +223,7 @@ describe('OrgController', () => {
       const user = buildUser({ role: Role.User });
 
       await expect(
-        OrgController.createSubOrg(user, {
-          name: 'Sub',
-          organisation: { connect: { id: 'org-1' } },
-        } as any)
+        OrgController.createSubOrg(user, 'org-1', { name: 'Sub' })
       ).rejects.toThrow(ForbiddenError);
     });
 

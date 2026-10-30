@@ -61,12 +61,7 @@ export function canPurgeFamily(user: FullUser, family: FullFamily) {
   return false;
 }
 
-export function canCreateFamily(
-  user: FullUser,
-  data: Prisma.FamilyCreateInput
-) {
-  if (isBlocked(user)) return false;
-  if (CAN_OVERRIDE.includes(user.role)) return true;
-
-  return data.organisation?.connect?.id === user.organisationId;
+/** Families are always created in the user's own organisation, so they need to have one. */
+export function canCreateFamily(user: FullUser) {
+  return !isBlocked(user) && !!user.organisationId;
 }

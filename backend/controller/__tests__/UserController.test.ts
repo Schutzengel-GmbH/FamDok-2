@@ -27,6 +27,12 @@ import {
 } from '../../testUtils/fixtures';
 import { generateTempPassword, UserController } from '../UserController';
 import {
+  UserCreateRequest,
+  UserEnabledRequest,
+  UserUpdateRequest,
+} from '../../../shared/api';
+import { FullUser } from '../../../shared/types';
+import {
   BadRequestError,
   ConflictError,
   ForbiddenError,
@@ -36,6 +42,14 @@ import { ZodError } from 'zod';
 import { Role } from '../../../shared/generated/prisma/client';
 
 const prismaMock = prisma as unknown as ReturnType<typeof createPrismaMock>;
+
+// what `route()` does before calling the controller
+const createUser = async (user: FullUser, input: unknown) =>
+  UserController.create(user, UserCreateRequest.parse(input));
+const updateUser = async (user: FullUser, id: string, input: unknown) =>
+  UserController.update(user, id, UserUpdateRequest.parse(input));
+const setEnabled = async (user: FullUser, id: string, input: unknown) =>
+  UserController.setEnabled(user, id, UserEnabledRequest.parse(input));
 
 describe('UserController', () => {
   beforeEach(() => {
@@ -238,7 +252,7 @@ describe('UserController', () => {
         prismaMock.user.findUnique.mockResolvedValue(existing);
 
         await expect(
-          UserController.update(reqUser, existing.id, { role })
+          updateUser(reqUser, existing.id, { role })
         ).rejects.toThrow(ForbiddenError);
         expect(prismaMock.user.update).not.toHaveBeenCalled();
       }
@@ -249,7 +263,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(reqUser);
       prismaMock.user.update.mockResolvedValue(reqUser);
 
-      await UserController.update(reqUser, reqUser.id, {
+      await updateUser(reqUser, reqUser.id, {
         firstName: 'New',
         lastName: 'Name',
       });
@@ -262,7 +276,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(reqUser);
 
       await expect(
-        UserController.update(reqUser, reqUser.id, {
+        updateUser(reqUser, reqUser.id, {
           firstName: 'New',
           role: Role.Admin,
         })
@@ -277,7 +291,7 @@ describe('UserController', () => {
       const updated = { ...existing, role: Role.OrgCoordinator };
       prismaMock.user.update.mockResolvedValue(updated);
 
-      const result = await UserController.update(reqUser, existing.id, {
+      const result = await updateUser(reqUser, existing.id, {
         role: Role.OrgCoordinator,
       });
 
@@ -291,7 +305,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(existing);
 
       await expect(
-        UserController.update(reqUser, existing.id, { firstName: 'New' })
+        updateUser(reqUser, existing.id, { firstName: 'New' })
       ).rejects.toThrow(ForbiddenError);
       expect(prismaMock.user.update).not.toHaveBeenCalled();
     });
@@ -303,7 +317,7 @@ describe('UserController', () => {
       const updated = { ...existing, email: 'new@example.com' };
       prismaMock.user.update.mockResolvedValue(updated);
 
-      const result = await UserController.update(reqUser, existing.id, {
+      const result = await updateUser(reqUser, existing.id, {
         email: 'new@example.com',
       });
 
@@ -321,7 +335,7 @@ describe('UserController', () => {
       mockAdminClient.users.update.mockRejectedValue(new Error('kc down'));
 
       await expect(
-        UserController.update(reqUser, existing.id, {
+        updateUser(reqUser, existing.id, {
           firstName: 'New',
           lastName: null,
         })
@@ -367,7 +381,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(existing);
 
       await expect(
-        UserController.update(reqUser, existing.id, input)
+        updateUser(reqUser, existing.id, input)
       ).rejects.toThrow(ZodError);
       expect(prismaMock.user.update).not.toHaveBeenCalled();
     });
@@ -379,7 +393,7 @@ describe('UserController', () => {
       prismaMock.subOrganisation.count.mockResolvedValue(1);
       prismaMock.user.update.mockResolvedValue(existing);
 
-      await UserController.update(reqUser, existing.id, {
+      await updateUser(reqUser, existing.id, {
         organisationId: 'org-2',
         subOrganisationIds: ['sub-2'],
       });
@@ -400,7 +414,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(existing);
       prismaMock.user.update.mockResolvedValue(existing);
 
-      await UserController.update(reqUser, existing.id, {
+      await updateUser(reqUser, existing.id, {
         organisationId: null,
       });
 
@@ -421,7 +435,7 @@ describe('UserController', () => {
         prismaMock.user.findUnique.mockResolvedValue(existing);
 
         await expect(
-          UserController.update(reqUser, existing.id, { role })
+          updateUser(reqUser, existing.id, { role })
         ).rejects.toThrow(BadRequestError);
         expect(prismaMock.user.update).not.toHaveBeenCalled();
       }
@@ -435,7 +449,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(reqUser);
       prismaMock.user.update.mockResolvedValue(reqUser);
 
-      await UserController.update(reqUser, reqUser.id, { firstName: 'New' });
+      await updateUser(reqUser, reqUser.id, { firstName: 'New' });
 
       expect(prismaMock.user.update).toHaveBeenCalled();
     });
@@ -449,7 +463,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(existing);
 
       await expect(
-        UserController.update(reqUser, existing.id, { organisationId: null })
+        updateUser(reqUser, existing.id, { organisationId: null })
       ).rejects.toThrow(BadRequestError);
     });
 
@@ -462,7 +476,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(existing);
 
       await expect(
-        UserController.update(reqUser, existing.id, { subOrganisationIds: [] })
+        updateUser(reqUser, existing.id, { subOrganisationIds: [] })
       ).rejects.toThrow(BadRequestError);
     });
 
@@ -476,7 +490,7 @@ describe('UserController', () => {
       prismaMock.subOrganisation.count.mockResolvedValue(0);
 
       await expect(
-        UserController.update(reqUser, existing.id, { organisationId: 'org-2' })
+        updateUser(reqUser, existing.id, { organisationId: 'org-2' })
       ).rejects.toThrow(BadRequestError);
       expect(prismaMock.user.update).not.toHaveBeenCalled();
     });
@@ -487,7 +501,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(existing);
 
       await expect(
-        UserController.update(reqUser, existing.id, {
+        updateUser(reqUser, existing.id, {
           role: 'Superuser',
         } as any)
       ).rejects.toThrow(ZodError);
@@ -498,7 +512,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(null);
 
       await expect(
-        UserController.update(reqUser, 'missing', {})
+        updateUser(reqUser, 'missing', {})
       ).rejects.toThrow(NotFoundError);
     });
 
@@ -508,7 +522,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(existing);
 
       await expect(
-        UserController.update(reqUser, existing.id, { firstName: 'New' })
+        updateUser(reqUser, existing.id, { firstName: 'New' })
       ).rejects.toThrow(ForbiddenError);
       expect(prismaMock.user.update).not.toHaveBeenCalled();
     });
@@ -576,7 +590,7 @@ describe('UserController', () => {
       const created = buildUser({ kcId: 'kc-new' });
       prismaMock.user.create.mockResolvedValue(created);
 
-      const result = await UserController.create(admin, input);
+      const result = await createUser(admin, input);
 
       expect(mockAdminClient.users.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -615,7 +629,7 @@ describe('UserController', () => {
         requiredActions: ['UPDATE_PASSWORD', 'VERIFY_EMAIL'],
       });
 
-      const result = await UserController.create(admin, input);
+      const result = await createUser(admin, input);
 
       expect(result.kcStatus).toEqual({
         enabled: true,
@@ -630,7 +644,7 @@ describe('UserController', () => {
     it('sets and returns a temporary password', async () => {
       prismaMock.user.create.mockResolvedValue(buildUser({ kcId: 'kc-new' }));
 
-      const result = await UserController.create(admin, {
+      const result = await createUser(admin, {
         ...input,
         onboarding: 'tempPassword',
       });
@@ -653,7 +667,7 @@ describe('UserController', () => {
         buildUser({ kcId: 'kc-existing' })
       );
 
-      await UserController.create(admin, input);
+      await createUser(admin, input);
 
       expect(mockAdminClient.users.create).not.toHaveBeenCalled();
       expect(prismaMock.user.create).toHaveBeenCalledWith(
@@ -666,7 +680,7 @@ describe('UserController', () => {
     it('throws ConflictError when the email is already used in the app', async () => {
       prismaMock.user.findUnique.mockResolvedValue(buildUser());
 
-      await expect(UserController.create(admin, input)).rejects.toThrow(
+      await expect(createUser(admin, input)).rejects.toThrow(
         ConflictError
       );
       expect(mockAdminClient.users.create).not.toHaveBeenCalled();
@@ -678,7 +692,7 @@ describe('UserController', () => {
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(buildUser({ kcId: 'kc-existing' }));
 
-      await expect(UserController.create(admin, input)).rejects.toThrow(
+      await expect(createUser(admin, input)).rejects.toThrow(
         ConflictError
       );
       expect(prismaMock.user.create).not.toHaveBeenCalled();
@@ -687,7 +701,7 @@ describe('UserController', () => {
     it('deletes the new keycloak account when creating the app user fails', async () => {
       prismaMock.user.create.mockRejectedValue(new Error('db error'));
 
-      await expect(UserController.create(admin, input)).rejects.toThrow(
+      await expect(createUser(admin, input)).rejects.toThrow(
         'db error'
       );
       expect(mockAdminClient.users.del).toHaveBeenCalledWith({ id: 'kc-new' });
@@ -701,7 +715,7 @@ describe('UserController', () => {
         new Error('smtp error')
       );
 
-      await expect(UserController.create(admin, input)).rejects.toThrow(
+      await expect(createUser(admin, input)).rejects.toThrow(
         'smtp error'
       );
       expect(prismaMock.user.delete).toHaveBeenCalledWith({
@@ -714,7 +728,7 @@ describe('UserController', () => {
       mockAdminClient.users.find.mockResolvedValue([{ id: 'kc-existing' }]);
       prismaMock.user.create.mockRejectedValue(new Error('db error'));
 
-      await expect(UserController.create(admin, input)).rejects.toThrow(
+      await expect(createUser(admin, input)).rejects.toThrow(
         'db error'
       );
       expect(mockAdminClient.users.del).not.toHaveBeenCalled();
@@ -722,7 +736,7 @@ describe('UserController', () => {
 
     it('requires an organisation for org-scoped roles', async () => {
       await expect(
-        UserController.create(admin, { ...input, organisationId: undefined })
+        createUser(admin, { ...input, organisationId: undefined })
       ).rejects.toThrow(ZodError);
       expect(mockAdminClient.users.create).not.toHaveBeenCalled();
     });
@@ -731,7 +745,7 @@ describe('UserController', () => {
       'rejects creating a %s with an organisation',
       async (role) => {
         await expect(
-          UserController.create(admin, { ...input, role })
+          createUser(admin, { ...input, role })
         ).rejects.toThrow(BadRequestError);
         expect(mockAdminClient.users.create).not.toHaveBeenCalled();
       }
@@ -741,7 +755,7 @@ describe('UserController', () => {
       prismaMock.subOrganisation.count.mockResolvedValue(0);
 
       await expect(
-        UserController.create(admin, {
+        createUser(admin, {
           ...input,
           role: Role.SubOrgCoordinator,
           subOrganisationIds: ['foreign-sub'],
@@ -760,7 +774,7 @@ describe('UserController', () => {
       });
 
       await expect(
-        UserController.create(reqUser, { ...input, organisationId: 'org-1' })
+        createUser(reqUser, { ...input, organisationId: 'org-1' })
       ).rejects.toThrow(ForbiddenError);
       expect(mockAdminClient.users.create).not.toHaveBeenCalled();
     });
@@ -771,7 +785,7 @@ describe('UserController', () => {
         organisationId: 'org-1',
       });
 
-      await expect(UserController.create(reqUser, input)).rejects.toThrow(
+      await expect(createUser(reqUser, input)).rejects.toThrow(
         ForbiddenError
       );
       expect(mockAdminClient.users.create).not.toHaveBeenCalled();
@@ -813,14 +827,14 @@ describe('UserController', () => {
         prismaMock.user.findUnique.mockResolvedValue(null);
         prismaMock.user.create.mockResolvedValue(buildUser({ kcId: 'kc-new' }));
 
-        await UserController.create(reqUser, input);
+        await createUser(reqUser, input);
 
         expect(prismaMock.user.create).toHaveBeenCalled();
       });
 
       it('forbids creating a user in another org', async () => {
         await expect(
-          UserController.create(reqUser, {
+          createUser(reqUser, {
             ...input,
             organisationId: 'org-2',
           })
@@ -832,7 +846,7 @@ describe('UserController', () => {
         'forbids creating a user with role %s',
         async (newRole) => {
           await expect(
-            UserController.create(reqUser, { ...input, role: newRole })
+            createUser(reqUser, { ...input, role: newRole })
           ).rejects.toThrow(ForbiddenError);
           expect(mockAdminClient.users.create).not.toHaveBeenCalled();
         }
@@ -843,7 +857,7 @@ describe('UserController', () => {
         prismaMock.user.findUnique.mockResolvedValue(existing);
         prismaMock.user.update.mockResolvedValue(existing);
 
-        await UserController.update(reqUser, existing.id, {
+        await updateUser(reqUser, existing.id, {
           firstName: 'New',
         });
 
@@ -855,7 +869,7 @@ describe('UserController', () => {
         prismaMock.user.findUnique.mockResolvedValue(existing);
 
         await expect(
-          UserController.update(reqUser, existing.id, { firstName: 'New' })
+          updateUser(reqUser, existing.id, { firstName: 'New' })
         ).rejects.toThrow(ForbiddenError);
         expect(prismaMock.user.update).not.toHaveBeenCalled();
       });
@@ -865,7 +879,7 @@ describe('UserController', () => {
         prismaMock.user.findUnique.mockResolvedValue(existing);
 
         await expect(
-          UserController.update(reqUser, existing.id, {
+          updateUser(reqUser, existing.id, {
             organisationId: 'org-2',
           })
         ).rejects.toThrow(ForbiddenError);
@@ -879,7 +893,7 @@ describe('UserController', () => {
           prismaMock.user.findUnique.mockResolvedValue(existing);
 
           await expect(
-            UserController.update(reqUser, existing.id, { role: newRole })
+            updateUser(reqUser, existing.id, { role: newRole })
           ).rejects.toThrow(ForbiddenError);
           expect(prismaMock.user.update).not.toHaveBeenCalled();
         }
@@ -890,7 +904,7 @@ describe('UserController', () => {
         prismaMock.user.findUnique.mockResolvedValue(existing);
 
         await expect(
-          UserController.update(reqUser, existing.id, { organisationId: null })
+          updateUser(reqUser, existing.id, { organisationId: null })
         ).rejects.toThrow(ForbiddenError);
       });
 
@@ -900,7 +914,7 @@ describe('UserController', () => {
         prismaMock.subOrganisation.count.mockResolvedValue(0);
 
         await expect(
-          UserController.update(reqUser, existing.id, {
+          updateUser(reqUser, existing.id, {
             subOrganisationIds: ['foreign-sub'],
           })
         ).rejects.toThrow(BadRequestError);
@@ -915,7 +929,7 @@ describe('UserController', () => {
         prismaMock.user.findUnique.mockResolvedValue(reqUser);
 
         await expect(
-          UserController.update(reqUser, reqUser.id, { role: other })
+          updateUser(reqUser, reqUser.id, { role: other })
         ).rejects.toThrow(ForbiddenError);
         expect(prismaMock.user.update).not.toHaveBeenCalled();
       });
@@ -924,7 +938,7 @@ describe('UserController', () => {
         prismaMock.user.findUnique.mockResolvedValue(reqUser);
         prismaMock.user.update.mockResolvedValue(reqUser);
 
-        await UserController.update(reqUser, reqUser.id, {
+        await updateUser(reqUser, reqUser.id, {
           role,
           jobTitle: 'Hebamme',
         });
@@ -944,7 +958,7 @@ describe('UserController', () => {
 
           it('cannot be edited', async () => {
             await expect(
-              UserController.update(reqUser, target.id, { firstName: 'New' })
+              updateUser(reqUser, target.id, { firstName: 'New' })
             ).rejects.toThrow(ForbiddenError);
             expect(prismaMock.user.update).not.toHaveBeenCalled();
           });
@@ -958,7 +972,7 @@ describe('UserController', () => {
 
           it('cannot be locked', async () => {
             await expect(
-              UserController.setEnabled(reqUser, target.id, { enabled: false })
+              setEnabled(reqUser, target.id, { enabled: false })
             ).rejects.toThrow(ForbiddenError);
           });
         }
@@ -1048,7 +1062,7 @@ describe('UserController', () => {
       const target = buildUser();
       prismaMock.user.findUnique.mockResolvedValue(target);
 
-      await UserController.setEnabled(admin, target.id, { enabled: false });
+      await setEnabled(admin, target.id, { enabled: false });
 
       expect(mockAdminClient.users.update).toHaveBeenCalledWith(
         { id: target.kcId },
@@ -1061,7 +1075,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(admin);
 
       await expect(
-        UserController.setEnabled(admin, admin.id, { enabled: false })
+        setEnabled(admin, admin.id, { enabled: false })
       ).rejects.toThrow(BadRequestError);
       expect(mockAdminClient.users.update).not.toHaveBeenCalled();
     });
@@ -1071,7 +1085,7 @@ describe('UserController', () => {
       prismaMock.user.findUnique.mockResolvedValue(user);
 
       await expect(
-        UserController.setEnabled(buildUser({ role: Role.User }), user.id, {
+        setEnabled(buildUser({ role: Role.User }), user.id, {
           enabled: true,
         })
       ).rejects.toThrow(ForbiddenError);

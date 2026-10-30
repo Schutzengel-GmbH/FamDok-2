@@ -63,7 +63,7 @@ describe('UserAdminComponent', () => {
     ({ fixture, httpMock } = await setup(Role.Admin));
     component = fixture.componentInstance;
 
-    httpMock.expectOne((r) => r.url.includes('/user?')).flush(users);
+    httpMock.expectOne((r) => r.url.endsWith('/user')).flush(users);
     httpMock.expectOne((r) => r.url.endsWith('/org')).flush([]);
   });
 
@@ -150,7 +150,7 @@ describe('UserAdminComponent', () => {
       ({ fixture, httpMock } = await setup(role));
 
       httpMock
-        .expectOne((r) => r.url.includes('/user/org/org-1?'))
+        .expectOne((r) => r.url.endsWith('/user/org/org-1'))
         .flush(users);
       httpMock.expectOne((r) => r.url.endsWith('/org')).flush([]);
     });

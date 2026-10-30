@@ -57,42 +57,11 @@ describe('AllDataGeneralComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('scopes responses to createdBy = current user for a plain User', () => {
-    setup(buildUser({ role: Role.User, id: 'me' }));
+  it('filters by form and leaves what the user may see to the backend', () => {
+    setup(buildUser({ role: Role.OrgCoordinator, organisationId: 'org-9' }));
 
     const { req, url } = currentRequestUrl();
-    expect(url).toContain('"createdBy":{"id":"me"}');
-    req.flush([]);
-  });
-
-  it("scopes responses to the current user's organisation for an OrgController/OrgCoordinator", () => {
-    setup(
-      buildUser({ role: Role.OrgCoordinator, id: 'me', organisationId: 'org-9' }),
-    );
-
-    const { req, url } = currentRequestUrl();
-    expect(url).toContain('"createdBy":{"organisationId":"org-9"}');
-    req.flush([]);
-  });
-
-  it('scopes responses to the sub-organisations for a SubOrgCoordinator', () => {
-    setup(
-      buildUser({
-        role: Role.SubOrgCoordinator,
-        id: 'me',
-        subOrganisations: [{ id: 'sub-1' }, { id: 'sub-2' }],
-      }),
-    );
-
-    const { req, url } = currentRequestUrl();
-    expect(url).toContain('"subOrganisations":{"some":{"id":{"in":["sub-1","sub-2"]}}}');
-    req.flush([]);
-  });
-
-  it('leaves createdBy unset for Admin/Controller', () => {
-    setup(buildUser({ role: Role.Admin, id: 'me' }));
-
-    const { req, url } = currentRequestUrl();
+    expect(url).toContain('"generalFormId"');
     expect(url).not.toContain('"createdBy":');
     req.flush([]);
   });

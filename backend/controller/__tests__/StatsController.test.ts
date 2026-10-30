@@ -4,7 +4,7 @@ import { prisma } from '../../db';
 import { createPrismaMock } from '../../testUtils/prismaMock';
 import { buildCase, buildCaseForm, buildContactDocumentation, buildUser } from '../../testUtils/fixtures';
 import { StatsController } from '../StatsController';
-import { BadRequestError, ForbiddenError } from '../../util/authUtils';
+import { ForbiddenError } from '../../util/authUtils';
 import { Role } from '../../../shared/generated/prisma/client';
 
 const prismaMock = prisma as unknown as ReturnType<typeof createPrismaMock>;
@@ -27,32 +27,6 @@ describe('StatsController', () => {
       await expect(StatsController.getCases(user)).rejects.toThrow(ForbiddenError);
       expect(prismaMock.case.findMany).not.toHaveBeenCalled();
     });
-
-    it('throws BadRequestError when the filter contains personal family data', async () => {
-      const admin = buildUser({ role: Role.Admin });
-
-      await expect(
-        StatsController.getCases(admin, { family: { name: 'Smith' } } as any)
-      ).rejects.toThrow(BadRequestError);
-      expect(prismaMock.case.findMany).not.toHaveBeenCalled();
-    });
-
-    it('throws BadRequestError when the filter uses aggregate operators', async () => {
-      const admin = buildUser({ role: Role.Admin });
-
-      await expect(
-        StatsController.getCases(admin, { AND: [{ organisationId: 'org-1' }] } as any)
-      ).rejects.toThrow(BadRequestError);
-    });
-
-    it('allows filtering by family city/plz', async () => {
-      const admin = buildUser({ role: Role.Admin });
-      prismaMock.case.findMany.mockResolvedValue([]);
-
-      await expect(
-        StatsController.getCases(admin, { family: { adress: { path: ['city'], equals: 'X' } } } as any)
-      ).resolves.toEqual([]);
-    });
   });
 
   describe('countCases', () => {
@@ -69,25 +43,6 @@ describe('StatsController', () => {
       const user = buildUser({ role: Role.User });
 
       await expect(StatsController.countCases(user, {})).rejects.toThrow(ForbiddenError);
-    });
-  });
-
-  describe('countGeneralFormResponses', () => {
-    it('counts responses for a privileged user', async () => {
-      const admin = buildUser({ role: Role.Admin });
-      prismaMock.generalFormResponse.count.mockResolvedValue(2);
-
-      const result = await StatsController.countGeneralFormResponses(admin, {});
-
-      expect(result).toBe(2);
-    });
-
-    it('throws ForbiddenError for a plain user', async () => {
-      const user = buildUser({ role: Role.User });
-
-      await expect(StatsController.countGeneralFormResponses(user, {})).rejects.toThrow(
-        ForbiddenError
-      );
     });
   });
 
@@ -122,65 +77,6 @@ describe('StatsController', () => {
       await expect(StatsController.contactDocumentation(user, {}, {})).rejects.toThrow(
         ForbiddenError
       );
-    });
-
-    it('throws a ZodError when the contactDocumentation filter includes createdBy', async () => {
-      const admin = buildUser({ role: Role.Admin });
-
-      await expect(
-        StatsController.contactDocumentation(admin, {}, { createdBy: { id: 'user-1' } } as any)
-      ).rejects.toThrow();
-    });
-  });
-
-  describe('countContactDocumentation', () => {
-    it('counts documentation for a privileged user', async () => {
-      const admin = buildUser({ role: Role.Admin });
-      prismaMock.contactDocumentation.count.mockResolvedValue(7);
-
-      const result = await StatsController.countContactDocumentation(admin, {});
-
-      expect(result).toBe(7);
-    });
-
-    it('throws ForbiddenError for a plain user', async () => {
-      const user = buildUser({ role: Role.User });
-
-      await expect(StatsController.countContactDocumentation(user, {})).rejects.toThrow(
-        ForbiddenError
-      );
-    });
-  });
-
-  describe('countCaseFormResponses', () => {
-    it('counts responses for a form without personal data', async () => {
-      const admin = buildUser({ role: Role.Admin });
-      const form = buildCaseForm({ containsPersonalData: false });
-      prismaMock.caseForm.findUniqueOrThrow.mockResolvedValue(form);
-      prismaMock.caseFormResponse.count.mockResolvedValue(3);
-
-      const result = await StatsController.countCaseFormResponses(form.id, admin, {});
-
-      expect(result).toBe(3);
-    });
-
-    it('throws ForbiddenError for a form containing personal data', async () => {
-      const admin = buildUser({ role: Role.Admin });
-      const form = buildCaseForm({ containsPersonalData: true });
-      prismaMock.caseForm.findUniqueOrThrow.mockResolvedValue(form);
-
-      await expect(StatsController.countCaseFormResponses(form.id, admin, {})).rejects.toThrow(
-        ForbiddenError
-      );
-    });
-
-    it('throws ForbiddenError for a plain user before touching prisma', async () => {
-      const user = buildUser({ role: Role.User });
-
-      await expect(StatsController.countCaseFormResponses('form-1', user, {})).rejects.toThrow(
-        ForbiddenError
-      );
-      expect(prismaMock.caseForm.findUniqueOrThrow).not.toHaveBeenCalled();
     });
   });
 
