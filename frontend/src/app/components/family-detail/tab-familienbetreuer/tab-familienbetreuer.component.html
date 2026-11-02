@@ -1,7 +1,7 @@
 <div class="tab-section">
   <div class="container">
     <div class="row">
-      <div class="col p-2">
+      <div class="col-12 col-lg p-2">
         <h6 class="section-title">Derzeitige Familienbetreuer</h6>
         <div class="text-muted small">
           @for (user of selectedCase().responsibleUsers; track user.id) {
@@ -13,7 +13,7 @@
           <app-handover-brief [handover]="handover"></app-handover-brief>
         }
       </div>
-      <div class="col p-2">
+      <div class="col-12 col-lg p-2">
         <app-case-handover
           [selectedCase]="selectedCase()"
           (changes)="changes.emit($event)" />

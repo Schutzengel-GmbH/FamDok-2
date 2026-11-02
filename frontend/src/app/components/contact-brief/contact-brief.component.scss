@@ -1,3 +1,10 @@
+// Wraps instead of forcing a horizontal scroll once date/art/dauer/actions no longer
+// fit on one line, e.g. on narrow phones.
+.contact-brief-row {
+  flex-wrap: wrap;
+  row-gap: 0.4rem;
+}
+
 div.ml {
   margin-left: auto;
 }

@@ -1,3 +1,10 @@
+// max-width keeps the card from growing past its column just to fit every KPI item on one
+// line - once it can't, stats-kpi-items wraps them instead of overflowing horizontally.
+:host {
+  display: block;
+  max-width: 100%;
+}
+
 .stats-kpi-items {
   display: flex;
   flex-wrap: wrap;
