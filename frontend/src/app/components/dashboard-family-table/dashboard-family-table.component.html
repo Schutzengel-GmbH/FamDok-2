@@ -1,64 +1,99 @@
 <div class="family-worklist">
-  <div
-    class="family-worklist-item"
-    *ngFor="let row of rows()"
-    (click)="selectCase(row)"
-    [class.family-worklist-item--active]="selectedCase?.id === row.id">
-    <div class="family-worklist-main">
-      <div class="family-worklist-title">
-        {{ familyNamePipe.transform(row.family) }}
+  <div class="family-worklist-desktop">
+    <div
+      class="family-worklist-item"
+      *ngFor="let row of rows()"
+      (click)="selectCase(row)"
+      [class.family-worklist-item--active]="selectedCase?.id === row.id">
+      <div class="family-worklist-main">
+        <div class="family-worklist-title">
+          {{ familyNamePipe.transform(row.family) }}
+        </div>
+
+        <div class="family-worklist-meta">
+          <span>{{ getChildrenCount(row) }} Kinder</span>
+          <span>Letzter Kontakt: {{ getLatestContactText(row) }}</span>
+          <span>Notiz: {{ row.family?.note }}</span>
+          <span
+            >Verantwortlich:
+            {{ userArrayPipe.transform(row.responsibleUsers) }}</span
+          >
+        </div>
       </div>
 
-      <div class="family-worklist-meta">
-        <span>{{ getChildrenCount(row) }} Kinder</span>
-        <span>Letzter Kontakt: {{ getLatestContactText(row) }}</span>
-        <span>Notiz: {{ row.family?.note }}</span>
-        <span
-          >Verantwortlich:
-          {{ userArrayPipe.transform(row.responsibleUsers) }}</span
-        >
+      <div class="family-worklist-status">
+        <span class="status-dot" [ngClass]="getZielStatusClass(row)"></span>
+        <span>{{ getZielStatusText(row) }}</span>
       </div>
-    </div>
 
-    <div class="family-worklist-status">
-      <span class="status-dot" [ngClass]="getZielStatusClass(row)"></span>
-      <span>{{ getZielStatusText(row) }}</span>
-    </div>
-
-    <div class="family-worklist-actions">
-      <button
-        type="button"
-        class="btn btn-outline-secondary btn-sm"
-        (click)="$event.stopPropagation(); openDetails(row, 'stammdaten')">
-        Details
-      </button>
-
-      <button
-        type="button"
-        class="btn btn-outline-secondary btn-sm"
-        (click)="
-          $event.stopPropagation(); openDetails(row, 'zielvereinbarungen')
-        ">
-        Ziele
-      </button>
-
-      @if (canEditCase(row)) {
+      <div class="family-worklist-actions">
         <button
           type="button"
           class="btn btn-outline-secondary btn-sm"
-          (click)="$event.stopPropagation(); openDetails(row, 'formulare')">
-          Formulare
+          (click)="$event.stopPropagation(); openDetails(row, 'stammdaten')">
+          Details
         </button>
-      }
 
-      <button
-        type="button"
-        class="btn btn-outline-secondary btn-sm"
-        (click)="
-          $event.stopPropagation(); openDetails(row, 'freie-dokumentation')
-        ">
-        Doku
-      </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          (click)="
+            $event.stopPropagation(); openDetails(row, 'zielvereinbarungen')
+          ">
+          Ziele
+        </button>
+
+        @if (canEditCase(row)) {
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            (click)="$event.stopPropagation(); openDetails(row, 'formulare')">
+            Formulare
+          </button>
+        }
+
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          (click)="
+            $event.stopPropagation(); openDetails(row, 'freie-dokumentation')
+          ">
+          Doku
+        </button>
+      </div>
     </div>
+  </div>
+
+  <div class="family-worklist-mobile">
+    @for (row of rows(); track row.id) {
+      <div
+        class="worklist-row"
+        role="button"
+        tabindex="0"
+        (click)="openDetails(row)"
+        (keydown.enter)="openDetails(row)">
+        <div class="worklist-row__main">
+          <span class="worklist-row__title">
+            {{ familyNamePipe.transform(row.family) }}
+          </span>
+          <span class="worklist-row__meta">
+            {{ getChildrenCount(row) }} Kinder · Letzter Kontakt:
+            {{ getLatestContactText(row) }}
+          </span>
+        </div>
+
+        <div class="worklist-row__trailing">
+          <span
+            class="status-dot"
+            [ngClass]="getZielStatusClass(row)"
+            [title]="getZielStatusText(row)"></span>
+          <i
+            class="bi bi-chevron-right worklist-row__chevron"
+            aria-hidden="true"></i>
+        </div>
+      </div>
+    } @empty {
+      <div class="worklist-row__empty">Keine Fälle gefunden.</div>
+    }
   </div>
 </div>

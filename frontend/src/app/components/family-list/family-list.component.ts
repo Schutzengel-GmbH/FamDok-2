@@ -212,7 +212,7 @@ export class Families implements OnInit {
   }
 
   private updateMobileTableMode(): void {
-    this.isMobileTable = window.innerWidth <= 900;
+    this.isMobileTable = window.innerWidth <= 992;
   }
 
   private updatePagedCases(): void {

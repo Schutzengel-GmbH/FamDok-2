@@ -18,23 +18,6 @@
   display: none;
 }
 
-.view-switch {
-  display: flex;
-  align-items: center;
-}
-
-.view-switch .btn-group .btn {
-  min-width: 110px;
-  font-size: 0.8rem;
-  white-space: nowrap;
-}
-
-.view-switch .btn-group .btn.active {
-  background-color: var(--bs-primary);
-  color: #fff;
-  border-color: var(--bs-primary);
-}
-
 @include media-down("nav") {
   .navbar {
     margin: 0;
@@ -45,10 +28,6 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .view-switch {
-    display: none;
   }
 }
 
