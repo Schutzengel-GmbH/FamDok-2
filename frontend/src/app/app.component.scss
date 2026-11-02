@@ -6,10 +6,6 @@
   height: 100%;
 }
 
-.mobile-menu-toggle {
-  display: none;
-}
-
 app-header {
   flex: 0 0 auto;
   z-index: 1030;
@@ -47,10 +43,6 @@ app-header {
   overflow: auto;
 }
 
-.app-overlay {
-  display: none;
-}
-
 @include media-down("nav") {
   .app-shell {
     grid-template-columns: 1fr;
@@ -67,10 +59,10 @@ app-header {
     transform: translateX(-100%);
     transition: transform 0.2s ease-in-out;
     box-shadow: 0 0 16px rgba(0, 0, 0, 0.4);
-  }
 
-  .mobile-menu-toggle:checked ~ .app-shell .app-sidebar {
-    transform: translateX(0);
+    &--open {
+      transform: translateX(0);
+    }
   }
 
   .app-content {
@@ -84,13 +76,5 @@ app-header {
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: 1100;
-  }
-
-  .mobile-menu-toggle:not(:checked) ~ .app-overlay {
-    display: none;
-  }
-
-  .mobile-menu-toggle:checked ~ .app-overlay {
-    display: block;
   }
 }

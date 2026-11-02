@@ -74,9 +74,9 @@
   margin-bottom: 1.25rem;
 }
 
-// Mobile: a plain <select> instead of the tab bar - with this many tabs, the bar either
-// wraps into a messy grid of badges or needs horizontal scrolling, neither of which is
-// pleasant to use on a phone. Swapped back for the tab bar from `sm` up.
+// Below the app shell's own mobile breakpoint: a plain <select> instead of the tab bar - with
+// this many tabs, the bar either wraps into a messy grid of badges or needs horizontal
+// scrolling on phones and tablets alike. Swapped back for the tab bar from `nav` up.
 .detail-tabs__select-wrap {
   display: none;
   margin-bottom: 0.5rem;
@@ -127,16 +127,7 @@
   color: $slate-muted;
 }
 
-@include media-down("sm") {
-  .detail-header h1 {
-    font-size: 1.2rem;
-  }
-
-  .detail-body {
-    padding: 1rem;
-    border-radius: 14px;
-  }
-
+@include media-down("nav") {
   .detail-tabs {
     border-bottom: none;
   }
@@ -147,6 +138,17 @@
 
   .detail-tabs .nav-tabs {
     display: none;
+  }
+}
+
+@include media-down("sm") {
+  .detail-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .detail-body {
+    padding: 1rem;
+    border-radius: 14px;
   }
 
   .detail-footer {

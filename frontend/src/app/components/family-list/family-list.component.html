@@ -138,74 +138,56 @@
         </ngx-datatable-row-detail>
       </ngx-datatable>
     } @else {
-      <div class="family-cards">
-        <a class="family-cards__add" routerLink="/create-family">
+      <div class="family-rows">
+        <a class="family-rows__add" routerLink="/create-family">
           <i class="bi bi-plus-lg"></i>
           Familie hinzufügen
         </a>
 
         @for (row of pagedCases; track row.id) {
-          <div class="family-card">
-            <div class="family-card__header">
-              <div class="family-card__title">
+          <div
+            class="family-row"
+            role="button"
+            tabindex="0"
+            (click)="openDetails(row.id)"
+            (keydown.enter)="openDetails(row.id)">
+            <div class="family-row__main">
+              <span class="family-row__title">
                 {{ familyNamePipe.transform(row.family) }}
-              </div>
-              <span class="table-badge">{{
-                countChildrenPipe.transform(row.family?.children)
-              }}</span>
+              </span>
+              <span class="family-row__meta">
+                {{ countChildrenPipe.transform(row.family?.children) }} Kinder
+                @if (userArrayPipe.transform(row.responsibleUsers)) {
+                  · {{ userArrayPipe.transform(row.responsibleUsers) }}
+                }
+              </span>
             </div>
 
-            @if (row.family?.note) {
-              <div class="family-card__note">{{ row.family?.note }}</div>
-            }
-
-            <dl class="family-card__meta">
-              <div class="family-card__meta-row">
-                <dt>Verantwortlich</dt>
-                <dd>{{ userArrayPipe.transform(row.responsibleUsers) }}</dd>
-              </div>
-              <div class="family-card__meta-row">
-                <dt>Adresse</dt>
-                <dd>
-                  {{
-                    row.family
-                      ? getAdressString(row.family.adress)
-                      : "Keine Adresse hinterlegt"
-                  }}
-                </dd>
-              </div>
-            </dl>
-
-            <div class="family-card__actions">
+            <div class="family-row__trailing">
               @if (row.family) {
                 @if (canEditCase(row)) {
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-primary"
-                    (click)="edit(row.family.id)">
+                    class="family-row__action"
+                    (click)="edit(row.family.id); $event.stopPropagation()"
+                    aria-label="Familie bearbeiten">
                     <i class="bi bi-pencil-square"></i>
-                    Bearbeiten
                   </button>
                 } @else {
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-secondary"
-                    (click)="inspect(row.family.id)">
+                    class="family-row__action"
+                    (click)="inspect(row.family.id); $event.stopPropagation()"
+                    aria-label="Familie ansehen">
                     <i class="bi bi-eye"></i>
-                    Ansehen
                   </button>
                 }
               }
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary"
-                (click)="openDetails(row.id)">
-                Details
-              </button>
+              <i class="bi bi-chevron-right family-row__chevron" aria-hidden="true"></i>
             </div>
           </div>
         } @empty {
-          <div class="family-cards__empty">Keine Familien gefunden.</div>
+          <div class="family-rows__empty">Keine Familien gefunden.</div>
         }
       </div>
     }
