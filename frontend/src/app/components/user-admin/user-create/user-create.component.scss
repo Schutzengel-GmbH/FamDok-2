@@ -23,12 +23,6 @@
   @include form-field-grid;
 }
 
-.user-create__suborgs {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
 .user-create__onboarding {
   border: 1px solid var(--bs-border-color);
   border-radius: $radius-control;

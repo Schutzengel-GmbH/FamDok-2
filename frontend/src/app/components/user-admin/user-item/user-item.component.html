@@ -1,73 +1,30 @@
 <article class="user-card">
-  <form [formGroup]="form">
+  <form class="user-card__form" [formGroup]="form">
     <div class="user-card__header">
-      <div class="user-card__identity">
-        <span class="user-card__name">{{ user.email }}</span>
-
-        @if (kcStatus(); as status) {
-          <div class="user-card__badges">
-            @if (!status.enabled) {
-              <span class="badge-soft badge-soft--red">Gesperrt</span>
-            }
-            @if (hasPendingAction("UPDATE_PASSWORD")) {
-              <span class="badge-soft badge-soft--yellow">
-                Passwort noch nicht gesetzt
-              </span>
-            }
-            @if (!status.emailVerified) {
-              <span class="badge-soft badge-soft--gray">
-                E-Mail nicht bestätigt
-              </span>
-            }
-          </div>
-        } @else {
-          <span class="badge-soft badge-soft--gray">
-            Keycloak-Status nicht verfügbar
-          </span>
-        }
-      </div>
+      <span class="user-card__name">{{ user.email }}</span>
 
       @if (kcStatus(); as status) {
-        <div class="user-card__kc-actions">
-          <button
-            class="btn btn-sm btn-outline-secondary"
-            type="button"
-            (click)="resendInvite()">
-            <i class="bi bi-envelope"></i>
-            Einladung senden
-          </button>
-          <button
-            class="btn btn-sm btn-outline-secondary"
-            type="button"
-            (click)="issueTempPassword()">
-            <i class="bi bi-key"></i>
-            Temporäres Passwort
-          </button>
-          <button
-            class="btn btn-sm"
-            [class.btn-outline-warning]="status.enabled"
-            [class.btn-outline-success]="!status.enabled"
-            type="button"
-            (click)="toggleEnabled()">
-            @if (status.enabled) {
-              <i class="bi bi-lock"></i>
-              Sperren
-            } @else {
-              <i class="bi bi-unlock"></i>
-              Entsperren
-            }
-          </button>
+        <div class="user-card__badges">
+          @if (!status.enabled) {
+            <span class="badge-soft badge-soft--red">Gesperrt</span>
+          }
+          @if (hasPendingAction("UPDATE_PASSWORD")) {
+            <span class="badge-soft badge-soft--yellow">
+              Passwort noch nicht gesetzt
+            </span>
+          }
+          @if (!status.emailVerified) {
+            <span class="badge-soft badge-soft--gray">
+              E-Mail nicht bestätigt
+            </span>
+          }
         </div>
+      } @else {
+        <span class="badge-soft badge-soft--gray">
+          Keycloak-Status nicht verfügbar
+        </span>
       }
     </div>
-
-    @if (tempPassword(); as password) {
-      <app-temp-password
-        class="user-card__temp-password"
-        [email]="user.email"
-        [password]="password"
-        (dismiss)="tempPassword.set(undefined)" />
-    }
 
     <div class="user-card__fields">
       <div class="form-floating">
@@ -122,18 +79,23 @@
           <label for="organisationId">Organisation</label>
         </div>
       }
-      <div class="user-card__suborgs">
-        <label class="form-label" for="subOrgSelect">Unterorganisationen</label>
-        <app-multi-select
-          id="subOrgSelect"
-          [items]="availableSubOrgs()"
-          [value]="selectedSubOrgs()"
-          [compareFn]="subOrgCompareFn"
-          labelProp="name"
-          placeholder="Keine"
-          (selectChange)="onSubOrgsChange($event)" />
-      </div>
+      <app-multi-select
+        fieldLabel="Unterorganisationen"
+        [items]="availableSubOrgs()"
+        [value]="selectedSubOrgs()"
+        [compareFn]="subOrgCompareFn"
+        labelProp="name"
+        placeholder="Keine"
+        (selectChange)="onSubOrgsChange($event)" />
     </div>
+
+    @if (tempPassword(); as password) {
+      <app-temp-password
+        class="user-card__temp-password"
+        [email]="user.email"
+        [password]="password"
+        (dismiss)="tempPassword.set(undefined)" />
+    }
 
     <div class="user-card__footer">
       <div class="user-card__footer-status">
@@ -151,20 +113,54 @@
           >
         }
       </div>
-      <div class="user-card__footer-actions">
-        <button
-          class="btn btn-sm btn-outline-danger"
-          type="button"
-          (click)="delete()">
-          Löschen
-        </button>
-        <button
-          class="btn btn-sm btn-primary"
-          type="button"
-          (click)="save()"
-          [disabled]="form.pristine || form.invalid">
-          Speichern
-        </button>
+      <div class="user-card__actions">
+        @if (kcStatus(); as status) {
+          <div class="user-card__action-group">
+            <button
+              class="btn btn-sm btn-outline-secondary"
+              type="button"
+              (click)="resendInvite()">
+              <i class="bi bi-envelope"></i>
+              Einladung senden
+            </button>
+            <button
+              class="btn btn-sm btn-outline-secondary"
+              type="button"
+              (click)="issueTempPassword()">
+              <i class="bi bi-key"></i>
+              Temporäres Passwort
+            </button>
+            <button
+              class="btn btn-sm"
+              [class.btn-outline-warning]="status.enabled"
+              [class.btn-outline-success]="!status.enabled"
+              type="button"
+              (click)="toggleEnabled()">
+              @if (status.enabled) {
+                <i class="bi bi-lock"></i>
+                Sperren
+              } @else {
+                <i class="bi bi-unlock"></i>
+                Entsperren
+              }
+            </button>
+          </div>
+        }
+        <div class="user-card__action-group">
+          <button
+            class="btn btn-sm btn-outline-danger"
+            type="button"
+            (click)="delete()">
+            Löschen
+          </button>
+          <button
+            class="btn btn-sm btn-primary"
+            type="button"
+            (click)="save()"
+            [disabled]="form.pristine || form.invalid">
+            Speichern
+          </button>
+        </div>
       </div>
     </div>
   </form>

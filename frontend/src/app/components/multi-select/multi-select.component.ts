@@ -1,10 +1,12 @@
 import {
   Component,
-  inject,
+  ElementRef,
   input,
   linkedSignal,
   model,
   output,
+  signal,
+  viewChild,
 } from '@angular/core';
 import {
   NgbDropdown,
@@ -33,9 +35,12 @@ function defaultCompare<T>(a: T, b: T): boolean {
   return false;
 }
 
+let nextFieldId = 0;
+
 @Component({
   selector: 'app-multi-select',
   templateUrl: './multi-select.component.html',
+  styleUrl: './multi-select.component.scss',
   standalone: true,
   imports: [
     NgbDropdown,
@@ -79,6 +84,25 @@ export class MultiSelect<TItem> {
   /** [Optional] Text displayed when no elements selected.
    */
   placeholder = input<string>('Elemente auswählen');
+
+  /** [Optional] Renders the select as a floating-label form field, matching `.form-floating`
+   * inputs and selects, with this text as its label. Defaults to a plain button.
+   */
+  fieldLabel = input<string>();
+
+  protected readonly fieldId = `multi-select-${nextFieldId++}`;
+
+  private dropdownButton =
+    viewChild.required<ElementRef<HTMLButtonElement>>('dropdownButton');
+
+  /** The menu lives in `body`, so CSS can't size it relative to the field. */
+  protected menuMinWidth = signal<number | undefined>(undefined);
+
+  protected onOpenChange(open: boolean) {
+    if (open && this.fieldLabel()) {
+      this.menuMinWidth.set(this.dropdownButton().nativeElement.offsetWidth);
+    }
+  }
 
   protected valueText = linkedSignal(() =>
     this.value()
