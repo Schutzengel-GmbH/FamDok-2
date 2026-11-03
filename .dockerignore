@@ -15,6 +15,9 @@
 **/compose*
 **/.dockerignore
 
+# Local backups (backup.sh) - would otherwise be sent with every build context.
+backups
+
 *.log
 *.env
 !*.env.production

@@ -14,9 +14,16 @@
 #   gunzip -c app-db.sql.gz      | sudo docker compose -p <project> exec -T app-db      sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"'
 #   gunzip -c keycloak-db.sql.gz | sudo docker compose -p <project> exec -T keycloak-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"'
 #   sudo docker run --rm --volumes-from "$(sudo docker compose -p <project> ps -aq backend)" \
-#     -v "$PWD":/backup alpine sh -c 'cd /app/dist/uploads && tar xzf /backup/uploads.tar.gz'
+#     -v "$PWD":/backup alpine:3.22 sh -c 'cd /app/dist/uploads && tar xzf /backup/uploads.tar.gz'
 
 set -euo pipefail
+
+# The dumps contain personal data: keep everything this script creates readable by its owner
+# only (the backup directory ends up 0700, so files written into it are protected too).
+umask 077
+
+# Pinned so a nightly run doesn't depend on whatever `alpine:latest` happens to be.
+ALPINE_IMAGE="alpine:3.22"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -54,7 +61,12 @@ APP_DB="$(container_of app-db)"
 KC_DB="$(container_of keycloak-db)"
 BACKEND="$(container_of -a backend)"
 
-mkdir -p "$TARGET"
+# Write into a .partial directory and only rename it to its final name once every file has been
+# verified, so a failed run can never leave behind something that looks like a complete backup
+# (which rotation would then count as one). On failure the partial directory is removed.
+WORK="$TARGET.partial"
+trap 'rm -rf -- "$WORK"' EXIT
+mkdir -p "$WORK"
 
 # Dumps a Postgres container's database. The credentials are taken from the container's own
 # environment (set from .env by docker-compose.yaml), so this script never has to read .env.
@@ -62,7 +74,7 @@ dump_db() {
   local container="$1" name="$2"
   echo "Dumping $name..."
   docker exec "$container" sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
-    | gzip > "$TARGET/$name.sql.gz"
+    | gzip > "$WORK/$name.sql.gz"
 }
 
 dump_db "$APP_DB" app-db
@@ -71,13 +83,15 @@ dump_db "$KC_DB" keycloak-db
 # --volumes-from mounts the backend's uploads volume regardless of the volume's name, and
 # works with the backend stopped too.
 echo "Archiving uploads..."
-docker run --rm --volumes-from "$BACKEND" -v "$TARGET":/backup alpine \
+docker run --rm --volumes-from "$BACKEND" -v "$WORK":/backup "$ALPINE_IMAGE" \
   tar czf /backup/uploads.tar.gz -C /app/dist/uploads .
 
 # Catch truncated or corrupt archives now rather than when a restore is needed.
-for f in "$TARGET"/*.gz; do
+for f in "$WORK"/*.gz; do
   gzip -t "$f"
 done
+
+mv -- "$WORK" "$TARGET"
 
 echo "Backup complete: $TARGET"
 ls -lh "$TARGET"
