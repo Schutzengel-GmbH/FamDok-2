@@ -253,7 +253,7 @@ async function ensureKeycloakUser(
 export async function createUser(
   adminClient: Awaited<ReturnType<typeof getAdminClient>>,
   def: SeedUserDef,
-  organisationId: string
+  organisationId: string | null
 ) {
   const kcId = await ensureKeycloakUser(adminClient, def);
 
@@ -779,7 +779,7 @@ async function main() {
       role: Role.Controller,
       jobTitle: 'Jugendamt',
     },
-    org1.id
+    null
   );
 
   const org1Users = await seedOrgUsers(adminClient, 'org1', org1, [org1Sub1, org1Sub2]);

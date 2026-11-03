@@ -18,13 +18,11 @@ import { FullFamily } from '../../../../../shared/types';
 import { CaregiverModalComponent } from '../create-family/modals/caregiver-modal/caregiver-modal';
 import { ChildModalComponent } from '../create-family/modals/child-modal/child-modal';
 import { NgbDateDeParserFormatter } from 'src/app/util/NgbDatePickerFormatter';
-import {
-  CaregiverCreateInput,
-  CaregiverUpdateInput,
-  ChildCreateInput,
-  ChildUpdateInput,
-  FamilyUpdateInput,
-} from '../../../../../shared/generated/prisma/models';
+import type {
+  CaregiverRequest,
+  ChildRequest,
+  FamilyUpdateRequest,
+} from '../../../../../shared/api';
 import { Familienstand } from '../../../../../shared/generated/prisma/enums';
 
 @Component({
@@ -47,8 +45,8 @@ export class EditFamilyComponent implements OnInit {
   private navigation = inject(NavigationService);
 
   protected family!: FullFamily;
-  protected caregivers!: CaregiverUpdateInput[];
-  protected children!: ChildUpdateInput[];
+  protected caregivers!: CaregiverRequest[];
+  protected children!: ChildRequest[];
   protected isSaving = false;
   protected isLoading = true;
   protected listsDirty = false;
@@ -120,11 +118,12 @@ export class EditFamilyComponent implements OnInit {
   init(f: FullFamily) {
     this.family = f;
 
-    this.caregivers = structuredClone(f.caregiver);
-    this.children = structuredClone(f.children);
-
-    this.children.map((c) => delete (c as { familyId: any }).familyId);
-    this.caregivers.map((c) => delete (c as { familyId: any }).familyId);
+    this.caregivers = structuredClone(f.caregiver).map(
+      ({ familyId, ...caregiver }) => caregiver,
+    );
+    this.children = structuredClone(f.children).map(
+      ({ familyId, ...child }) => child,
+    );
 
     const currentCase = f.case;
 
@@ -190,7 +189,7 @@ export class EditFamilyComponent implements OnInit {
     modalRef.closed.subscribe(
       (
         result:
-          { reason: 'cancel' } | { reason: 'save'; value: ChildCreateInput },
+          { reason: 'cancel' } | { reason: 'save'; value: ChildRequest },
       ) => {
         if (result.reason !== 'save') return;
         !isNew
@@ -219,7 +218,7 @@ export class EditFamilyComponent implements OnInit {
       (
         result:
           | { reason: 'cancel' }
-          | { reason: 'save'; value: CaregiverCreateInput },
+          | { reason: 'save'; value: CaregiverRequest },
       ) => {
         if (result.reason !== 'save') return;
         !isNew
@@ -266,7 +265,7 @@ export class EditFamilyComponent implements OnInit {
     this.init(this.family);
   }
 
-  makeUpdateInput(): FamilyUpdateInput {
+  makeUpdateInput(): FamilyUpdateRequest {
     return {
       name: this.valueIfChanged(this.name, this.family.name),
       note: this.valueIfChanged(this.note, this.family.note),
@@ -275,22 +274,8 @@ export class EditFamilyComponent implements OnInit {
         .replace(/\s/g, '')
         .split(',')
         .filter((n) => n !== ''),
-      caregiver: {
-        deleteMany: { id: { in: this.family.caregiver.map((c) => c.id) } },
-        createMany: {
-          data: this.caregivers
-            .filter((c) => this.caregivers.some((tc) => tc.id === c.id))
-            .map((c) => c as CaregiverCreateInput),
-        },
-      },
-      children: {
-        deleteMany: { id: { in: this.family.children.map((c) => c.id) } },
-        createMany: {
-          data: this.children
-            .filter((c) => this.children.some((tc) => tc.id === c.id))
-            .map((c) => c as ChildCreateInput),
-        },
-      },
+      caregivers: this.caregivers,
+      children: this.children,
       adress: {
         street: this.street.value,
         number: this.number.value,
@@ -298,30 +283,28 @@ export class EditFamilyComponent implements OnInit {
         city: this.city.value,
       },
       case: {
-        update: {
-          city: this.valueIfChanged(this.city, this.family.adress?.city),
-          plz: this.valueIfChanged(this.plz, this.family.adress?.plz),
-          migrationBackground: this.valueIfChanged(
-            this.migrationBackground,
-            this.family.case?.migrationBackground,
-          ),
-          specificMigrationBackground: this.valueIfChanged(
-            this.specificMigrationBackground,
-            this.family.case?.specificMigrationBackground,
-          ),
-          familienstand: this.valueIfChanged(
-            this.familienstand,
-            this.family.case?.familienstand,
-          ),
-          partnerInvolved: this.valueIfChanged(
-            this.partnerInvolved,
-            this.family.case?.partnerInvolved,
-          ),
-          bekanntJA: this.valueIfChanged(
-            this.bekanntJA,
-            this.family.case?.bekanntJA,
-          ),
-        },
+        city: this.valueIfChanged(this.city, this.family.adress?.city),
+        plz: this.valueIfChanged(this.plz, this.family.adress?.plz),
+        migrationBackground: this.valueIfChanged(
+          this.migrationBackground,
+          this.family.case?.migrationBackground,
+        ),
+        specificMigrationBackground: this.valueIfChanged(
+          this.specificMigrationBackground,
+          this.family.case?.specificMigrationBackground,
+        ),
+        familienstand: this.valueIfChanged(
+          this.familienstand,
+          this.family.case?.familienstand,
+        ),
+        partnerInvolved: this.valueIfChanged(
+          this.partnerInvolved,
+          this.family.case?.partnerInvolved,
+        ),
+        bekanntJA: this.valueIfChanged(
+          this.bekanntJA,
+          this.family.case?.bekanntJA,
+        ),
       },
     };
   }

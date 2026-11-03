@@ -1,12 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
-import {
-  ChildModel as Child,
-  FamilyUpdateInput,
-  FamilyWhereInput,
-} from '../../../../shared/generated/prisma/models';
+import { ChildModel as Child } from '../../../../shared/generated/prisma/models';
 import { FullFamily } from '../../../../shared/types';
+import type {
+  ChildHealthDataRequest,
+  FamilyUpdateRequest,
+} from '../../../../shared/api';
 import { map, Observable } from 'rxjs';
 
 @Injectable({
@@ -16,20 +16,6 @@ export class FamilyService {
   private http = inject(HttpClient);
 
   protected familyApiUrl = environment.apiUrl + '/family';
-
-  /**
-   * Fetches families from the API.
-   * @param {FamilyWhereInput} [filter] Optional Prisma where filter
-   * @returns {Observable<FullFamily[]>} Observable emitting an array of families
-   */
-  getFamilies(filter?: FamilyWhereInput): Observable<FullFamily[]> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
-    return this.http.get<FullFamily[]>(
-      this.familyApiUrl + '?' + params.toString(),
-    );
-  }
 
   /**
    * Fetches a single Family by ID.
@@ -58,10 +44,10 @@ export class FamilyService {
   /**
    * Updates a family by ID.
    * @param {string} id UUID of the family
-   * @param {FamilyUpdateInput} update Update data
+   * @param {FamilyUpdateRequest} update Update data
    * @returns {Observable<FullFamily>} Observable emitting the updated family
    */
-  updateFamily(id: string, update: FamilyUpdateInput): Observable<FullFamily> {
+  updateFamily(id: string, update: FamilyUpdateRequest): Observable<FullFamily> {
     return this.http.put<FullFamily>(this.familyApiUrl + '/i/' + id, update);
   }
 
@@ -69,22 +55,18 @@ export class FamilyService {
    * Replaces a child's full healthData array.
    * @param {string} familyId UUID of the family
    * @param {string} childId UUID of the child
-   * @param {PrismaJson.HealthDataPointChild[]} healthData The new full healthData array
+   * @param {ChildHealthDataRequest['healthData']} healthData The new full healthData array
    * @returns {Observable<FullFamily>} Observable emitting the updated family
    */
   updateHealthData(
     familyId: string,
     childId: string,
-    healthData: PrismaJson.HealthDataPointChild[],
+    healthData: ChildHealthDataRequest['healthData'],
   ): Observable<FullFamily> {
-    return this.updateFamily(familyId, {
-      children: {
-        update: {
-          where: { id: childId },
-          data: { healthData },
-        },
-      },
-    });
+    return this.http.put<FullFamily>(
+      `${this.familyApiUrl}/i/${familyId}/children/${childId}/health-data`,
+      { healthData },
+    );
   }
 
   /**

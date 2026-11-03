@@ -3,11 +3,7 @@ import {
   QuestionType,
   Status,
 } from '../../../../shared/generated/prisma/enums';
-import {
-  AnswerWhereInput,
-  CaseWhereInput,
-} from '../../../../shared/generated/prisma/models';
-import { isEmptyObject } from './generalUtils';
+import type { AnswerWhere, CaseWhere } from '../../../../shared/api';
 
 export type FilterType =
   | 'caseFilter'
@@ -55,7 +51,7 @@ export type CaseFilterInput = {
   zielTopic?: string;
 };
 
-export function makeCaseFilter(input: CaseFilterInput): CaseWhereInput {
+export function makeCaseFilter(input: CaseFilterInput): CaseWhere {
   const anyZielFilter =
     input.zielFinishBy ||
     input.zielStartedAt ||
@@ -119,25 +115,10 @@ export function makeCaseFilter(input: CaseFilterInput): CaseWhereInput {
   };
 }
 
-/**
- * Combines several optional Prisma where-filters targeting the same relation into one, AND-ing
- * them together when more than one is present. Needed wherever a role-based access-scoping
- * filter and a user-picked UI filter target the same field - a plain object spread would let
- * one silently clobber the other instead of both applying.
- */
-export function combineWhereFilters<T extends object>(
-  ...filters: (T | undefined)[]
-): T | undefined {
-  const defined = filters.filter((f): f is T => !!f && !isEmptyObject(f));
-  if (defined.length === 0) return undefined;
-  if (defined.length === 1) return defined[0];
-  return { AND: defined } as T;
-}
-
 export function makeTextQuestionFilter(input: {
   question: Question;
   value: string | undefined;
-}): AnswerWhereInput {
+}): AnswerWhere {
   const { question, value } = input;
   return {
     questionId: question.id,
@@ -148,7 +129,7 @@ export function makeTextQuestionFilter(input: {
 export function makeNumberQuestionFilter(input: {
   question: Question;
   filter: NumFieldFilter;
-}): AnswerWhereInput {
+}): AnswerWhere {
   const { question, filter } = input;
   if (question.type === QuestionType.Float)
     return {
@@ -166,7 +147,7 @@ export function makeNumberQuestionFilter(input: {
 export function makeDateQuestionFilter(input: {
   question: Question;
   filter: DateFieldFilter;
-}): AnswerWhereInput {
+}): AnswerWhere {
   const { question, filter } = input;
 
   return {

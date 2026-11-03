@@ -6,8 +6,10 @@ import { prisma } from '../db';
 
 import {
   canAccessAllUsers,
+  canCreateUser,
   canEditUser,
-  canManageUsers,
+  canManageAllUsers,
+  canManageOrgUsers,
   canSeeOrgUsers,
   canSeeSubOrgUsers,
 } from './authFns/UserAuthFns';
@@ -17,8 +19,7 @@ import {
   ForbiddenError,
   NotFoundError,
 } from '../util/authUtils';
-import { Prisma } from '../../shared/generated/prisma/client';
-import { UserUpdateInputObjectSchema } from '../../shared/generated/zod/schemas';
+import { Prisma, Role } from '../../shared/generated/prisma/client';
 import { USER_DEFAULT_INCLUDE } from '../../shared/consts';
 import {
   AdminUser,
@@ -27,9 +28,13 @@ import {
   UserWithTempPassword,
 } from '../../shared/types';
 import {
+  ROLES_REQUIRING_ORG,
+  ROLES_WITHOUT_ORG,
+  OrgUsersQuery,
   UserCreateRequest,
   UserEnabledRequest,
-} from '../../shared/zodTypes';
+  UserUpdateRequest,
+} from '../../shared/api';
 
 /** How long the link in an invite email stays valid */
 const INVITE_LIFESPAN_SECONDS = 7 * 24 * 60 * 60;
@@ -64,32 +69,19 @@ function toKcStatus(kcUser: UserRepresentation): KcStatus {
   };
 }
 
-/** Plain value of a Prisma string update field (`'x'` or `{ set: 'x' }`). */
-function updateValue(field: unknown): string | null | undefined {
-  if (typeof field === 'string' || field === null) return field;
-  if (field && typeof field === 'object' && 'set' in field)
-    return field.set as string | null;
-  return undefined;
-}
-
 export class UserController {
   /**
    * Get all users
    * @param user requesting user
-   * @param where [Optional] Prisma UserWhereInput
    * @returns User[]
    */
-  static async getAll(
-    user: FullUser,
-    where?: Prisma.UserWhereInput
-  ): Promise<AdminUser[]> {
+  static async getAll(user: FullUser): Promise<AdminUser[]> {
     if (!canAccessAllUsers(user)) throw new ForbiddenError();
 
     const users = await prisma.user.findMany({
       include: USER_DEFAULT_INCLUDE,
-      where,
     });
-    if (!canManageUsers(user)) return users;
+    if (!canManageAllUsers(user)) return users;
 
     return UserController.withKcStatus(users);
   }
@@ -135,13 +127,13 @@ export class UserController {
    * Get all users in organisation
    * @param user requesting user
    * @param orgId ID of the organisation
-   * @param where [Optional] Prisma UserWhereInput
+   * @param where [Optional] filter
    * @returns User[]
    */
   static async getOrgUsers(
     user: FullUser,
     orgId: string,
-    where?: Prisma.UserWhereInput
+    where?: OrgUsersQuery['where']
   ) {
     if (!canSeeOrgUsers(user, orgId)) throw new ForbiddenError();
 
@@ -149,6 +141,9 @@ export class UserController {
       where: { ...where, organisationId: orgId },
       include: USER_DEFAULT_INCLUDE,
     });
+    if (canManageOrgUsers(user, orgId))
+      return UserController.withKcStatus(users);
+
     return users;
   }
 
@@ -184,7 +179,7 @@ export class UserController {
     if (!user) throw new NotFoundError();
     if (!canSeeOrgUsers(reqUser, user.organisationId!))
       throw new ForbiddenError();
-    if (!canManageUsers(reqUser)) return user;
+    if (!canEditUser(reqUser, user)) return user;
 
     return UserController.withOwnKcStatus(user);
   }
@@ -208,33 +203,35 @@ export class UserController {
    * Name and email are synced to Keycloak first, so a failing sync leaves both sides unchanged.
    * @param reqUser requesting user
    * @param id user ID
-   * @param data prisma user update input
+   * @param data the update
    * @returns User
    */
-  static async update(
-    reqUser: FullUser,
-    id: string,
-    data: Prisma.UserUpdateInput
-  ) {
+  static async update(reqUser: FullUser, id: string, data: UserUpdateRequest) {
     const user = await prisma.user.findUnique({
       where: { id },
       include: USER_DEFAULT_INCLUDE,
     });
 
     if (!user) throw new NotFoundError();
-    if (!canEditUser(reqUser, user)) throw new ForbiddenError();
+    if (!canEditUser(reqUser, user, data))
+      throw new ForbiddenError('Dieses Update ist nicht erlaubt');
 
-    UserUpdateInputObjectSchema.parse(data);
-    if (data.kcId !== undefined)
-      throw new BadRequestError('kcId cannot be changed');
+    const { organisationId, subOrganisationIds, ...fields } = data;
+    if (
+      data.role !== undefined ||
+      organisationId !== undefined ||
+      subOrganisationIds !== undefined
+    )
+      await UserController.assertValidScope(
+        data.role ?? user.role,
+        organisationId === undefined ? user.organisationId : organisationId,
+        subOrganisationIds ?? user.subOrganisations.map((so) => so.id)
+      );
 
     const kcUpdate: UserRepresentation = {};
-    const email = updateValue(data.email);
-    const firstName = updateValue(data.firstName);
-    const lastName = updateValue(data.lastName);
-    if (email) kcUpdate.email = email;
-    if (firstName !== undefined) kcUpdate.firstName = firstName ?? '';
-    if (lastName !== undefined) kcUpdate.lastName = lastName ?? '';
+    if (data.email) kcUpdate.email = data.email;
+    if (data.firstName !== undefined) kcUpdate.firstName = data.firstName ?? '';
+    if (data.lastName !== undefined) kcUpdate.lastName = data.lastName ?? '';
 
     if (Object.keys(kcUpdate).length > 0) {
       const adminClient = await getAdminClient();
@@ -243,7 +240,18 @@ export class UserController {
 
     const update = await prisma.user.update({
       where: { id },
-      data: data,
+      data: {
+        ...fields,
+        organisation:
+          organisationId === undefined
+            ? undefined
+            : organisationId
+              ? { connect: { id: organisationId } }
+              : { disconnect: true },
+        subOrganisations: subOrganisationIds && {
+          set: subOrganisationIds.map((id) => ({ id })),
+        },
+      },
       include: USER_DEFAULT_INCLUDE,
     });
 
@@ -251,31 +259,77 @@ export class UserController {
   }
 
   /**
+   * Makes sure role, organisation and suborganisations of a user fit together - the scoped data
+   * access relies on this, e.g. a suborganisation of another org would expose that org's cases.
+   */
+  private static async assertValidScope(
+    role: Role,
+    organisationId: string | null | undefined,
+    subOrganisationIds: string[]
+  ) {
+    if (
+      (ROLES_WITHOUT_ORG as readonly Role[]).includes(role) &&
+      (organisationId || subOrganisationIds.length > 0)
+    )
+      throw new BadRequestError(
+        'Admins und Controller dürfen keiner Organisation zugewiesen sein'
+      );
+    if (
+      (ROLES_REQUIRING_ORG as readonly Role[]).includes(role) &&
+      !organisationId
+    )
+      throw new BadRequestError('Diese Rolle benötigt eine Organisation');
+    if (role === Role.SubOrgCoordinator && subOrganisationIds.length === 0)
+      throw new BadRequestError('Diese Rolle benötigt eine Unterorganisation');
+    if (subOrganisationIds.length === 0) return;
+
+    const ids = [...new Set(subOrganisationIds)];
+    const matching = organisationId
+      ? await prisma.subOrganisation.count({
+          where: { id: { in: ids }, organisationId },
+        })
+      : 0;
+    if (matching !== ids.length)
+      throw new BadRequestError(
+        'Unterorganisationen müssen zur Organisation des Benutzers gehören'
+      );
+  }
+
+  /**
    * Creates a user in Keycloak and the app DB, so role and organisation are set before the
    * first login. An existing Keycloak account with the same email (e.g. created in the Keycloak
    * console) is linked instead of duplicated.
    * @param reqUser requesting user, must be allowed to manage users
-   * @param input UserCreateRequest
+   * @param data the new user
    * @returns the new user, plus the temporary password if that onboarding was chosen
    */
   static async create(
     reqUser: FullUser,
-    input: unknown
+    data: UserCreateRequest
   ): Promise<UserWithTempPassword> {
-    if (!canManageUsers(reqUser))
-      throw new ForbiddenError('Only admins can create users');
-
-    const data = UserCreateRequest.parse(input);
+    if (!canCreateUser(reqUser, data))
+      throw new ForbiddenError(
+        'Nur Admins, OrgController und OrgCoordinator können User erstellen'
+      );
+    await UserController.assertValidScope(
+      data.role,
+      data.organisationId,
+      data.subOrganisationIds
+    );
 
     if (await prisma.user.findUnique({ where: { email: data.email } }))
-      throw new ConflictError('Ein Benutzer mit dieser E-Mail-Adresse existiert bereits');
+      throw new ConflictError(
+        'Ein Benutzer mit dieser E-Mail-Adresse existiert bereits'
+      );
 
     const adminClient = await getAdminClient();
     const existing = (
       await adminClient.users.find({ email: data.email, exact: true })
     )[0];
     if (existing && (await UserController.getUserByKC(existing.id!)))
-      throw new ConflictError('Dieses Keycloak-Konto ist bereits mit einem Benutzer verknüpft');
+      throw new ConflictError(
+        'Dieses Keycloak-Konto ist bereits mit einem Benutzer verknüpft'
+      );
 
     const kcId =
       existing?.id ??
@@ -320,7 +374,9 @@ export class UserController {
       if (!existing)
         await adminClient.users
           .del({ id: kcId })
-          .catch((err) => console.error('rollback of keycloak user failed', err));
+          .catch((err) =>
+            console.error('rollback of keycloak user failed', err)
+          );
       throw e;
     }
   }
@@ -366,14 +422,12 @@ export class UserController {
   }
 
   private static async getManagedUser(reqUser: FullUser, id: string) {
-    if (!canManageUsers(reqUser))
-      throw new ForbiddenError('Only admins can manage users');
-
     const user = await prisma.user.findUnique({
       where: { id },
       include: USER_DEFAULT_INCLUDE,
     });
     if (!user) throw new NotFoundError();
+    if (!canEditUser(reqUser, user)) throw new ForbiddenError();
     return user;
   }
 
@@ -395,7 +449,10 @@ export class UserController {
    */
   static async issueTempPassword(reqUser: FullUser, id: string) {
     const user = await UserController.getManagedUser(reqUser, id);
-    const tempPassword = await UserController.onboard(user.kcId, 'tempPassword');
+    const tempPassword = await UserController.onboard(
+      user.kcId,
+      'tempPassword'
+    );
     return { tempPassword: tempPassword! };
   }
 
@@ -403,10 +460,13 @@ export class UserController {
    * Locks or unlocks the user's Keycloak account. Locked users can't log in.
    * @param reqUser requesting user, must be allowed to manage users
    * @param id user ID
-   * @param input UserEnabledRequest
+   * @param request whether the account should be enabled
    */
-  static async setEnabled(reqUser: FullUser, id: string, input: unknown) {
-    const { enabled } = UserEnabledRequest.parse(input);
+  static async setEnabled(
+    reqUser: FullUser,
+    id: string,
+    { enabled }: UserEnabledRequest
+  ) {
     const user = await UserController.getManagedUser(reqUser, id);
     if (!enabled && user.id === reqUser.id)
       throw new BadRequestError('Das eigene Konto kann nicht gesperrt werden');
@@ -437,7 +497,7 @@ export class UserController {
    * @returns void
    */
   static async delete(requestingUser: FullUser, id: string) {
-    if (!canManageUsers(requestingUser))
+    if (!canManageAllUsers(requestingUser))
       throw new ForbiddenError('Only admins can delete users');
     const adminClient = await getAdminClient();
     const user = await prisma.user.delete({

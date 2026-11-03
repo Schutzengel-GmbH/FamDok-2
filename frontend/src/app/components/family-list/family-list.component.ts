@@ -113,19 +113,10 @@ export class Families implements OnInit {
       const source$ =
         user.role === Role.Admin
           ? this.caseService.getCases()
-          : user.role === Role.OrgCoordinator
-            ? this.caseService.getCases({
-                organisation: { id: user.organisationId! },
-                closedAt: null,
-              })
-            : user.role === Role.SubOrgCoordinator
-              ? this.caseService.getCases({
-                  subOrganisationId: {
-                    in: user.subOrganisations.map((so) => so.id),
-                  },
-                  closedAt: null,
-                })
-              : this.caseService.getCasesForUser(this.meService.getKCId()!);
+          : user.role === Role.OrgCoordinator ||
+              user.role === Role.SubOrgCoordinator
+            ? this.caseService.getCases({ closedAt: null })
+            : this.caseService.getMyCases();
 
       source$.subscribe((cases) => {
         this.allCases = cases.sort(sortCasesByFamilyName) ?? [];

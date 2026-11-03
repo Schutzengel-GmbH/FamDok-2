@@ -1,5 +1,4 @@
 import { prisma } from '../db';
-import { Prisma } from '../../shared/generated/prisma/client';
 import { Role } from '../../shared/generated/prisma/client';
 import {
   BadRequestError,
@@ -11,14 +10,22 @@ import {
   canEditCaseFormResponse,
   canSeeCaseFormResponse,
   canSeeCaseFormResponses,
+  isFamilyMember,
+  visibleCaseFormResponseWhere,
 } from './authFns/CaseFormResponseAuthFns';
+import { caseWhereFor } from './authFns/CaseAuthFns';
 import { FullUser } from '../../shared/types';
 import {
   CASEFORM_DEFAULT_INCLUDE,
   CASEFORMRESPONSE_DEFAULT_INCLUDE,
 } from '../../shared/consts';
-import { AnswerCreateManyCaseFormResponseInput } from '../../shared/generated/prisma/models';
 import { caseFormWhereRestrictions } from './authFns/CaseFormDefinitionAuthFns';
+import {
+  CaseFormResponseCreateRequest,
+  CaseFormResponseUpdateRequest,
+  CaseFormResponseWhere,
+} from '../../shared/api';
+import { answerWrites, answersFor, relationWrite } from '../util/formWrites';
 
 export class CaseFormResponseController {
   static async getAll(user: FullUser) {
@@ -29,15 +36,12 @@ export class CaseFormResponseController {
     });
   }
 
-  static async getWhere(
-    user: FullUser,
-    where?: Prisma.CaseFormResponseWhereInput
-  ) {
+  static async getWhere(user: FullUser, where: CaseFormResponseWhere = {}) {
+    const filter = { ...where, case: caseWhereFor(user, where.case) };
     const responses = await prisma.caseFormResponse.findMany({
-      where,
+      where: { AND: [filter, visibleCaseFormResponseWhere(user)] },
       include: CASEFORMRESPONSE_DEFAULT_INCLUDE,
     });
-    // TODO: this is very restrictive, consider filtering out bad responses, rather than denying outright
     if (!canSeeCaseFormResponses(user, responses)) throw new ForbiddenError();
 
     return responses;
@@ -54,21 +58,13 @@ export class CaseFormResponseController {
     return response;
   }
 
-  static async create(
-    user: FullUser,
-    data: Prisma.CaseFormResponseCreateInput
-  ) {
+  static async create(user: FullUser, data: CaseFormResponseCreateRequest) {
+    const { caseId, caseFormId, caregiverId, childId } = data;
+
     if (!(await canCreateCaseFormResponse(user, data)))
       throw new ForbiddenError();
 
-    if (!data.caseForm?.connect?.id)
-      throw new BadRequestError('no definition id');
-    if (!data.case.connect?.id) throw new BadRequestError('no case id');
-
-    const caseFormId = data.caseForm.connect.id;
-    const caseId = data.case.connect.id;
-
-    const transactionResult = await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
       const definition = await tx.caseForm.findUnique({
         where: {
           id: caseFormId,
@@ -96,61 +92,45 @@ export class CaseFormResponseController {
           );
       }
 
-      // make sure there is always a "answer" to all questions, so we never run into the issue
-      // of having to "upsertMany" which doesn't exist in prisma
-
-      // this shouldn't really happen, but just in case, make sure we're not getting any undefined errors
-      if (data.answers?.createMany?.data == undefined)
-        data.answers = { createMany: { data: [] } };
-
-      data = {
-        ...data,
-        answers: {
-          createMany: {
-            data: definition.questions.map<AnswerCreateManyCaseFormResponseInput>(
-              (q) => ({
-                questionId: q.id,
-                ...(
-                  data.answers!.createMany!
-                    .data as AnswerCreateManyCaseFormResponseInput[]
-                ).find((a) => a.questionId === q.id),
-              })
-            ),
+      return tx.caseFormResponse.create({
+        data: {
+          case: { connect: { id: caseId } },
+          caseForm: { connect: { id: caseFormId } },
+          createdBy: { connect: { id: user.id } },
+          caregiver: caregiverId ? { connect: { id: caregiverId } } : undefined,
+          child: childId ? { connect: { id: childId } } : undefined,
+          answers: {
+            createMany: {
+              data: answersFor(definition.questions, data.answers),
+            },
           },
         },
-      };
-
-      return tx.caseFormResponse.create({
-        data,
         include: CASEFORMRESPONSE_DEFAULT_INCLUDE,
       });
     });
-
-    return transactionResult;
   }
 
   static async update(
     user: FullUser,
     id: string,
-    data: Prisma.CaseFormResponseUpdateInput
+    data: CaseFormResponseUpdateRequest
   ) {
-    // certain fields should never be changed by a user via an update.
-    // TODO: consider providing administration ways around this, especially for createdBy?
-    if (data.caseForm || data.createdBy || data.id)
-      throw new BadRequestError(
-        'request contains fields that should not be updated'
-      );
-
     const existing = await prisma.caseFormResponse.findUnique({
       where: { id },
       include: CASEFORMRESPONSE_DEFAULT_INCLUDE,
     });
     if (!existing) throw new NotFoundError();
     if (!canEditCaseFormResponse(user, existing)) throw new ForbiddenError();
+    if (!isFamilyMember(existing.case.family, data))
+      throw new BadRequestError('Person gehört nicht zur Familie des Falls');
 
     return prisma.caseFormResponse.update({
       where: { id },
-      data,
+      data: {
+        caregiver: relationWrite(data.caregiverId),
+        child: relationWrite(data.childId),
+        answers: answerWrites(data.answers),
+      },
       include: CASEFORMRESPONSE_DEFAULT_INCLUDE,
     });
   }

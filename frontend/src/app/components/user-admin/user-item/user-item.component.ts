@@ -20,10 +20,12 @@ import { TempPasswordComponent } from '../temp-password/temp-password.component'
   standalone: true,
   imports: [ReactiveFormsModule, MultiSelect, TempPasswordComponent],
   templateUrl: './user-item.component.html',
+  styleUrl: './user-item.component.scss',
 })
 export class UserItemComponent implements OnInit {
   @Input() user!: AdminUser;
   @Input() orgs!: FullOrganisation[];
+  @Input() forAdmin!: boolean;
 
   private userService = inject(UserService);
   private toastService = inject(ToastService);
@@ -78,23 +80,14 @@ export class UserItemComponent implements OnInit {
   save() {
     if (this.form.pristine) return;
 
-    const subOrganisationIds: string[] =
-      this.form.get('subOrganisationIds')?.value ?? [];
-
     this.userService
       .updateUser(this.user.id, {
         firstName: this.form.get('firstName')?.value,
         lastName: this.form.get('lastName')?.value,
         role: this.form.get('role')?.value,
         jobTitle: this.form.get('jobTitle')?.value,
-        organisation: this.form.get('organisationId')?.value
-          ? {
-              connect: { id: this.form.get('organisationId')!.value },
-            }
-          : { disconnect: true },
-        subOrganisations: {
-          set: subOrganisationIds.map((id) => ({ id })),
-        },
+        organisationId: this.form.get('organisationId')?.value || null,
+        subOrganisationIds: this.form.get('subOrganisationIds')?.value ?? [],
       })
       .subscribe((u) => {
         this.toastService.show({
@@ -138,7 +131,11 @@ export class UserItemComponent implements OnInit {
           s && {
             ...s,
             pendingActions: [
-              ...new Set([...s.pendingActions, 'UPDATE_PASSWORD', 'VERIFY_EMAIL']),
+              ...new Set([
+                ...s.pendingActions,
+                'UPDATE_PASSWORD',
+                'VERIFY_EMAIL',
+              ]),
             ],
           },
       );

@@ -223,7 +223,7 @@ export class Settings {
     modalRef.closed.subscribe((result) => {
       if (result?.reason !== 'save') return;
       this.orgService
-        .update(org.id, { subOrganisations: { create: { name: result.value } } })
+        .createSubOrg(org.id, { name: result.value })
         .subscribe({
           next: () => {
             this.toast.show({
@@ -252,11 +252,7 @@ export class Settings {
     modalRef.closed.subscribe((result) => {
       if (result?.reason !== 'save') return;
       this.orgService
-        .update(subOrg.organisationId, {
-          subOrganisations: {
-            update: { where: { id: subOrg.id }, data: { name: result.value } },
-          },
-        })
+        .updateSubOrg(subOrg.id, { name: result.value })
         .subscribe({
           next: () => {
             this.toast.show({
@@ -284,9 +280,7 @@ export class Settings {
       style: 'danger',
       confirmAction: () => {
         this.orgService
-          .update(subOrg.organisationId, {
-            subOrganisations: { delete: { id: subOrg.id } },
-          })
+          .deleteSubOrg(subOrg.id)
           .subscribe({
             next: () => {
               this.toast.show({

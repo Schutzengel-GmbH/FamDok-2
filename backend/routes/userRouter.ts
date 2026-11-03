@@ -1,46 +1,33 @@
 import { Router } from 'express';
 import { UserController } from '../controller/UserController';
-import { handleError } from '../util/routerUtils';
-import { Prisma } from '../../shared/generated/prisma/client';
+import { handleError, route } from '../util/routerUtils';
+import {
+  OrgUsersQuery,
+  UserCreateRequest,
+  UserEnabledRequest,
+  UserUpdateRequest,
+} from '../../shared/api';
 
 const UserRouter = Router();
 
-UserRouter.get('/', async (req, res) => {
-  const where = req.query['where']
-    ? (JSON.parse(req.query['where'] as string) as Prisma.UserWhereInput)
-    : {};
+UserRouter.get(
+  '/',
+  route(({ user }) => UserController.getAll(user))
+);
 
-  try {
-    const users = await UserController.getAll(req.user!, where);
-    res.status(200).send(users);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+UserRouter.get(
+  '/org/:id',
+  route({ query: OrgUsersQuery }, ({ user, params, query }) =>
+    UserController.getOrgUsers(user, params.id, query.where)
+  )
+);
 
-UserRouter.get('/org/:id', async (req, res) => {
-  const { id } = req.params;
-
-  const where = req.query['where']
-    ? (JSON.parse(req.query['where'] as string) as Prisma.UserWhereInput)
-    : {};
-
-  try {
-    const users = await UserController.getOrgUsers(req.user!, id, where);
-    res.status(200).send(users);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
-
-UserRouter.post('/', async (req, res) => {
-  try {
-    const user = await UserController.create(req.user!, req.body);
-    res.status(201).send(user);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+UserRouter.post(
+  '/',
+  route({ body: UserCreateRequest }, ({ user, body }) =>
+    UserController.create(user, body)
+  )
+);
 
 UserRouter.get('/i/:id', async (req, res) => {
   try {
@@ -54,15 +41,12 @@ UserRouter.get('/i/:id', async (req, res) => {
   }
 });
 
-UserRouter.put('/i/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const user = await UserController.update(req.user!, id, req.body);
-    res.send(user);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+UserRouter.put(
+  '/i/:id',
+  route({ body: UserUpdateRequest }, ({ user, params, body }) =>
+    UserController.update(user, params.id, body)
+  )
+);
 
 UserRouter.delete('/i/:id', async (req, res) => {
   try {
@@ -83,29 +67,18 @@ UserRouter.post('/i/:id/invite', async (req, res) => {
   }
 });
 
-UserRouter.post('/i/:id/temp-password', async (req, res) => {
-  try {
-    const result = await UserController.issueTempPassword(
-      req.user!,
-      req.params.id
-    );
-    res.send(result);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+UserRouter.post(
+  '/i/:id/temp-password',
+  route(({ user, params }) =>
+    UserController.issueTempPassword(user, params.id)
+  )
+);
 
-UserRouter.put('/i/:id/enabled', async (req, res) => {
-  try {
-    const user = await UserController.setEnabled(
-      req.user!,
-      req.params.id,
-      req.body
-    );
-    res.send(user);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+UserRouter.put(
+  '/i/:id/enabled',
+  route({ body: UserEnabledRequest }, ({ user, params, body }) =>
+    UserController.setEnabled(user, params.id, body)
+  )
+);
 
 export default UserRouter;

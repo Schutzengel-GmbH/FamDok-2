@@ -4,7 +4,7 @@ import { ChartKey } from './stats-chart-card.component';
 import { StatsService } from 'src/app/services/stats.service';
 import { sortByNumProperty } from 'src/app/util/generalUtils';
 import { ContactDocumentationOptions } from '../../../../../../shared/sharedGlobals';
-import { CaseWhereInput } from '../../../../../../shared/generated/prisma/models';
+import type { AnonCaseWhere } from '../../../../../../shared/api';
 
 @Injectable({
   providedIn: 'root',
@@ -17,7 +17,7 @@ export class ChartsService {
 
   updateData(
     chartKey: ChartKey,
-    filter: CaseWhereInput = {},
+    filter: AnonCaseWhere = {},
     range: { start: Date; end: Date },
   ) {
     switch (chartKey) {

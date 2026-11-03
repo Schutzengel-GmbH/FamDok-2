@@ -57,6 +57,44 @@ describe('CaseFormResponseController', () => {
     });
   });
 
+  describe('filtering', () => {
+    it('only finds responses without personal data for a Controller', async () => {
+      const user = buildUser({ role: Role.Controller });
+      prismaMock.caseFormResponse.findMany.mockResolvedValue([]);
+
+      await CaseFormResponseController.getWhere(user);
+
+      const { where } = prismaMock.caseFormResponse.findMany.mock.calls[0][0];
+      expect(where.AND[1].OR).toContainEqual({
+        caseForm: { containsPersonalData: false },
+      });
+    });
+
+    it('only finds responses of their own cases for a plain user', async () => {
+      const user = buildUser({ role: Role.User });
+      prismaMock.caseFormResponse.findMany.mockResolvedValue([]);
+
+      await CaseFormResponseController.getWhere(user);
+
+      const { where } = prismaMock.caseFormResponse.findMany.mock.calls[0][0];
+      expect(where.AND[1]).toEqual({
+        OR: [{ case: { responsibleUsers: { some: { id: user.id } } } }],
+      });
+    });
+
+    it('ignores family filters for anonymized roles', async () => {
+      const user = buildUser({ role: Role.OrgController, organisationId: 'org-1' });
+      prismaMock.caseFormResponse.findMany.mockResolvedValue([]);
+
+      await CaseFormResponseController.getWhere(user, {
+        case: { city: 'Berlin', family: { name: 'x' } },
+      });
+
+      const { where } = prismaMock.caseFormResponse.findMany.mock.calls[0][0];
+      expect(where.AND[0].case).toEqual({ city: 'Berlin' });
+    });
+  });
+
   describe('get', () => {
     it('returns the response when visible to the user', async () => {
       const user = buildUser({ role: Role.Admin });
@@ -89,11 +127,7 @@ describe('CaseFormResponseController', () => {
 
   describe('create', () => {
     function buildCreateData(caseId: string, caseFormId: string, answers: any[] = []) {
-      return {
-        case: { connect: { id: caseId } },
-        caseForm: { connect: { id: caseFormId } },
-        answers: { createMany: { data: answers } },
-      } as any;
+      return { caseId, caseFormId, answers };
     }
 
     it('creates a response, filling in missing answers for each question', async () => {
@@ -158,17 +192,21 @@ describe('CaseFormResponseController', () => {
       expect(prismaMock.caseFormResponse.create).not.toHaveBeenCalled();
     });
 
-    it('throws BadRequestError when no definition id is provided', async () => {
+    it('throws ForbiddenError for a child of another family', async () => {
       const user = buildUser({ role: Role.User });
-      const c = buildCase({ responsibleUsers: [{ id: user.id }] });
+      const c = buildCase({
+        responsibleUsers: [{ id: user.id }],
+        family: { children: [{ id: 'own-child' }], caregiver: [] },
+      });
       prismaMock.case.findUnique.mockResolvedValue(c);
 
-      const data = {
-        case: { connect: { id: c.id } },
-        answers: { createMany: { data: [] } },
-      } as any;
-
-      await expect(CaseFormResponseController.create(user, data)).rejects.toThrow(BadRequestError);
+      await expect(
+        CaseFormResponseController.create(user, {
+          ...buildCreateData(c.id, 'form-1'),
+          childId: 'foreign-child',
+        })
+      ).rejects.toThrow(ForbiddenError);
+      expect(prismaMock.caseFormResponse.create).not.toHaveBeenCalled();
     });
 
     it('throws ForbiddenError when the user is not responsible for the case', async () => {
@@ -200,9 +238,35 @@ describe('CaseFormResponseController', () => {
       const updated = { ...existing };
       prismaMock.caseFormResponse.update.mockResolvedValue(updated);
 
-      const result = await CaseFormResponseController.update(user, existing.id, {} as any);
+      const result = await CaseFormResponseController.update(user, existing.id, {
+        answers: [
+          { id: 'a1', questionId: 'q1', answerText: 'changed' },
+          { questionId: 'q2', answerText: 'new' },
+        ],
+      });
 
       expect(result).toBe(updated);
+      const updateCall = prismaMock.caseFormResponse.update.mock.calls[0][0];
+      expect(updateCall.data.answers).toEqual({
+        updateMany: [{ where: { id: 'a1' }, data: { answerText: 'changed' } }],
+        createMany: { data: [{ questionId: 'q2', answerText: 'new' }] },
+      });
+    });
+
+    it('throws BadRequestError for a caregiver of another family', async () => {
+      const user = buildUser({ role: Role.Admin });
+      const existing = buildCaseFormResponse({
+        case: { family: { children: [], caregiver: [{ id: 'own' }] } },
+      });
+      prismaMock.caseFormResponse.findUnique.mockResolvedValue(existing);
+
+      await expect(
+        CaseFormResponseController.update(user, existing.id, {
+          caregiverId: 'foreign',
+          answers: [],
+        })
+      ).rejects.toThrow(BadRequestError);
+      expect(prismaMock.caseFormResponse.update).not.toHaveBeenCalled();
     });
 
     it('throws NotFoundError when missing', async () => {

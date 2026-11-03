@@ -207,24 +207,10 @@ describe('CreateFamilyComponent', () => {
 
     component['onSubmit']();
 
-    const familyReq = httpMock.expectOne(
-      (r) => r.url === `${environment.apiUrl}/family` && r.method === 'POST',
-    );
-    expect(familyReq.request.body.name).toBe('Musterfamilie');
-    expect(familyReq.request.body.organisation).toEqual({
-      connect: { id: user.organisationId },
-    });
-    familyReq.flush({ id: 'family-1' });
-
     const caseReq = httpMock.expectOne(
       (r) => r.url === `${environment.apiUrl}/case` && r.method === 'POST',
     );
-    expect(caseReq.request.body.family).toEqual({
-      connect: { id: 'family-1' },
-    });
-    expect(caseReq.request.body.responsibleUsers).toEqual({
-      connect: { id: user.id },
-    });
+    expect(caseReq.request.body.family.name).toBe('Musterfamilie');
     caseReq.flush({ id: 'case-1' });
 
     expect(navigation.back).toHaveBeenCalled();
@@ -248,7 +234,7 @@ describe('CreateFamilyComponent', () => {
     component['onSubmit']();
 
     const familyReq = httpMock.expectOne(
-      (r) => r.url === `${environment.apiUrl}/family`,
+      (r) => r.url === `${environment.apiUrl}/case`,
     );
     familyReq.flush('Boom', { status: 500, statusText: 'Server Error' });
 

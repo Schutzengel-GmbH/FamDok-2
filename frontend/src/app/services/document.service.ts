@@ -3,7 +3,6 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { FullDocument, FullTag } from '../../../../shared/types';
-import { DocumentWhereInput } from '../../../../shared/generated/prisma/models';
 
 export interface DocumentMetaInput {
   title: string;
@@ -21,14 +20,10 @@ export class DocumentService {
 
   /**
    * Fetches documents from the library.
-   * @param {DocumentWhereInput} [filter] Optional Prisma where filter
    * @returns {Observable<FullDocument[]>} Observable emitting an array of documents
    */
-  getDocuments(filter?: DocumentWhereInput): Observable<FullDocument[]> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
-    return this.http.get<FullDocument[]>(this.apiUrl + '?' + params.toString());
+  getDocuments(): Observable<FullDocument[]> {
+    return this.http.get<FullDocument[]>(this.apiUrl);
   }
 
   /**

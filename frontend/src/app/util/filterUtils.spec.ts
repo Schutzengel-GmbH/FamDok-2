@@ -1,5 +1,4 @@
 import {
-  combineWhereFilters,
   makeCaseFilter,
   makeDateQuestionFilter,
   makeNumberQuestionFilter,
@@ -110,29 +109,6 @@ describe('filterUtils', () => {
       });
 
       expect(result).toEqual({});
-    });
-  });
-
-  describe('combineWhereFilters', () => {
-    it('returns undefined when no filter is given', () => {
-      expect(combineWhereFilters()).toBeUndefined();
-    });
-
-    it('returns undefined when every filter is undefined or empty', () => {
-      expect(combineWhereFilters(undefined, {}, undefined)).toBeUndefined();
-    });
-
-    it('returns the single filter unwrapped when only one is non-empty', () => {
-      const filter = { organisationId: 'org-1' };
-
-      expect(combineWhereFilters<any>(undefined, filter, {})).toBe(filter);
-    });
-
-    it('ANDs multiple non-empty filters together instead of one overwriting the other', () => {
-      const a = { id: 'user-1' };
-      const b = { organisationId: 'org-1' };
-
-      expect(combineWhereFilters<any>(a, b)).toEqual({ AND: [a, b] });
     });
   });
 

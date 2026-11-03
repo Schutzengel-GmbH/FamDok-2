@@ -50,9 +50,9 @@ export function createPrismaMock() {
     // that receives a transaction-scoped client. Support both; the callback gets the same
     // mock so per-model mockResolvedValue(...) set in a test also applies inside the
     // transaction, without every test needing to stub the transaction result itself.
-    $transaction: jest.fn((arg: unknown) =>
+    $transaction: jest.fn((arg: unknown): unknown =>
       typeof arg === 'function'
-        ? (arg as (tx: typeof mock) => unknown)(mock)
+        ? (arg as (tx: unknown) => unknown)(mock)
         : Promise.all(arg as unknown[])
     ),
   };

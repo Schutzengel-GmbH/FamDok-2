@@ -41,7 +41,7 @@ Das Projekt ist als **Monorepo** aufgebaut:
 FH_Digihub/
 ├── frontend/          # Angular-SPA
 ├── backend/           # Express-REST-API
-├── shared/            # Gemeinsam genutzte generierte Typen (Prisma, Keycloak-Config)
+├── shared/            # Gemeinsam genutzte Typen (Prisma, Request-Schemas in api/, Keycloak-Config)
 ├── docker-compose.yaml          # Produktiv-Stack
 └── docker-compose-dev.yaml      # Entwicklungsinfrastruktur (Keycloak + DB)
 ```
@@ -236,14 +236,14 @@ npx prisma generate
 | -------------------- | ---------------------------------------------------------------------------- | ------------- |
 | `Admin`              | Vollzugriff: Familien, Fälle, Formulare, User-Admin, Statistik               | `/user-admin` |
 | `Controller`         | Anonyme Statistik über alle Organisationen; verwaltet globale Formulare      | `/stats`      |
-| `OrgController`      | Wie `Controller`, beschränkt auf die eigene Organisation                     | `/stats`      |
-| `OrgCoordinator`     | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Organisation | `/dashboard`  |
+| `OrgController`      | Wie `Controller`, beschränkt auf die eigene Organisation, zusätzlich Benutzerverwaltung der eigenen Organisation | `/stats`      |
+| `OrgCoordinator`     | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Organisation und Benutzerverwaltung der eigenen Organisation | `/dashboard`  |
 | `SubOrgCoordinator`  | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Unterorganisation | `/dashboard`  |
 | `User`               | Standardzugriff: Familien, eigene Fälle, Formulare                           | `/dashboard`  |
 
 ### Benutzerverwaltung
 
-Admins legen Benutzer unter `/user-admin` an. Das Backend erstellt dabei das Keycloak-Konto über den Service-Account-Client `fh-backend` und gleichzeitig den App-Benutzer – Rolle und Organisation stehen damit schon vor dem ersten Login fest. Existiert in Keycloak bereits ein Konto mit derselben E-Mail, wird es verknüpft statt dupliziert. Für das erste Passwort gibt es zwei Wege:
+Admins legen Benutzer unter `/user-admin` an; `OrgController` und `OrgCoordinator` verwalten dort die Benutzer ihrer eigenen Organisation (keine Rollen `Admin`/`Controller`, kein Löschen, kein Wechsel der Organisation). Das Backend erstellt dabei das Keycloak-Konto über den Service-Account-Client `fh-backend` und gleichzeitig den App-Benutzer – Rolle und Organisation stehen damit schon vor dem ersten Login fest. Existiert in Keycloak bereits ein Konto mit derselben E-Mail, wird es verknüpft statt dupliziert. Für das erste Passwort gibt es zwei Wege:
 
 - **Einladung (Standard):** Keycloak verschickt eine Mail mit einem Link (7 Tage gültig) zum Setzen des Passworts und Bestätigen der E-Mail-Adresse.
 - **Temporäres Passwort:** Das Passwort wird dem Admin einmalig angezeigt und muss beim ersten Login geändert werden. Es wird nirgends gespeichert.
@@ -286,7 +286,7 @@ Das Dashboard (Route `/`) leitet nach dem Login automatisch rollenabhängig weit
 | `/allgemeine-formulare/*`         | Formular-Editor (allgemein)    | Admin, Controller, OrgController                   |
 | `/fallbezogene-formulare/*`       | Formular-Editor (fallbezogen)  | Admin, Controller, OrgController                   |
 | `/me`                             | Eigenes Profil                 | alle Rollen                                        |
-| `/user-admin`                     | Benutzerverwaltung             | Admin                                              |
+| `/user-admin`                     | Benutzerverwaltung             | Admin, OrgController, OrgCoordinator               |
 | `/import/survey`                  | Formulardefinition importieren | Admin                                              |
 | `/all-stats`                      | Rohdaten-Ansicht               | authentifiziert                                    |
 | `/error`                          | Fehlerseite                    | –                                                   |
@@ -308,6 +308,17 @@ Alle Endpunkte erfordern einen gültigen Keycloak Bearer-Token im `Authorization
 | `/me`                   | MeRouter                     | Eigenes Profil                                          |
 | `/org`                  | OrgController                | Organisationen & Sub-Organisationen                     |
 | `/stats`                | StatsController              | Anonymisierte Statistiken & Auswertungen                |
+
+### Requests
+
+Jede Route akzeptiert genau ein Eingabeformat: ein Zod-Schema aus `shared/api`, abgeleitet von den generierten Prisma-Schemas, aber ohne verschachtelte Schreibzugriffe. Komponente, Service, Route und Controller nutzen denselben Typ. Filter werden serverseitig immer mit dem kombiniert, was der Benutzer sehen darf (`visibleCaseWhere` u. Ä.), Berechtigungen gehören also nie in Frontend-Filter.
+
+So kommt eine neue Route dazu:
+
+1. Schema in `shared/api` anlegen: Felder aus dem generierten `XCreateManyInput` per `.pick` übernehmen, `.strict()` nicht vergessen. Relationen sind einfache IDs, den Prisma-Aufruf baut der Controller.
+2. Route mit `route()` aus `backend/util/routerUtils.ts` anlegen. Der Handler bekommt nur geparste Eingaben; `req.body` und `req.query` sind in Routern tabu (`routes/__tests__/noRawInput.test.ts`).
+3. Im Frontend den Typ per `import type` nutzen, Queries mit `toQuery` aus `util/apiUtils.ts` serialisieren.
+4. Eine Zeile in `controller/__tests__/requestSchemas.test.ts` ergänzen, die prüft, dass das Schema verschachtelte Schreibzugriffe ablehnt.
 
 ---
 

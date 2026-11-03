@@ -1,14 +1,13 @@
 import { inject, Injectable } from '@angular/core';
-import {
-  AnswerCreateManyCaseFormResponseInput,
-  AnswerUpdateManyWithWhereWithoutCaseFormResponseInput,
-  CaseFormCreateInput,
-  CaseFormResponseCreateInput,
-  CaseFormResponseUpdateInput,
-  CaseFormResponseWhereInput,
-  CaseFormUpdateInput,
-  CaseFormWhereInput,
-} from '../../../../shared/generated/prisma/models';
+import type {
+  CaseFormCreateRequest,
+  CaseFormListQuery,
+  CaseFormResponseCreateRequest,
+  CaseFormResponseUpdateRequest,
+  CaseFormResponseWhere,
+  CaseFormUpdateRequest,
+} from '../../../../shared/api';
+import { toAnswerRequest, toQuery } from '../util/apiUtils';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { FullCaseForm, FullCaseFormResponse } from '../../../../shared/types';
@@ -28,15 +27,12 @@ export class CaseFormService {
 
   /**
    * Fetches case form definitions.
-   * @param {CaseFormDefinitionWhereInput} [filter] Optional Prisma where filter
+   * @param {CaseFormListQuery['where']} [where] Optional filter
    * @returns {Observable<FullCaseForm[]>} Observable emitting case form definitions
    */
-  getCaseForms(filter?: CaseFormWhereInput): Observable<FullCaseForm[]> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
+  getCaseForms(where?: CaseFormListQuery['where']): Observable<FullCaseForm[]> {
     return this.http.get<FullCaseForm[]>(
-      this.caseFormApiUrl + '?' + params.toString(),
+      this.caseFormApiUrl + toQuery({ where }),
     );
   }
 
@@ -51,33 +47,30 @@ export class CaseFormService {
 
   /**
    * Fetches all case form responses.
-   * @param {CaseFormResponseWhereInput} [filter] Optional Prisma where filter
+   * @param {CaseFormResponseWhere} [filter] Optional filter
    * @returns {Observable<FullCaseFormResponse[]>} Observable emitting the form responses
    */
   getCaseFormResponses(
-    filter?: CaseFormResponseWhereInput,
+    filter?: CaseFormResponseWhere,
   ): Observable<FullCaseFormResponse[]> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
     return this.http.get<FullCaseFormResponse[]>(
-      this.caseFormResponseApiUrl + '?' + params.toString(),
+      this.caseFormResponseApiUrl + toQuery({ where: filter }),
     );
   }
 
   /**
    * Fetches all case form responses for a given definition.
    * @param {string} definitionId UUID of the case form definition
-   * @param {GeneralFormResponseWhereInput} [filter] Optional Prisma where filter
+   * @param {GeneralFormResponseWhere} [filter] Optional Prisma where filter
    * @returns {Observable<FullCaseFormResponse[]>} Observable emitting the form responses
    */
   getCaseFormResponsesForForm(
     definitionId: string,
-    filter?: CaseFormResponseWhereInput,
+    filter?: CaseFormResponseWhere,
   ): Observable<FullCaseFormResponse[]> {
-    const where: CaseFormResponseWhereInput = {
+    const where: CaseFormResponseWhere = {
       ...filter,
-      caseForm: { id: definitionId },
+      caseFormId: definitionId,
     };
     return this.getCaseFormResponses(where);
   }
@@ -95,11 +88,11 @@ export class CaseFormService {
 
   /**
    * Creates a case form definition.
-   * @param {CaseFormDefinitionCreateInput} caseFormDefinitionData Create input
+   * @param {CaseFormCreateRequest} caseFormDefinitionData Create input
    * @returns {Observable<FullCaseForm>} Observable emitting the created form definition
    */
   createCaseFormDefinition(
-    caseFormDefinitionData: CaseFormCreateInput,
+    caseFormDefinitionData: CaseFormCreateRequest,
   ): Observable<FullCaseForm> {
     return this.http.post<FullCaseForm>(
       this.caseFormApiUrl,
@@ -110,12 +103,12 @@ export class CaseFormService {
   /**
    * Updates a case form definition by ID.
    * @param {string} id UUID of the form definition
-   * @param {CaseFormUpdateInput} update Update input
+   * @param {CaseFormUpdateRequest} update Update input
    * @returns {Observable<FullCaseForm>} Observable emitting the updated form definition
    */
   updateCaseFormDefinition(
     id: string,
-    update: CaseFormUpdateInput,
+    update: CaseFormUpdateRequest,
   ): Observable<FullCaseForm> {
     return this.http.put<FullCaseForm>(
       this.caseFormApiUrl + '/i/' + id,
@@ -139,68 +132,34 @@ export class CaseFormService {
     caseId?: string;
     caregiverId?: string;
     childId?: string;
-    answers: Partial<Answer>[] | AnswerCreateManyCaseFormResponseInput[];
+    answers: Partial<Answer>[];
   }) {
     const { responseId, caregiverId, childId, caseId, formId, answers } =
       response;
     if (responseId) {
-      // updateMany for all questions that already have an answer.id
-      const updateMany: AnswerUpdateManyWithWhereWithoutCaseFormResponseInput[] =
-        answers
-          .filter((a) => a.id != null)
-          .map((a) => ({
-            where: { id: a.id },
-            data: {
-              answerBool: a.answerBool,
-              answerDate: a.answerDate,
-              answerInt: a.answerInt,
-              answerNum: a.answerNum,
-              answerSelectId: a.answerSelectId,
-              answerText: a.answerText,
-            },
-          }));
-      // for questions without. this should only happen if a new question is added
-      // to the form when a response has already been submitted
-      const createData = answers.filter(
-        (a) => !a.id,
-      ) as AnswerCreateManyCaseFormResponseInput[];
-
       return this.updateCaseFormResponse(responseId, {
-        caregiver: caregiverId
-          ? { connect: { id: caregiverId } }
-          : { disconnect: true },
-        child: childId ? { connect: { id: childId } } : { disconnect: true },
-        answers: {
-          updateMany,
-          createMany: {
-            data: createData,
-          },
-        },
-      });
-    } else {
-      return this.createCaseFormResponse({
-        caseForm: { connect: { id: formId } },
-        caregiver: caregiverId ? { connect: { id: caregiverId } } : undefined,
-        child: childId ? { connect: { id: childId } } : undefined,
-        answers: {
-          createMany: {
-            data: answers as AnswerCreateManyCaseFormResponseInput[],
-          },
-        },
-        case: {
-          connect: { id: caseId },
-        },
+        caregiverId: caregiverId ?? null,
+        childId: childId ?? null,
+        answers: answers.map(toAnswerRequest),
       });
     }
+
+    return this.createCaseFormResponse({
+      caseId: caseId!,
+      caseFormId: formId,
+      caregiverId,
+      childId,
+      answers: answers.map(({ id, ...answer }) => toAnswerRequest(answer)),
+    });
   }
 
   /**
    * Creates a case form response.
-   * @param {CaseFormResponseCreateInput} caseFormResponsedata Create input
+   * @param {CaseFormResponseCreateRequest} caseFormResponsedata Create input
    * @returns {Observable<FullCaseFormResponse>} Observable emitting the created response
    */
   createCaseFormResponse(
-    caseFormResponsedata: CaseFormResponseCreateInput,
+    caseFormResponsedata: CaseFormResponseCreateRequest,
   ): Observable<FullCaseFormResponse> {
     return this.http
       .post<FullCaseFormResponse>(
@@ -213,12 +172,12 @@ export class CaseFormService {
   /**
    * Updates a case form response by ID.
    * @param {string} id UUID of the response
-   * @param {CaseFormResponseUpdateInput} update Update input
+   * @param {CaseFormResponseUpdateRequest} update Update input
    * @returns {Observable<FullCaseFormResponse>} Observable emitting the updated response
    */
   updateCaseFormResponse(
     id: string,
-    update: CaseFormResponseUpdateInput,
+    update: CaseFormResponseUpdateRequest,
   ): Observable<FullCaseFormResponse> {
     return this.http
       .put<FullCaseFormResponse>(

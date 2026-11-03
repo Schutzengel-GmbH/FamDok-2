@@ -140,18 +140,16 @@ describe('QuestionFormService', () => {
     });
   });
 
-  describe('buildQuestionsCreateInput', () => {
-    it('builds a createMany payload with sequential order', () => {
+  describe('buildQuestions', () => {
+    it('numbers the questions in sequential order', () => {
       const array = service.createQuestionsArray([
         buildQuestion({ text: 'A' }) as any,
         buildQuestion({ text: 'B' }) as any,
       ]);
 
-      const input = service.buildQuestionsCreateInput(array);
+      const questions = service.buildQuestions(array);
 
-      expect(input.createMany.data.length).toBe(2);
-      expect(input.createMany.data[0].order).toBe(0);
-      expect(input.createMany.data[1].order).toBe(1);
+      expect(questions.map((q) => q.order)).toEqual([0, 1]);
     });
 
     it('nulls out type-irrelevant fields (e.g. min/max for a Text question)', () => {
@@ -159,34 +157,31 @@ describe('QuestionFormService', () => {
         buildQuestion({ type: QuestionType.Text, min: 5, max: 10 }) as any,
       ]);
 
-      const input = service.buildQuestionsCreateInput(array);
+      const [question] = service.buildQuestions(array);
 
-      expect(input.createMany.data[0].min).toBeNull();
-      expect(input.createMany.data[0].max).toBeNull();
+      expect(question.min).toBeNull();
+      expect(question.max).toBeNull();
     });
   });
 
-  describe('buildQuestionsUpdateInput', () => {
-    it('splits existing (has id) vs. new (no id) questions into update/createMany', () => {
+  describe('buildQuestionUpdates', () => {
+    it('keeps the id of existing questions, and leaves it out of new ones', () => {
       const array = service.createQuestionsArray([
         buildQuestion({ id: 'q-1', text: 'Existing' }) as any,
       ]);
       service.addQuestion(array); // new question, no id
 
-      const input = service.buildQuestionsUpdateInput(array, []);
+      const { questions } = service.buildQuestionUpdates(array, []);
 
-      expect(input.update?.length).toBe(1);
-      expect(input.update?.[0].where).toEqual({ id: 'q-1' });
-      expect(input.createMany?.data.length).toBe(1);
+      expect(questions.map((q) => q.id)).toEqual(['q-1', undefined]);
     });
 
-    it('includes a deleteMany clause only when there are deleted ids', () => {
+    it('passes on the deleted ids', () => {
       const array = service.createQuestionsArray();
 
-      expect(service.buildQuestionsUpdateInput(array, []).deleteMany).toBeUndefined();
       expect(
-        service.buildQuestionsUpdateInput(array, ['q-1']).deleteMany,
-      ).toEqual({ id: { in: ['q-1'] } });
+        service.buildQuestionUpdates(array, ['q-1']).deletedQuestionIds,
+      ).toEqual(['q-1']);
     });
   });
 });

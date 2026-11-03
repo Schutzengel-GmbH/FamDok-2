@@ -7,15 +7,15 @@ import {
   FullGeneralFormResponse,
 } from '../../../../shared/types';
 import { AnswerModel as Answer } from '../../../../shared/generated/prisma/models';
-import {
-  AnswerCreateManyCaseFormResponseInput,
-  GeneralFormCreateInput,
-  GeneralFormResponseCreateInput,
-  GeneralFormResponseUpdateInput,
-  GeneralFormResponseWhereInput,
-  GeneralFormUpdateInput,
-  GeneralFormWhereInput,
-} from '../../../../shared/generated/prisma/models';
+import type {
+  GeneralFormCreateRequest,
+  GeneralFormListQuery,
+  GeneralFormResponseCreateRequest,
+  GeneralFormResponseUpdateRequest,
+  GeneralFormResponseWhere,
+  GeneralFormUpdateRequest,
+} from '../../../../shared/api';
+import { toAnswerRequest, toQuery } from '../util/apiUtils';
 
 @Injectable({
   providedIn: 'root',
@@ -26,9 +26,11 @@ export class GeneralFormService {
   private definitionApiUrl = environment.apiUrl + '/general-form/definitions';
   private responseApiUrl = environment.apiUrl + '/general-form/responses';
 
-  getDefinitions(where?: GeneralFormWhereInput): Observable<FullGeneralForm[]> {
+  getDefinitions(
+    where?: GeneralFormListQuery['where'],
+  ): Observable<FullGeneralForm[]> {
     return this.http.get<FullGeneralForm[]>(
-      this.definitionApiUrl + (where ? `?where=${JSON.stringify(where)}` : ''),
+      this.definitionApiUrl + toQuery({ where }),
     );
   }
 
@@ -36,13 +38,13 @@ export class GeneralFormService {
     return this.http.get<FullGeneralForm>(this.definitionApiUrl + '/i/' + id);
   }
 
-  createDefinition(data: GeneralFormCreateInput): Observable<FullGeneralForm> {
+  createDefinition(data: GeneralFormCreateRequest): Observable<FullGeneralForm> {
     return this.http.post<FullGeneralForm>(this.definitionApiUrl, data);
   }
 
   updateDefinition(
     id: string,
-    data: GeneralFormUpdateInput,
+    data: GeneralFormUpdateRequest,
   ): Observable<FullGeneralForm> {
     return this.http.put<FullGeneralForm>(
       this.definitionApiUrl + '/i/' + id,
@@ -57,20 +59,20 @@ export class GeneralFormService {
   }
 
   getResponses(
-    where?: GeneralFormResponseWhereInput,
+    where?: GeneralFormResponseWhere,
   ): Observable<FullGeneralFormResponse[]> {
     return this.http.get<FullGeneralFormResponse[]>(
-      this.responseApiUrl + (where ? `?where=${JSON.stringify(where)}` : ''),
+      this.responseApiUrl + toQuery({ where }),
     );
   }
 
-  getResponsesFromUser(userId: string, where?: GeneralFormResponseWhereInput) {
+  getResponsesFromUser(userId: string, where?: GeneralFormResponseWhere) {
     return this.getResponses({ ...where, userId });
   }
 
   getResponsesForDefinition(
     definitionId: string,
-    where?: GeneralFormResponseWhereInput,
+    where?: GeneralFormResponseWhere,
   ) {
     return this.getResponses({
       ...where,
@@ -85,14 +87,14 @@ export class GeneralFormService {
   }
 
   createResponse(
-    data: GeneralFormResponseCreateInput,
+    data: GeneralFormResponseCreateRequest,
   ): Observable<FullGeneralFormResponse> {
     return this.http.post<FullGeneralFormResponse>(this.responseApiUrl, data);
   }
 
   updateResponse(
     id: string,
-    data: GeneralFormResponseUpdateInput,
+    data: GeneralFormResponseUpdateRequest,
   ): Observable<FullGeneralFormResponse> {
     return this.http.put<FullGeneralFormResponse>(
       this.responseApiUrl + '/i/' + id,
@@ -100,46 +102,22 @@ export class GeneralFormService {
     );
   }
 
-  saveResponse(
-    response:
-      | {
-          responseId: string;
-          formId: string;
-          answers: Partial<Answer>[];
-        }
-      | {
-          responseId: undefined;
-          formId: string;
-          answers: AnswerCreateManyCaseFormResponseInput[];
-        },
-  ) {
+  saveResponse(response: {
+    responseId?: string;
+    formId: string;
+    answers: Partial<Answer>[];
+  }) {
     const { responseId, formId, answers } = response;
     if (responseId) {
       return this.updateResponse(responseId, {
-        answers: {
-          updateMany: answers.map((a) => ({
-            where: { id: a.id! },
-            data: {
-              answerBool: a.answerBool,
-              answerDate: a.answerDate,
-              answerInt: a.answerInt,
-              answerNum: a.answerNum,
-              answerSelectId: a.answerSelectId,
-              answerText: a.answerText,
-            },
-          })),
-        },
-      });
-    } else {
-      return this.createResponse({
-        form: { connect: { id: formId } },
-        answers: {
-          createMany: {
-            data: answers as AnswerCreateManyCaseFormResponseInput[],
-          },
-        },
+        answers: answers.map(toAnswerRequest),
       });
     }
+
+    return this.createResponse({
+      generalFormId: formId,
+      answers: answers.map(({ id, ...answer }) => toAnswerRequest(answer)),
+    });
   }
 
   deleteResponse(id: string): Observable<FullGeneralFormResponse> {

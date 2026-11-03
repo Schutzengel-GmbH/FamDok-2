@@ -12,11 +12,8 @@ import { FormsModule } from '@angular/forms';
 import { SimpleSelectFilter } from 'src/app/components/filter-inputs/simple-select-filter/simple-select-filter.component';
 import { ContactDocumentationOptions } from '../../../../../../../shared/sharedGlobals';
 import { ContactDocumentationModel as ContactDocumentation } from '../../../../../../../shared/generated/prisma/models';
-import {
-  ContactDocumentationWhereInput,
-  StringFilter,
-  StringNullableListFilter,
-} from '../../../../../../../shared/generated/prisma/models';
+import { StringFilter, StringNullableListFilter } from '../../../../../../../shared/generated/prisma/models';
+import type { ContactDocumentationWhere } from '../../../../../../../shared/api';
 
 @Component({
   selector: 'app-themen-filter',

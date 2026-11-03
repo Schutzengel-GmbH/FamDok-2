@@ -93,15 +93,18 @@ async function main() {
 
   console.log('Creating users (Postgres + Keycloak)...');
   const adminClient = await getAdminClient();
-  const create = (def: Omit<SeedUserDef, 'firstName' | 'lastName' | 'password'>) =>
+  const create = (
+    def: Omit<SeedUserDef, 'firstName' | 'lastName' | 'password'>,
+    organisationId: string | null = org.id
+  ) =>
     createUser(
       adminClient,
       { ...randomPersonName(), ...def, password: TEST_PASSWORD },
-      org.id
+      organisationId
     );
 
   const users = [
-    await create({ username: 'controller', role: Role.Controller, jobTitle: 'Jugendamt' }),
+    await create({ username: 'controller', role: Role.Controller, jobTitle: 'Jugendamt' }, null),
     await create({
       username: 'orgcontroller',
       role: Role.OrgController,

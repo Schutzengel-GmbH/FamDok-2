@@ -4,12 +4,8 @@ import {
 } from '../../shared/consts';
 import { FullUser } from '../../shared/types';
 import { prisma } from '../db';
-import { Prisma } from '../../shared/generated/prisma/client';
-import {
-  BadRequestError,
-  ForbiddenError,
-  NotFoundError,
-} from '../util/authUtils';
+import { ForbiddenError, NotFoundError } from '../util/authUtils';
+import { OrgRequest } from '../../shared/api';
 import {
   canAccessAllOrgs,
   canAccessOrg,
@@ -38,7 +34,7 @@ export class OrgController {
     return org;
   }
 
-  static async createOrg(user: FullUser, data: Prisma.OrganisationCreateInput) {
+  static async createOrg(user: FullUser, data: OrgRequest) {
     if (!canEditOrgs(user)) throw new ForbiddenError();
 
     return prisma.organisation.create({
@@ -47,11 +43,7 @@ export class OrgController {
     });
   }
 
-  static async updateOrg(
-    user: FullUser,
-    id: string,
-    data: Prisma.OrganisationUpdateInput
-  ) {
+  static async updateOrg(user: FullUser, id: string, data: OrgRequest) {
     if (!canEditOrgs(user)) throw new ForbiddenError();
 
     return prisma.organisation.update({
@@ -95,27 +87,16 @@ export class OrgController {
     return subOrg;
   }
 
-  static async createSubOrg(
-    user: FullUser,
-    data: Prisma.SubOrganisationCreateInput
-  ) {
-    if (!data.organisation.connect?.id)
-      throw new BadRequestError('no org id provided');
-
-    if (!canEditSubOrgs(user, data.organisation.connect.id))
-      throw new ForbiddenError();
+  static async createSubOrg(user: FullUser, orgId: string, data: OrgRequest) {
+    if (!canEditSubOrgs(user, orgId)) throw new ForbiddenError();
 
     return prisma.subOrganisation.create({
-      data,
+      data: { ...data, organisation: { connect: { id: orgId } } },
       include: SUBORGANISATION_DEFAULT_INCLUDE,
     });
   }
 
-  static async updateSubOrg(
-    user: FullUser,
-    id: string,
-    data: Prisma.SubOrganisationUpdateInput
-  ) {
+  static async updateSubOrg(user: FullUser, id: string, data: OrgRequest) {
     return prisma.$transaction(async (tx) => {
       const subOrg = await tx.subOrganisation.findUnique({ where: { id } });
 

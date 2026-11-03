@@ -98,7 +98,7 @@ export class EditContactDocumentation implements OnChanges {
       this.draftCreated = true;
       this.draftPending.set(true);
       this.documentationService
-        .createDocumentation(caseId, { case: { connect: { id: caseId } } })
+        .createDocumentation(caseId, {})
         .subscribe({
           next: (doc) => {
             this.router.navigate(['contact-documentation', caseId, doc.id], {
@@ -205,9 +205,6 @@ export class EditContactDocumentation implements OnChanges {
           end: this.setDurationViaTime()
             ? this.timeStringToDate(this.end())
             : null,
-          case: {
-            connect: { id: caseId },
-          },
         })
         .subscribe({ next: onSaved, error: onError });
     }

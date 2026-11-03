@@ -8,13 +8,14 @@ import {
   NgOptionTemplateDirective,
   NgSelectComponent,
 } from '@ng-select/ng-select';
-import { FullCase, FullUser, Handover } from '../../../../../shared/types';
+import { FullCase, FullUser } from '../../../../../shared/types';
 import { UserPipe } from '../../pipes/user.pipe';
 import { SelectUser } from '../select-user/select-user.component';
 import { UserService } from 'src/app/services/user.service';
 import { MeService } from 'src/app/services/me.service';
 import { ToastService } from 'src/app/services/toast.service';
 import { CaseService } from 'src/app/services/case.service';
+import type { HandoverRequest } from '../../../../../shared/api';
 
 export type HandoverMode = 'coordinator' | 'own' | 'none';
 
@@ -136,7 +137,7 @@ export class CaseHandoverComponent {
     // Coordinators keep access to the case even after removing themselves.
     const userRemoved = this.mode() === 'own' && this.removeMe();
 
-    const handover: Handover =
+    const handover: HandoverRequest =
       this.mode() === 'own'
         ? {
             caseId: this.selectedCase().id,

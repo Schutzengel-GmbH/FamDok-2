@@ -4,7 +4,7 @@ import {
 } from '../../shared/consts';
 import { FullUser } from '../../shared/types';
 import { prisma } from '../db';
-import { Prisma, Role } from '../../shared/generated/prisma/client';
+import { Role } from '../../shared/generated/prisma/client';
 import { ForbiddenError, NotFoundError } from '../util/authUtils';
 import {
   canCreateGeneralForm,
@@ -13,11 +13,27 @@ import {
   canSeeGeneralFormResponse,
   canSeeGeneralFormResponses,
   generalFormWhereRestrictions,
+  visibleGeneralFormResponseWhere,
 } from './authFns/GeneralFormAuthFns';
-import { AnswerCreateManyGeneralFormResponseInput } from '../../shared/generated/prisma/models';
+import {
+  GeneralFormCreateRequest,
+  GeneralFormListQuery,
+  GeneralFormResponseCreateRequest,
+  GeneralFormResponseUpdateRequest,
+  GeneralFormResponseWhere,
+  GeneralFormUpdateRequest,
+} from '../../shared/api';
+import {
+  answerWrites,
+  answersFor,
+  questionWrites,
+} from '../util/formWrites';
 
 export class GeneralFormController {
-  static getDefinitions(user: FullUser, where?: Prisma.GeneralFormWhereInput) {
+  static getDefinitions(
+    user: FullUser,
+    where?: GeneralFormListQuery['where']
+  ) {
     return prisma.generalForm.findMany({
       where: { AND: [{ ...where }, ...generalFormWhereRestrictions(user)] },
       orderBy: { name: 'asc' },
@@ -34,11 +50,19 @@ export class GeneralFormController {
     return form;
   }
 
-  static createDefinition(user: FullUser, data: Prisma.GeneralFormCreateInput) {
-    if (!canCreateGeneralForm(user, data)) throw new ForbiddenError();
+  static createDefinition(user: FullUser, data: GeneralFormCreateRequest) {
+    if (!canCreateGeneralForm(user)) throw new ForbiddenError();
+
+    const { questions, ...fields } = data;
 
     return prisma.generalForm.create({
-      data,
+      data: {
+        ...fields,
+        // Admin/Controller create global forms, OrgController forms of their own organisation
+        organisationId:
+          user.role === Role.OrgController ? user.organisationId : null,
+        questions: { createMany: { data: questions } },
+      },
       include: GENERALFORM_DEFAULT_INCLUDE,
     });
   }
@@ -46,19 +70,20 @@ export class GeneralFormController {
   static async updateDefinition(
     user: FullUser,
     id: string,
-    data: Prisma.GeneralFormUpdateInput
+    data: GeneralFormUpdateRequest
   ) {
     const existing = await prisma.generalForm.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError();
     if (!canEditGeneralForm(user, existing)) throw new ForbiddenError();
 
-    // OrgController can't move a form to another org or make it global - only Admin/Controller
-    // (who bypass this check above) may change organisationId.
-    if (user.role === Role.OrgController) delete data.organisation;
+    const { questions, deletedQuestionIds, ...fields } = data;
 
     return prisma.generalForm.update({
       where: { id },
-      data,
+      data: {
+        ...fields,
+        questions: questionWrites({ questions, deletedQuestionIds }),
+      },
       include: GENERALFORM_DEFAULT_INCLUDE,
     });
   }
@@ -74,12 +99,9 @@ export class GeneralFormController {
     });
   }
 
-  static async getResponses(
-    user: FullUser,
-    where: Prisma.GeneralFormResponseWhereInput
-  ) {
+  static async getResponses(user: FullUser, where: GeneralFormResponseWhere = {}) {
     const responses = await prisma.generalFormResponse.findMany({
-      where,
+      where: { AND: [where, visibleGeneralFormResponseWhere(user)] },
       include: GENERALFORMRESPONSE_DEFAULT_INCLUDE,
     });
 
@@ -103,41 +125,24 @@ export class GeneralFormController {
 
   static async createResponse(
     user: FullUser,
-    data: Prisma.GeneralFormResponseCreateInput
+    data: GeneralFormResponseCreateRequest
   ) {
-    const definition = await prisma.generalForm.findUniqueOrThrow({
-      where: { id: data?.form?.connect?.id },
+    const definition = await prisma.generalForm.findFirst({
+      where: {
+        id: data.generalFormId,
+        AND: generalFormWhereRestrictions(user),
+      },
       include: GENERALFORM_DEFAULT_INCLUDE,
     });
-
-    // make sure there is always a "answer" to all questions, so we never run into the issue
-    // of having to "upsertMany" which doesn't exist in prisma
-
-    // this shouldn't really happen, but just in case, make sure we're not getting any undefined errors
-    if (data.answers?.createMany?.data == undefined)
-      data.answers = { createMany: { data: [] } };
-
-    data = {
-      ...data,
-      answers: {
-        createMany: {
-          data: definition!.questions.map<AnswerCreateManyGeneralFormResponseInput>(
-            (q) => ({
-              questionId: q.id,
-              ...(
-                data.answers!.createMany!
-                  .data as AnswerCreateManyGeneralFormResponseInput[]
-              ).find((a) => a.questionId === q.id),
-            })
-          ),
-        },
-      },
-    };
+    if (!definition) throw new NotFoundError();
 
     return prisma.generalFormResponse.create({
       data: {
-        ...data,
+        form: { connect: { id: definition.id } },
         createdBy: { connect: { id: user.id } },
+        answers: {
+          createMany: { data: answersFor(definition.questions, data.answers) },
+        },
       },
       include: GENERALFORMRESPONSE_DEFAULT_INCLUDE,
     });
@@ -146,7 +151,7 @@ export class GeneralFormController {
   static async updateResponse(
     user: FullUser,
     id: string,
-    data: Prisma.GeneralFormResponseUpdateInput
+    data: GeneralFormResponseUpdateRequest
   ) {
     const response = await prisma.generalFormResponse.findUnique({
       where: { id },
@@ -158,7 +163,7 @@ export class GeneralFormController {
 
     return prisma.generalFormResponse.update({
       where: { id },
-      data,
+      data: { answers: answerWrites(data.answers) },
       include: GENERALFORMRESPONSE_DEFAULT_INCLUDE,
     });
   }

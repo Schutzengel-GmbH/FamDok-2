@@ -2,11 +2,11 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { UserService } from './user.service';
-import { FullOrganisation } from '../../../../shared/types';
 import {
-  OrganisationCreateInput,
-  OrganisationUpdateInput,
-} from '../../../../shared/generated/prisma/models';
+  FullOrganisation,
+  FullSubOrganisation,
+} from '../../../../shared/types';
+import type { OrgRequest } from '../../../../shared/api';
 
 @Injectable({
   providedIn: 'root',
@@ -39,7 +39,7 @@ export class OrgService {
    * @param update
    * @returns
    */
-  update(id: string, update: OrganisationUpdateInput) {
+  update(id: string, update: OrgRequest) {
     return this.http.put<FullOrganisation>(
       this.orgApiUrl + '/i/' + id,
       update,
@@ -51,7 +51,7 @@ export class OrgService {
    * @param data
    * @returns
    */
-  create(data: OrganisationCreateInput) {
+  create(data: OrgRequest) {
     return this.http.post<FullOrganisation>(this.orgApiUrl, data);
   }
 
@@ -66,6 +66,24 @@ export class OrgService {
     );
   }
 
+  createSubOrg(orgId: string, data: OrgRequest) {
+    return this.http.post<FullSubOrganisation>(
+      this.orgApiUrl + '/i/' + orgId + '/sub',
+      data,
+    );
+  }
+
+  updateSubOrg(id: string, data: OrgRequest) {
+    return this.http.put<FullSubOrganisation>(
+      this.orgApiUrl + '/sub/' + id,
+      data,
+    );
+  }
+
+  deleteSubOrg(id: string) {
+    return this.http.delete<FullSubOrganisation>(this.orgApiUrl + '/sub/' + id);
+  }
+
   /**
    * Add a user to an organisation
    * @param userId user ID
@@ -73,8 +91,6 @@ export class OrgService {
    * @returns
    */
   addUser(userId: string, orgId: string) {
-    return this.userService.updateUser(userId, {
-      organisation: { connect: { id: orgId } },
-    });
+    return this.userService.updateUser(userId, { organisationId: orgId });
   }
 }

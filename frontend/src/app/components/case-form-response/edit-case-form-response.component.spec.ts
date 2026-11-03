@@ -165,7 +165,7 @@ describe('EditCaseFormResponse', () => {
 
     const req = httpMock.expectOne((r) => r.url.includes('/case-form-response'));
     expect(req.request.method).toBe('POST');
-    expect(req.request.body.answers.createMany.data.length).toBe(1);
+    expect(req.request.body.answers.length).toBe(1);
     req.flush({ id: 'resp-1', case: { family: { name: 'Musterfamilie' } } });
 
     expect(toast.toasts().length).toBe(1);
@@ -182,7 +182,7 @@ describe('EditCaseFormResponse', () => {
     component['saveResponse']();
 
     const req = httpMock.expectOne((r) => r.url.includes('/case-form-response'));
-    expect(req.request.body.caregiver).toEqual({ connect: { id: 'cg-1' } });
+    expect(req.request.body.caregiverId).toBe('cg-1');
     expect(req.request.body.child).toBeUndefined();
     req.flush({ id: 'resp-1', case: { family: { name: 'Musterfamilie' } } });
   });
@@ -196,7 +196,7 @@ describe('EditCaseFormResponse', () => {
     component['saveResponse']();
 
     const req = httpMock.expectOne((r) => r.url.includes('/case-form-response'));
-    expect(req.request.body.child).toEqual({ connect: { id: 'child-1' } });
+    expect(req.request.body.childId).toBe('child-1');
     expect(req.request.body.caregiver).toBeUndefined();
     req.flush({ id: 'resp-1', case: { family: { name: 'Musterfamilie' } } });
   });

@@ -12,7 +12,6 @@ import { PDFService, StammdatenCase } from '../util/pdfService';
 import { deleteStoredFile, streamFile } from '../util/fileStorage';
 import { purgeFamilyPersonalData } from '../util/personalDataPurge';
 import {
-  canCreate,
   canEditCase,
   canExportCase,
   canHandover,
@@ -22,6 +21,7 @@ import {
   caseWhereFor,
   contactDocumentationQueryArgsFor,
   contactDocWhereFor,
+  visibleCaseWhere,
   MyCasesScope,
   myCasesScopeFilter,
 } from './authFns/CaseAuthFns';
@@ -32,12 +32,6 @@ import {
   canUploadCaseAttachment,
 } from './authFns/CaseAttachmentAuthFns';
 
-import {
-  CaseCreateInputObjectSchema,
-  CaseIncludeObjectSchema,
-  CaseUpdateInputObjectSchema,
-  CaseWhereInputObjectSchema,
-} from '../../shared/generated/zod/schemas';
 import { FullCase, FullUser } from '../../shared/types';
 import { Handover, Prisma } from '../../shared/generated/prisma/client';
 import {
@@ -53,6 +47,18 @@ import {
   safeFilename,
   stammdatenFilename,
 } from '../../shared/utils/filename';
+import { canCreateFamily } from './authFns/FamilyAuthFn';
+import {
+  CaseCreateRequest,
+  CaseWhere,
+  ContactDocumentationCreateRequest,
+  ContactDocumentationUpdateRequest,
+  ContactDocumentationWhere,
+  HandoverRequest,
+  MyCasesQuery,
+  ZielCreateRequest,
+  ZielUpdateRequest,
+} from '../../shared/api';
 
 function isoDay(d: Date | null | undefined): string {
   if (!d) return 'ohne-Datum';
@@ -61,18 +67,36 @@ function isoDay(d: Date | null | undefined): string {
     .slice(0, 10);
 }
 
+/** If the documentation has a start and end, the duration follows from them. */
+function withDuration<T extends ContactDocumentationCreateRequest>(input: T): T {
+  return input.start && input.end
+    ? {
+        ...input,
+        duration: differenceInMinutes(new Date(input.end), new Date(input.start)),
+      }
+    : input;
+}
+
+const LATEST_CONTACT_INCLUDE = {
+  contactDocumentation: {
+    orderBy: { date: { sort: 'desc', nulls: 'last' } },
+    take: 1,
+  },
+} satisfies Prisma.CaseInclude;
+
 export class CaseController {
   static async getAll(
     user: FullUser,
-    where?: Prisma.CaseWhereInput,
-    include?: Prisma.CaseInclude
+    where: CaseWhere = {},
+    {
+      scope = {},
+      include,
+    }: { scope?: Prisma.CaseWhereInput; include?: Prisma.CaseInclude } = {}
   ) {
-    // check for valid inputs, parse throws ZodError
-    if (where) CaseWhereInputObjectSchema.parse(where);
-    if (include) CaseIncludeObjectSchema.parse(include);
-
     const cases = await prisma.case.findMany({
-      where: caseWhereFor(user, where),
+      where: {
+        AND: [caseWhereFor(user, where)!, scope, visibleCaseWhere(user)],
+      },
       include: caseIncludeFor(user, include),
     });
 
@@ -91,15 +115,16 @@ export class CaseController {
    */
   static async getMyCases(
     user: FullUser,
-    scope: MyCasesScope,
-    where?: Prisma.CaseWhereInput,
-    include?: Prisma.CaseInclude
+    { where, scope = 'own', preset }: MyCasesQuery
   ) {
     const scopeFilter = myCasesScopeFilter(user, scope);
     if (!scopeFilter)
       throw new ForbiddenError(`Scope "${scope}" not permitted`);
 
-    return this.getAll(user, { ...where, ...scopeFilter }, include);
+    return this.getAll(user, where, {
+      scope: scopeFilter,
+      include: preset === 'latestContact' ? LATEST_CONTACT_INCLUDE : undefined,
+    });
   }
 
   static async get(user: FullUser, id: string) {
@@ -113,39 +138,35 @@ export class CaseController {
     return result;
   }
 
-  static async create(user: FullUser, data: Prisma.CaseCreateInput) {
-    // check for valid inputs, parse throws ZodError
-    CaseCreateInputObjectSchema.parse(data);
+  static async create(user: FullUser, data: CaseCreateRequest) {
+    if (!canCreateFamily(user)) throw new ForbiddenError();
 
-    if (!canCreate(user, data))
-      throw new ForbiddenError('User not authorized to create this case');
+    const { family, ...fields } = data;
+    const { children = [], caregivers = [], adress, ...familyFields } = family;
+    const organisation = { connect: { id: user.organisationId! } };
 
-    const result = prisma.case.create({
-      data,
-      include: caseIncludeFor(user),
-    });
-    return result;
-  }
-
-  static async updateCase(
-    user: FullUser,
-    id: string,
-    data: Prisma.CaseUpdateInput
-  ) {
-    // check for valid inputs, parse throws ZodError
-    CaseUpdateInputObjectSchema.parse(data);
-
-    const c = await prisma.case.findUnique({
-      where: { id },
-      include: CASE_DEFAULT_INCLUDE,
-    });
-    if (!c) throw new NotFoundError();
-    if (!canEditCase(user, c))
-      throw new ForbiddenError("User can't edit this case");
-
-    return prisma.case.update({
-      where: { id },
-      data,
+    return prisma.case.create({
+      data: {
+        ...fields,
+        city: adress?.city,
+        plz: adress?.plz,
+        organisation,
+        createdBy: { connect: { id: user.id } },
+        responsibleUsers: { connect: { id: user.id } },
+        family: {
+          create: {
+            ...familyFields,
+            adress: adress as PrismaJson.Address | undefined,
+            organisation,
+            children: {
+              createMany: {
+                data: children as Prisma.ChildCreateManyFamilyInput[],
+              },
+            },
+            caregiver: { createMany: { data: caregivers } },
+          },
+        },
+      },
       include: caseIncludeFor(user),
     });
   }
@@ -153,12 +174,7 @@ export class CaseController {
   static async addZiel(
     user: FullUser,
     caseId: string,
-    data: {
-      startedAt: Date;
-      finishBy: Date;
-      topic: string;
-      description: string;
-    }
+    data: ZielCreateRequest
   ) {
     const c = await prisma.case.findUnique({
       where: { id: caseId },
@@ -182,7 +198,7 @@ export class CaseController {
   static async updateZiel(
     user: FullUser,
     id: string,
-    data: Prisma.ZielvereinbarungUpdateInput
+    data: ZielUpdateRequest
   ) {
     const c = await prisma.case.findFirst({
       where: { zielvereinbarungen: { some: { id } } },
@@ -220,10 +236,15 @@ export class CaseController {
 
   static async getContactDocumentations(
     user: FullUser,
-    filter?: Prisma.ContactDocumentationWhereInput
+    filter: ContactDocumentationWhere = {}
   ) {
     const d = await prisma.contactDocumentation.findMany({
-      where: contactDocWhereFor(user, filter),
+      where: {
+        AND: [
+          contactDocWhereFor(user, filter)!,
+          { case: visibleCaseWhere(user) },
+        ],
+      },
       ...contactDocumentationQueryArgsFor(user),
     });
 
@@ -239,13 +260,15 @@ export class CaseController {
 
   static async getMyContactDocumentations(
     user: FullUser,
-    filter?: Prisma.ContactDocumentationWhereInput
+    filter: ContactDocumentationWhere = {}
   ) {
-    const where: Prisma.ContactDocumentationWhereInput = filter
-      ? { ...filter, createdBy: { id: user.id } }
-      : { createdBy: { id: user.id } };
     const d = await prisma.contactDocumentation.findMany({
-      where: contactDocWhereFor(user, where),
+      where: {
+        AND: [
+          contactDocWhereFor(user, filter)!,
+          { userId: user.id, case: visibleCaseWhere(user) },
+        ],
+      },
       ...contactDocumentationQueryArgsFor(user),
     });
 
@@ -295,7 +318,7 @@ export class CaseController {
   static async getContactDocumentationForCase(
     user: FullUser,
     caseId: string,
-    where?: Prisma.ContactDocumentationWhereInput
+    where?: ContactDocumentationWhere
   ) {
     const c = await prisma.case.findUnique({
       where: { id: caseId },
@@ -307,7 +330,7 @@ export class CaseController {
       throw new ForbiddenError("User can't access this case");
 
     return prisma.contactDocumentation.findMany({
-      where: contactDocWhereFor(user, { ...where, caseId }),
+      where: { ...contactDocWhereFor(user, where), caseId },
       ...contactDocumentationQueryArgsFor(user),
     });
   }
@@ -337,7 +360,7 @@ export class CaseController {
   static async createContactDocumentation(
     user: FullUser,
     caseId: string,
-    input: Prisma.ContactDocumentationCreateInput
+    input: ContactDocumentationCreateRequest
   ) {
     const c = await prisma.case.findUnique({
       where: { id: caseId },
@@ -348,14 +371,9 @@ export class CaseController {
     if (!canEditCase(user, c))
       throw new ForbiddenError("User can't edit this case");
 
-    // if the data contains start and end, calculate duration.
-    if (input.start && input.end) {
-      input.duration = differenceInMinutes(input.end, input.start);
-    }
-
     return prisma.contactDocumentation.create({
       data: {
-        ...input,
+        ...withDuration(input),
         case: { connect: { id: caseId } },
         createdBy: { connect: { id: user.id } },
       },
@@ -366,7 +384,7 @@ export class CaseController {
   static async updateContactDocumentation(
     user: FullUser,
     id: string,
-    input: Prisma.ContactDocumentationUpdateInput
+    input: ContactDocumentationUpdateRequest
   ) {
     const d = await prisma.contactDocumentation.findUnique({
       where: { id },
@@ -383,17 +401,9 @@ export class CaseController {
     if (!canEditCase(user, c))
       throw new ForbiddenError("User can't edit this case");
 
-    // if the data contains start and end, calculate duration.
-    if (input.start && input.end) {
-      input.duration = differenceInMinutes(
-        new Date(input.end as Date),
-        new Date(input.start as Date)
-      );
-    }
-
     return prisma.contactDocumentation.update({
       where: { id },
-      data: { ...input },
+      data: withDuration(input),
       ...contactDocumentationQueryArgsFor(user),
     });
   }
@@ -462,7 +472,7 @@ export class CaseController {
     return res;
   }
 
-  static async handover(initiatingUser: FullUser, handover: Handover) {
+  static async handover(initiatingUser: FullUser, handover: HandoverRequest) {
     const c = await prisma.case.findUnique({
       where: { id: handover.caseId },
       include: { responsibleUsers: true },

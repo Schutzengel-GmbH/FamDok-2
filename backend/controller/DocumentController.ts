@@ -2,29 +2,17 @@ import { prisma } from '../db';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../util/authUtils';
 import { deleteStoredFile, streamFile } from '../util/fileStorage';
 import { canManageDocuments, canSeeDocuments } from './authFns/DocumentAuthFns';
-import {
-  DocumentIncludeObjectSchema,
-  DocumentWhereInputObjectSchema,
-} from '../../shared/generated/zod/schemas';
 import { FullUser } from '../../shared/types';
-import { Prisma } from '../../shared/generated/prisma/client';
 import { DOCUMENT_DEFAULT_INCLUDE } from '../../shared/consts';
-import { DocumentMeta } from '../../shared/zodTypes';
+import { DocumentMeta } from '../../shared/api';
 import { Response } from 'express';
 
 export class DocumentController {
-  static async getAll(
-    user: FullUser,
-    where?: Prisma.DocumentWhereInput,
-    include?: Prisma.DocumentInclude
-  ) {
+  static async getAll(user: FullUser) {
     if (!canSeeDocuments(user)) throw new ForbiddenError();
-    if (where) DocumentWhereInputObjectSchema.parse(where);
-    if (include) DocumentIncludeObjectSchema.parse(include);
 
     return prisma.document.findMany({
-      where,
-      include: { ...DOCUMENT_DEFAULT_INCLUDE, ...include },
+      include: DOCUMENT_DEFAULT_INCLUDE,
       omit: { storageKey: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -59,12 +47,10 @@ export class DocumentController {
   static async create(
     user: FullUser,
     file: Express.Multer.File | undefined,
-    rawMeta: unknown
+    meta: DocumentMeta
   ) {
     if (!canManageDocuments(user)) throw new ForbiddenError();
     if (!file) throw new BadRequestError('No file uploaded');
-
-    const meta = DocumentMeta.parse(rawMeta);
 
     return prisma.document.create({
       data: {
@@ -82,10 +68,9 @@ export class DocumentController {
     });
   }
 
-  static async update(user: FullUser, id: string, rawMeta: unknown) {
+  static async update(user: FullUser, id: string, meta: DocumentMeta) {
     if (!canManageDocuments(user)) throw new ForbiddenError();
 
-    const meta = DocumentMeta.parse(rawMeta);
     const existing = await prisma.document.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError();
 

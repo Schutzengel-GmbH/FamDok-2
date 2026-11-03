@@ -73,7 +73,12 @@ describe('MenuComponent', () => {
 
     expect(component.isOrgController()).toBeTrue();
     const labels = component.topLinks().map((l) => l.label);
-    expect(labels).toEqual(['Statistik-Dashboard', 'Alle Formulardaten', 'Dokumente']);
+    expect(labels).toEqual([
+      'Benutzerverwaltung',
+      'Statistik-Dashboard',
+      'Alle Formulardaten',
+      'Dokumente',
+    ]);
   });
 
   it('shows the base nav with "Meine Eingaben" for a plain User', async () => {
@@ -101,14 +106,31 @@ describe('MenuComponent', () => {
     );
   });
 
+  it('adds the user-admin link to the base nav for an OrgCoordinator', async () => {
+    await setup(Role.OrgCoordinator);
+
+    expect(component.isOrgCoordinator()).toBeTrue();
+    const labels = component.topLinks().map((l) => l.label);
+    expect(labels).toEqual([
+      'Benutzerverwaltung',
+      'Dashboard',
+      'Familien',
+      'Alle Formulardaten',
+      'Alle Formulare',
+      'Dokumente',
+    ]);
+  });
+
   it('shows the base nav with "Alle Formulardaten" for a SubOrgCoordinator', async () => {
     await setup(Role.SubOrgCoordinator);
 
     expect(component.isCoordinator()).toBeTrue();
+    expect(component.isOrgCoordinator()).toBeFalse();
     const links = component.topLinks();
     expect(links.find((l) => l.link === '/all-stats')?.label).toBe(
       'Alle Formulardaten',
     );
+    expect(links.some((l) => l.link === '/user-admin')).toBeFalse();
   });
 
   it('always exposes a single "Einstellungen" bottom link', async () => {

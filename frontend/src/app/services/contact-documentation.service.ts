@@ -1,15 +1,16 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import {
-  ContactDocumentationWhereInput,
-  ContactDocumentationCreateInput,
-  ContactDocumentationUpdateInput,
-} from '../../../../shared/generated/prisma/models';
+import type {
+  ContactDocumentationCreateRequest,
+  ContactDocumentationUpdateRequest,
+  ContactDocumentationWhere,
+} from '../../../../shared/api';
 import { FullContactDocumentation } from '../../../../shared/types';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { triggerBlobDownload } from './document.service';
 import { WarningsService } from './warnings.service';
+import { toQuery } from '../util/apiUtils';
 
 @Injectable({
   providedIn: 'root',
@@ -22,33 +23,27 @@ export class ContactDocumentationService {
 
   /**
    * Get all (filtered) ContactDocumentation.
-   * @param {ContactDocumentationWhereInput} filter Prisma Where Input filter
+   * @param {ContactDocumentationWhere} filter Optional filter
    * @returns {Observable<FullContactDocumentation[]>}
    */
   getDocumentations(
-    filter?: ContactDocumentationWhereInput,
+    filter?: ContactDocumentationWhere,
   ): Observable<FullContactDocumentation[]> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
     return this.http.get<FullContactDocumentation[]>(
-      this.caseApiUrl + '/documentation/all?' + params.toString(),
+      this.caseApiUrl + '/documentation/all' + toQuery({ where: filter }),
     );
   }
 
   /**
    * Get all my (filtered) ContactDocumentation.
-   * @param {ContactDocumentationWhereInput} filter Prisma Where Input filter
+   * @param {ContactDocumentationWhere} filter Optional filter
    * @returns {Observable<FullContactDocumentation[]>}
    */
   getMyDocumentations(
-    filter?: ContactDocumentationWhereInput,
+    filter?: ContactDocumentationWhere,
   ): Observable<FullContactDocumentation[]> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
     return this.http.get<FullContactDocumentation[]>(
-      this.caseApiUrl + '/documentation/my?' + params.toString(),
+      this.caseApiUrl + '/documentation/my' + toQuery({ where: filter }),
     );
   }
 
@@ -94,23 +89,19 @@ export class ContactDocumentationService {
   /**
    * Get all (or filtered) Contact Documentation for a case
    * @param {string} caseId UUID of the case
-   * @param {ContactDocumentationWhereInput} filter Prisma Where Input filter
+   * @param {ContactDocumentationWhere} filter Optional filter
    * @returns {Observable<FullContactDocumentation>} Observable emitting the Contact Documentation
    */
   getDocumentationForCase(
     caseId: string,
-    filter?: ContactDocumentationWhereInput,
+    filter?: ContactDocumentationWhere,
   ): Observable<FullContactDocumentation> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
     return this.http.get<FullContactDocumentation>(
       this.caseApiUrl +
         '/i/' +
         caseId +
         '/documentation' +
-        '?' +
-        params.toString(),
+        toQuery({ where: filter }),
     );
   }
 
@@ -125,20 +116,23 @@ export class ContactDocumentationService {
     n?: number,
   ): Observable<FullContactDocumentation[]> {
     return this.http.get<FullContactDocumentation[]>(
-      this.caseApiUrl + '/i/' + caseId + '/documentation/latest',
-      { params: n ? { n } : undefined },
+      this.caseApiUrl +
+        '/i/' +
+        caseId +
+        '/documentation/latest' +
+        toQuery({ n }),
     );
   }
 
   /**
    * Create a new Documentation for a case
    * @param {string} caseId UUID of the case
-   * @param {ContactDocumentationCreateInput} input Prisma Create input
+   * @param {ContactDocumentationCreateRequest} input Create input
    * @returns {Observable<FullContactDocumentation>} Observable emitting the Contact Documentation
    */
   createDocumentation(
     caseId: string,
-    input: ContactDocumentationCreateInput,
+    input: ContactDocumentationCreateRequest,
   ): Observable<FullContactDocumentation> {
     return this.http
       .post<FullContactDocumentation>(
@@ -152,13 +146,13 @@ export class ContactDocumentationService {
    * Update a Contact Documentation
    * @param {string} caseId UUID of the case
    * @param {string} docId UUID of the Documentation
-   * @param {ContactDocumentationUpdateInput} update Prisma Update input
+   * @param {ContactDocumentationUpdateRequest} update Update input
    * @returns {Observable<FullContactDocumentation>} Observable emitting the Contact Documentation
    */
   updateDocumentation(
     caseId: string,
     docId: string,
-    update: ContactDocumentationUpdateInput,
+    update: ContactDocumentationUpdateRequest,
   ): Observable<FullContactDocumentation> {
     return this.http
       .put<FullContactDocumentation>(

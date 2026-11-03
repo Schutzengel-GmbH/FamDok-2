@@ -61,12 +61,12 @@ describe('OrgService', () => {
     req.flush({});
   });
 
-  it('addUser connects the user to the organisation via UserService', () => {
+  it('addUser sets the organisation of the user via UserService', () => {
     service.addUser('user-1', 'org-1').subscribe();
 
     const req = httpMock.expectOne(`${environment.apiUrl}/user/i/user-1`);
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual({ organisation: { connect: { id: 'org-1' } } });
+    expect(req.request.body).toEqual({ organisationId: 'org-1' });
     req.flush({});
   });
 });

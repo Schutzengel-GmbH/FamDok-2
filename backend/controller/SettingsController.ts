@@ -3,7 +3,7 @@ import { Role } from '../../shared/generated/prisma/enums';
 import { FullUser, Settings } from '../../shared/types';
 import { prisma } from '../db';
 import { BadRequestError, UnauthorizedError } from '../util/authUtils';
-import { SettingsKeys } from '../../shared/zodTypes';
+import { SettingsKeys } from '../../shared/api';
 
 export class SettingsController {
   static getSettings() {

@@ -19,22 +19,6 @@ describe('FamilyService', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('getFamilies GETs families with an optional filter', () => {
-    service.getFamilies().subscribe();
-
-    const req = httpMock.expectOne((r) => r.url.includes('/family') && !r.url.includes('/i/'));
-    expect(req.request.method).toBe('GET');
-    req.flush([]);
-  });
-
-  it('getFamilies encodes the given filter into the where param', () => {
-    service.getFamilies({ name: { equals: 'Muster' } }).subscribe();
-
-    const req = httpMock.expectOne((r) => r.url.includes('/family') && !r.url.includes('/i/'));
-    expect(decodeURIComponent(req.request.url)).toContain('"name":{"equals":"Muster"}');
-    req.flush([]);
-  });
-
   it('getFamily GETs a single family by id', () => {
     service.getFamily('family-1').subscribe();
 

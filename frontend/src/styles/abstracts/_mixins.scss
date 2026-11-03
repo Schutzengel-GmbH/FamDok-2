@@ -140,6 +140,15 @@
   }
 }
 
+/// Responsives Raster für Formularfelder (form-floating/form-select), bricht ab einer
+/// Mindestbreite pro Feld automatisch in weniger Spalten um.
+@mixin form-field-grid($min: 170px) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax($min, 1fr));
+  gap: 0.85rem;
+  align-items: end;
+}
+
 /// Bootstrap-Karte als Flex-Spalte, die ihre Höhe füllt (Dashboard/Statistik).
 @mixin fill-card {
   height: 100%;

@@ -4,20 +4,36 @@ import { prisma } from '../../db';
 import { Prisma } from '../../../shared/generated/prisma/client';
 import { Role } from '../../../shared/generated/prisma/client';
 import { isSameOrg, isSameSubOrg } from './scopeUtils';
+import { orgCaseWhere, subOrgCaseWhere } from './CaseAuthFns';
 
 const WRITE_OVERRIDE_ROLES: Role[] = [Role.Admin];
 
+type FamilyMembers = { childId?: string | null; caregiverId?: string | null };
+
+/** Whether the child and caregiver a response is about belong to the family of its case. */
+export function isFamilyMember(
+  family: { children: { id: string }[]; caregiver: { id: string }[] } | null,
+  { childId, caregiverId }: FamilyMembers
+) {
+  return (
+    (!childId || !!family?.children.some((c) => c.id === childId)) &&
+    (!caregiverId || !!family?.caregiver.some((c) => c.id === caregiverId))
+  );
+}
+
 export async function canCreateCaseFormResponse(
   user: FullUser,
-  data: Prisma.CaseFormResponseCreateInput
+  data: FamilyMembers & { caseId: string }
 ) {
-  if (!data.case?.connect?.id) return false;
   const c = await prisma.case.findUnique({
-    where: { id: data.case.connect.id },
+    where: { id: data.caseId },
     include: CASE_DEFAULT_INCLUDE,
   });
   if (!c) return false;
-  return c.responsibleUsers.some((ru) => ru.id === user.id);
+  return (
+    c.responsibleUsers.some((ru) => ru.id === user.id) &&
+    isFamilyMember(c.family, data)
+  );
 }
 
 /**
@@ -52,6 +68,27 @@ function canSeeSingleCaseFormResponse(
     return isSameSubOrg(user, response.case.subOrganisationId);
 
   return false;
+}
+
+/** {@link canSeeSingleCaseFormResponse} as a filter, see {@link visibleCaseWhere}. */
+export function visibleCaseFormResponseWhere(
+  user: FullUser
+): Prisma.CaseFormResponseWhereInput {
+  if (user.role === Role.Admin) return {};
+
+  const noPersonalData = { caseForm: { containsPersonalData: false } };
+  const OR: Prisma.CaseFormResponseWhereInput[] = [
+    { case: { responsibleUsers: { some: { id: user.id } } } },
+  ];
+
+  if (user.role === Role.Controller) OR.push(noPersonalData);
+  if (user.role === Role.OrgController)
+    OR.push({ ...noPersonalData, case: orgCaseWhere(user) });
+  if (user.role === Role.OrgCoordinator) OR.push({ case: orgCaseWhere(user) });
+  if (user.role === Role.SubOrgCoordinator)
+    OR.push({ case: subOrgCaseWhere(user) });
+
+  return { OR };
 }
 
 export function canSeeCaseFormResponse(

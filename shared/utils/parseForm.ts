@@ -1,20 +1,16 @@
-import {
-  CaseFormCreateInput,
-  GeneralFormCreateInput,
-  QuestionCreateInput,
-} from "../generated/prisma/models";
-import {
-  CaseFormCreateInputObjectSchema,
-  GeneralFormCreateInputObjectSchema,
-} from "../generated/zod/schemas";
 import { Question } from "../generated/prisma/browser";
 import { FullCaseForm, FullGeneralForm } from "../types";
+import {
+  CaseFormCreateRequest,
+  GeneralFormCreateRequest,
+  QuestionCreate,
+} from "../api/form";
 import z from "zod";
 
 /**
  * Parses an uploaded definition and checks its outer shape, so malformed input surfaces as a
  * ZodError rather than a raw SyntaxError/TypeError. The fields themselves are validated by
- * the create-input schemas below.
+ * the request schemas below.
  */
 const FormDefinitionSchema = z
   .string()
@@ -32,47 +28,29 @@ const FormDefinitionSchema = z
  * Stamps each question with its `order` from its position in the definition array, so the
  * persisted sequence doesn't depend on incidental DB insertion/storage order.
  */
-function withOrder(questions: Record<string, unknown>[]): QuestionCreateInput[] {
+function withOrder(questions: Record<string, unknown>[]) {
   return questions.map((question, order) => ({
     ...question,
     order,
-  })) as QuestionCreateInput[];
+  })) as QuestionCreate[];
 }
 
-export function parseCaseForm(formInput: string): CaseFormCreateInput {
+export function parseCaseForm(formInput: string): CaseFormCreateRequest {
   const form = FormDefinitionSchema.parse(formInput);
 
-  const createInput = {
+  return CaseFormCreateRequest.parse({
     ...form,
-    questions: {
-      createMany: { data: withOrder(form.questions) },
-    },
-    caseFormResponses: undefined,
-  };
-
-  const result = CaseFormCreateInputObjectSchema.safeParse(createInput);
-
-  if (!result.success) throw result.error;
-
-  return result.data;
+    questions: withOrder(form.questions),
+  });
 }
 
-export function parseGeneralForm(formInput: string): GeneralFormCreateInput {
+export function parseGeneralForm(formInput: string): GeneralFormCreateRequest {
   const form = FormDefinitionSchema.parse(formInput);
 
-  const createInput = {
+  return GeneralFormCreateRequest.parse({
     ...form,
-    questions: {
-      createMany: { data: withOrder(form.questions) },
-    },
-    responses: undefined,
-  };
-
-  const result = GeneralFormCreateInputObjectSchema.safeParse(createInput);
-
-  if (!result.success) throw result.error;
-
-  return result.data;
+    questions: withOrder(form.questions),
+  });
 }
 
 /**

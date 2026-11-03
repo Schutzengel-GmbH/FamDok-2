@@ -14,7 +14,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { FormsModule } from '@angular/forms';
 import { NumberFilterInput } from 'src/app/components/filter-inputs/number-filter/number-filter.component';
 import { QuestionModel as Question } from '../../../../../../../shared/generated/prisma/models';
-import { AnswerWhereInput } from '../../../../../../../shared/generated/prisma/models';
+import type { AnswerWhere } from '../../../../../../../shared/api';
 
 @Component({
   selector: 'app-num-question-filter',
@@ -24,7 +24,7 @@ import { AnswerWhereInput } from '../../../../../../../shared/generated/prisma/m
 })
 export class NumQuestionFilter {
   question = input.required<Question>();
-  filterChanged = output<AnswerWhereInput>();
+  filterChanged = output<AnswerWhere>();
 
   private modalService = inject(NgbModal);
   filterInput: NumFieldFilter | undefined = undefined;

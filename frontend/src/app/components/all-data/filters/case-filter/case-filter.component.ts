@@ -13,7 +13,7 @@ import { StringFilter } from '../../../filter-inputs/string-filter/string-filter
 import { DateFilter } from '../../../filter-inputs/date-filter/date-filter.component';
 import { Topics } from '../../../../../../../shared/definitions/zielvereinbarung';
 import { isEmptyObject } from 'src/app/util/generalUtils';
-import { CaseWhereInput } from '../../../../../../../shared/generated/prisma/models';
+import type { CaseWhere } from '../../../../../../../shared/api';
 
 @Component({
   selector: 'app-case-filter',
@@ -22,7 +22,7 @@ import { CaseWhereInput } from '../../../../../../../shared/generated/prisma/mod
   imports: [FormsModule, StringFilter, DateFilter],
 })
 export class CaseFilter {
-  filterChanged = output<CaseWhereInput>();
+  filterChanged = output<CaseWhere>();
   anon = input<boolean>();
 
   private modalService = inject(NgbModal);
