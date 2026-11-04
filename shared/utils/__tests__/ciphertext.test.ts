@@ -1,4 +1,5 @@
 import {
+  buildAad,
   CiphertextFormatError,
   formatEnvelope,
   fromB64Url,
@@ -15,15 +16,17 @@ const empty = "";
 
 const randomArray = (l: number) => {
   const arr = new Uint8Array(l);
-  arr.forEach((_, i) => (arr[i] = Math.floor(Math.random() * 255)));
+  arr.forEach((_, i) => (arr[i] = Math.floor(Math.random() * 256)));
   return arr;
 };
 
-describe("B64Url roundtrips from 0 to 40 bytes to work", () => {
-  for (let i = 0; i < 40; i++) {
-    const arr = randomArray(i);
-    expect(fromB64Url(toB64Url(arr))).toEqual(arr);
-  }
+describe("B64", () => {
+  it("roundtrips", () => {
+    for (let i = 0; i <= 40; i++) {
+      const arr = randomArray(i);
+      expect(fromB64Url(toB64Url(arr))).toEqual(arr);
+    }
+  });
 });
 
 describe("toB64Url", () => {
@@ -110,10 +113,45 @@ describe("parseEnvelope", () => {
     expect(() => parseEnvelope("v1.1.abcdABCDabcdABCD.abcd")).toThrow(
       CiphertextFormatError,
     );
+    // leading space
+    expect(() =>
+      parseEnvelope(" v1.1.abcdABCDabcdABCD.abcdABCDabcdABCDabcdABCD"),
+    ).toThrow(CiphertextFormatError);
+    // wrong iv length
+    expect(() =>
+      parseEnvelope("v1.1.abcdABCDabcdABC.abcdABCDabcdABCDabcdABCD"),
+    ).toThrow(CiphertextFormatError);
+  });
+});
+
+describe("buildAad", () => {
+  it("builds aad", () => {
+    expect(buildAad({ table: "table", rowId: "row", field: "field" })).toEqual(
+      "table:row:field",
+    );
+  });
+  it("throws on empty strings", () => {
+    expect(() =>
+      buildAad({
+        table: "",
+        rowId: "row",
+        field: "field",
+      }),
+    ).toThrow(CiphertextFormatError);
+  });
+  it("throws when encountering :", () => {
+    expect(() =>
+      buildAad({ table: "a:b", rowId: "row", field: "field" }),
+    ).toThrow(CiphertextFormatError);
   });
 });
 
 describe("isEnvelope", () => {
+  it("accepts proper envelope", () => {
+    expect(
+      isEnvelope("v1.1.abcdABCDabcdABCD.abcdABCDabcdABCDabcdABCDabcdABCD"),
+    ).toBe(true);
+  });
   it("rejects non strings", () => {
     expect(isEnvelope(null)).toBe(false);
     expect(isEnvelope({})).toBe(false);

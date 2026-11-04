@@ -61,9 +61,11 @@ export function toB64Url(bytes: Uint8Array): string {
 
 export function fromB64Url(s: string): Uint8Array {
   // A base64 string must always conform to the character set
-  if (!/^[A-Za-z0-9_-]*$/.test(s)) throw new CiphertextFormatError();
+  if (!/^[A-Za-z0-9_-]*$/.test(s))
+    throw new CiphertextFormatError("not a valid base64 string");
   // There is no padding, but a triplet can never result in one trailing char
-  if (s.length % 4 === 1) throw new CiphertextFormatError();
+  if (s.length % 4 === 1)
+    throw new CiphertextFormatError("not a valid base64 string");
 
   let output = [] as number[];
 
@@ -118,12 +120,27 @@ export function fromB64Url(s: string): Uint8Array {
   return new Uint8Array(output);
 }
 
-export function buildAad(args: {
+export type FieldContext = {
   table: string;
   rowId: string;
   field: string;
-}): string {
-  const { table, rowId, field } = args;
+};
+
+function validateFieldContext(ctx: FieldContext): boolean {
+  return (
+    ctx.table != "" &&
+    ctx.field != "" &&
+    ctx.rowId != "" &&
+    !ctx.table.includes(":") &&
+    !ctx.field.includes(":") &&
+    !ctx.rowId.includes(":")
+  );
+}
+
+export function buildAad(ctx: FieldContext): string {
+  if (!validateFieldContext(ctx))
+    throw new CiphertextFormatError("bad FieldContext");
+  const { table, rowId, field } = ctx;
   return `${table}:${rowId}:${field}`;
 }
 
@@ -133,7 +150,8 @@ export function formatEnvelope(
   ct: string,
 ): string {
   const envelope = `v1.${keyVersion}.${iv}.${ct}`;
-  if (!ENVELOPE_REGEX.test(envelope)) throw new CiphertextFormatError();
+  if (!ENVELOPE_REGEX.test(envelope))
+    throw new CiphertextFormatError("invalid envelope string");
   return envelope;
 }
 
@@ -142,7 +160,8 @@ export function parseEnvelope(s: string): {
   iv: string;
   ct: string;
 } {
-  if (!isEnvelope(s)) throw new CiphertextFormatError();
+  if (!isEnvelope(s))
+    throw new CiphertextFormatError("invalid envelope string");
   const parts = s.split(".");
   return { keyVersion: parseInt(parts[1]), iv: parts[2], ct: parts[3] };
 }
