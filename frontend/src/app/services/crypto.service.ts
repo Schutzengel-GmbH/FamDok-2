@@ -32,21 +32,24 @@ export class CryptoService {
     key: VersionedKey,
     ctx: FieldContext,
   ): Promise<string> {
-    const iv = this.randomBytes(12);
     const encoder = new TextEncoder();
+
+    const iv = this.randomBytes(12);
+
     const additionalData = encoder.encode(buildAad(ctx));
     const plaintextBytes = encoder.encode(plaintext);
-    const res = await crypto.subtle.encrypt(
+
+    const encryptedBytes = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv, additionalData },
       key.key,
       plaintextBytes,
     );
-    const env = formatEnvelope(
+
+    return formatEnvelope(
       key.version,
       toB64Url(iv),
-      toB64Url(new Uint8Array(res)),
+      toB64Url(new Uint8Array(encryptedBytes)),
     );
-    return env;
   }
 
   async decryptField(
@@ -55,10 +58,14 @@ export class CryptoService {
     ctx: FieldContext,
   ): Promise<string> {
     const { keyVersion, iv, ct } = parseEnvelope(envelope);
+
     const key = keys(keyVersion);
     if (!key) throw new UnknownKeyVersionError();
+
     const aad = buildAad(ctx);
+
     const encoder = new TextEncoder();
+
     try {
       const plaintextBytes = await crypto.subtle.decrypt(
         {
