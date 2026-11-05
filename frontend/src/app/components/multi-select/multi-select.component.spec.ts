@@ -147,6 +147,48 @@ describe('MultiSelect', () => {
     });
   });
 
+  describe('fieldLabel', () => {
+    const toggle = (): HTMLButtonElement =>
+      fixture.nativeElement.querySelector('[ngbDropdownToggle], .dropdown-toggle');
+
+    it('renders a plain button by default', () => {
+      expect(toggle().classList).toContain('btn');
+      expect(toggle().classList).not.toContain('form-select');
+      expect(fixture.nativeElement.querySelector('label')).toBeNull();
+    });
+
+    it('renders a floating-label field linked to the toggle when set', () => {
+      fixture.componentRef.setInput('fieldLabel', 'Tags');
+      fixture.detectChanges();
+
+      const label: HTMLLabelElement = fixture.nativeElement.querySelector(
+        '.form-floating > .form-select ~ label',
+      );
+      expect(label.textContent).toContain('Tags');
+      expect(label.htmlFor).toBe(toggle().id);
+      expect(toggle().classList).not.toContain('btn');
+    });
+
+    it('sizes the open menu to the field', () => {
+      fixture.componentRef.setInput('fieldLabel', 'Tags');
+      fixture.detectChanges();
+
+      toggle().click();
+      fixture.detectChanges();
+
+      expect(component['menuMinWidth']()).toBe(toggle().offsetWidth);
+    });
+  });
+
+  it('tells the user when there is nothing to choose from', () => {
+    fixture.componentRef.setInput('items', []);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Keine Optionen verfügbar',
+    );
+  });
+
   it('renders only type="button" buttons, so it never submits a surrounding form', () => {
     const buttons: NodeListOf<HTMLButtonElement> =
       fixture.nativeElement.querySelectorAll('button');

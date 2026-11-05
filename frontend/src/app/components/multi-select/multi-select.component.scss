@@ -1,0 +1,25 @@
+:host {
+  display: block;
+  min-width: 0; // lange Auswahl soll kürzen, nicht die Grid-Spalte aufweiten
+}
+
+// Darstellung als Formularfeld (fieldLabel gesetzt): .form-select bringt den Pfeil mit.
+.multi-select__field {
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+
+  &::after {
+    display: none;
+  }
+}
+
+.multi-select__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.multi-select__check {
+  flex: 0 0 1rem;
+}

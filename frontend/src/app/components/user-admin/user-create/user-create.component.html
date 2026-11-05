@@ -66,19 +66,14 @@
         <label for="newOrganisationId">Organisation</label>
       </div>
     }
-    <div class="user-create__suborgs">
-      <label class="form-label" for="newSubOrgSelect">
-        Unterorganisationen
-      </label>
-      <app-multi-select
-        id="newSubOrgSelect"
-        [items]="availableSubOrgs()"
-        [value]="selectedSubOrgs()"
-        [compareFn]="subOrgCompareFn"
-        labelProp="name"
-        placeholder="Keine"
-        (selectChange)="onSubOrgsChange($event)" />
-    </div>
+    <app-multi-select
+      fieldLabel="Unterorganisationen"
+      [items]="availableSubOrgs()"
+      [value]="selectedSubOrgs()"
+      [compareFn]="subOrgCompareFn"
+      labelProp="name"
+      placeholder="Keine"
+      (selectChange)="onSubOrgsChange($event)" />
   </div>
 
   <fieldset class="user-create__onboarding">
