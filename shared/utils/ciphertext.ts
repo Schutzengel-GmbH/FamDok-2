@@ -169,3 +169,24 @@ export function parseEnvelope(s: string): {
 export function isEnvelope(x: unknown): boolean {
   return typeof x === "string" && ENVELOPE_REGEX.test(x);
 }
+
+const WRAPPED_PRIV_KEY_REGEX = /^k1\.<16 chars>\.<22+ chars>$/;
+
+export function isWrappedPrivKey(x: unknown): boolean {
+  return typeof x === "string" && WRAPPED_PRIV_KEY_REGEX.test(x);
+}
+
+export function formatWrappedPrivateKey(iv: string, ct: string): string {
+  const wrapped = `k1.${iv}.${ct}`;
+  if (!isWrappedPrivKey(wrapped))
+    throw new CiphertextFormatError("invalid key");
+  return wrapped;
+}
+
+export function parseWrappedPrivateKey(s: string): { iv: string; ct: string } {
+  if (!isWrappedPrivKey(s))
+    throw new CiphertextFormatError("invalid wrapped key");
+
+  const parts = s.split(".");
+  return { iv: parts[1], ct: parts[2] };
+}

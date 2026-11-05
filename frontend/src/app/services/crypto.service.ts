@@ -5,6 +5,7 @@ import {
   formatEnvelope,
   fromB64Url,
   parseEnvelope,
+  parseWrappedPrivateKey,
   toB64Url,
 } from '../../../../shared/utils/ciphertext';
 import SuperJSON from 'superjson';
@@ -99,6 +100,69 @@ export class CryptoService {
     ctx: FieldContext,
   ): Promise<T> {
     return SuperJSON.parse<T>(await this.decryptField(envelope, keys, ctx));
+  }
+
+  generateUserKeyPair(): Promise<CryptoKeyPair> {
+    return crypto.subtle.generateKey(
+      { name: 'ECDH', namedCurve: 'P-256' },
+      true,
+      ['deriveBits'],
+    );
+  }
+
+  exportPublicKey(key: CryptoKey): Promise<ArrayBuffer> {
+    return crypto.subtle.exportKey('spki', key);
+  }
+
+  importPublicKey(s: string): Promise<CryptoKey> {
+    return crypto.subtle.importKey(
+      'spki',
+      fromB64Url(s),
+      { name: 'ECDH', namedCurve: 'P-256' },
+      true,
+      [],
+    );
+  }
+
+  async wrapPrivateKey(
+    priv: CryptoKey,
+    kek: CryptoKey,
+    userId: string,
+  ): Promise<string> {
+    const encoder = new TextEncoder();
+    const iv = this.randomBytes(12);
+    const additionalData = encoder.encode(`famdok-userkey-v1:${userId}`);
+
+    const wrapped = await crypto.subtle.wrapKey('pkcs8', priv, kek, {
+      name: 'AES-GCM',
+      iv,
+      additionalData,
+    });
+
+    return `k1.${toB64Url(iv)}.${toB64Url(new Uint8Array(wrapped))}`;
+  }
+
+  async unwrapPrivateKey(
+    wrapped: string,
+    kek: CryptoKey,
+    userId: string,
+  ): Promise<CryptoKey> {
+    const { iv, ct } = parseWrappedPrivateKey(wrapped);
+    const encoder = new TextEncoder();
+
+    return crypto.subtle.unwrapKey(
+      'pkcs8',
+      fromB64Url(ct),
+      kek,
+      {
+        name: 'AES-GCM',
+        iv: fromB64Url(iv),
+        additionalData: encoder.encode(`famdok-userkey-v1:${userId}`),
+      },
+      { name: 'ECDH', namedCurve: 'P-256' },
+      false,
+      ['deriveBits'],
+    );
   }
 
   private randomBytes(n: number): Uint8Array {
