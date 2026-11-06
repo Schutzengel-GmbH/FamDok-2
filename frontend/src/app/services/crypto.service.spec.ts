@@ -1,11 +1,18 @@
 import { TestBed } from '@angular/core/testing';
 import { CryptoService } from './crypto.service';
-import { DecryptionError, UnknownKeyVersionError } from '../util/crypto/errors';
+import {
+  DecryptionError,
+  UnknownKeyVersionError,
+  WrongPassphraseError,
+} from '../util/crypto/errors';
 import {
   CiphertextFormatError,
   formatEnvelope,
   parseEnvelope,
 } from '../../../../shared/utils/ciphertext';
+import { deriveKek, newKdfParams } from '../util/crypto/kdf';
+
+const userId = 'abcd-1234-efgh-5678';
 
 describe('CryptoService', () => {
   let service: CryptoService;
@@ -168,7 +175,6 @@ describe('CryptoService', () => {
       field: 'dokumentation',
     };
     const fixedIV = new Uint8Array(12).map((_, i) => i);
-
     const msg = await service.decryptField(knownEnvelope, knownKeys, knownCtx);
     expect(msg).toEqual(knownMsg);
 
@@ -179,5 +185,85 @@ describe('CryptoService', () => {
       knownCtx,
     );
     expect(envelope).toEqual(knownEnvelope);
+  });
+
+  describe('user key wrapping', () => {
+    const passphrase = 'Grüße aus Flensburg';
+    const params = newKdfParams(1024, 2); // cheap: we test wiring, not Argon2 cost
+    let kek: CryptoKey;
+    let pair: CryptoKeyPair;
+    let wrapped: string;
+
+    beforeAll(async () => {
+      kek = await deriveKek(passphrase, params);
+    });
+
+    beforeEach(async () => {
+      pair = await service.generateUserKeyPair();
+      wrapped = await service.wrapPrivateKey(pair.privateKey, kek, userId);
+    });
+
+    it('exports a public key as 122 b64url chars and imports it back', async () => {
+      const exported = await service.exportPublicKey(pair.publicKey);
+      expect(exported.length).toBe(122);
+      const imported = await service.importPublicKey(exported);
+      expect(imported.usages).toEqual([]);
+      expect(await service.exportPublicKey(imported)).toBe(exported);
+    });
+
+    it('unwraps with a KEK re-derived from the same passphrase', async () => {
+      const kek2 = await deriveKek(passphrase, params); // the real login flow
+      const priv = await service.unwrapPrivateKey(wrapped, kek2, userId);
+      expect(priv.extractable).toBeFalse();
+      expect(priv.usages).toEqual(['deriveBits']);
+      await expectAsync(crypto.subtle.exportKey('pkcs8', priv)).toBeRejected();
+    });
+
+    it('unwrapped key computes the same ECDH secret', async () => {
+      const other = await service.generateUserKeyPair();
+      const priv = await service.unwrapPrivateKey(wrapped, kek, userId);
+      const ab = new Uint8Array(
+        await crypto.subtle.deriveBits(
+          { name: 'ECDH', public: other.publicKey },
+          priv,
+          256,
+        ),
+      );
+      const ba = new Uint8Array(
+        await crypto.subtle.deriveBits(
+          { name: 'ECDH', public: pair.publicKey },
+          other.privateKey,
+          256,
+        ),
+      );
+      expect(ab).toEqual(ba);
+    });
+
+    it('wrong passphrase → WrongPassphraseError', async () => {
+      const wrongKek = await deriveKek('Grüße aus Kiel', params);
+      await expectAsync(
+        service.unwrapPrivateKey(wrapped, wrongKek, userId),
+      ).toBeRejectedWithError(WrongPassphraseError);
+    });
+
+    it('wrong userId → WrongPassphraseError', async () => {
+      await expectAsync(
+        service.unwrapPrivateKey(wrapped, kek, 'someone-else'),
+      ).toBeRejectedWithError(WrongPassphraseError);
+    });
+
+    it('flipped first ciphertext char → WrongPassphraseError', async () => {
+      const [k, iv, ct] = wrapped.split('.');
+      const tampered = `${k}.${iv}.${(ct[0] === 'A' ? 'B' : 'A') + ct.slice(1)}`;
+      await expectAsync(
+        service.unwrapPrivateKey(tampered, kek, userId),
+      ).toBeRejectedWithError(WrongPassphraseError);
+    });
+
+    it('malformed k1 string → CiphertextFormatError', async () => {
+      await expectAsync(
+        service.unwrapPrivateKey('k1.nope', kek, userId),
+      ).toBeRejectedWithError(CiphertextFormatError);
+    });
   });
 });

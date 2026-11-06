@@ -3,19 +3,29 @@ import {
   buildAad,
   FieldContext,
   formatEnvelope,
+  formatWrappedPrivateKey,
   fromB64Url,
   parseEnvelope,
   parseWrappedPrivateKey,
   toB64Url,
 } from '../../../../shared/utils/ciphertext';
 import SuperJSON from 'superjson';
-import { DecryptionError, UnknownKeyVersionError } from '../util/crypto/errors';
+import {
+  DecryptionError,
+  UnknownKeyVersionError,
+  WrongPassphraseError,
+} from '../util/crypto/errors';
 
 export interface VersionedKey {
   version: number;
   key: CryptoKey;
 }
+
 export type KeyResolver = (version: number) => CryptoKey | undefined;
+
+function buildUserkey(userId: string) {
+  return `famdok-userkey-v1:${userId}`;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -110,8 +120,8 @@ export class CryptoService {
     );
   }
 
-  exportPublicKey(key: CryptoKey): Promise<ArrayBuffer> {
-    return crypto.subtle.exportKey('spki', key);
+  async exportPublicKey(key: CryptoKey): Promise<string> {
+    return toB64Url(new Uint8Array(await crypto.subtle.exportKey('spki', key)));
   }
 
   importPublicKey(s: string): Promise<CryptoKey> {
@@ -131,7 +141,7 @@ export class CryptoService {
   ): Promise<string> {
     const encoder = new TextEncoder();
     const iv = this.randomBytes(12);
-    const additionalData = encoder.encode(`famdok-userkey-v1:${userId}`);
+    const additionalData = encoder.encode(buildUserkey(userId));
 
     const wrapped = await crypto.subtle.wrapKey('pkcs8', priv, kek, {
       name: 'AES-GCM',
@@ -139,7 +149,10 @@ export class CryptoService {
       additionalData,
     });
 
-    return `k1.${toB64Url(iv)}.${toB64Url(new Uint8Array(wrapped))}`;
+    return formatWrappedPrivateKey(
+      toB64Url(iv),
+      toB64Url(new Uint8Array(wrapped)),
+    );
   }
 
   async unwrapPrivateKey(
@@ -150,19 +163,25 @@ export class CryptoService {
     const { iv, ct } = parseWrappedPrivateKey(wrapped);
     const encoder = new TextEncoder();
 
-    return crypto.subtle.unwrapKey(
-      'pkcs8',
-      fromB64Url(ct),
-      kek,
-      {
-        name: 'AES-GCM',
-        iv: fromB64Url(iv),
-        additionalData: encoder.encode(`famdok-userkey-v1:${userId}`),
-      },
-      { name: 'ECDH', namedCurve: 'P-256' },
-      false,
-      ['deriveBits'],
-    );
+    try {
+      return await crypto.subtle.unwrapKey(
+        'pkcs8',
+        fromB64Url(ct),
+        kek,
+        {
+          name: 'AES-GCM',
+          iv: fromB64Url(iv),
+          additionalData: encoder.encode(buildUserkey(userId)),
+        },
+        { name: 'ECDH', namedCurve: 'P-256' },
+        false,
+        ['deriveBits'],
+      );
+    } catch (e) {
+      if (e instanceof Error && e.name === 'OperationError')
+        throw new WrongPassphraseError();
+      throw e;
+    }
   }
 
   private randomBytes(n: number): Uint8Array {

@@ -157,4 +157,35 @@ describe("isEnvelope", () => {
     expect(isEnvelope({})).toBe(false);
     expect(isEnvelope(1)).toBe(false);
   });
+
+  describe("wrapped private key (k1)", () => {
+    const iv = "AAECAwQFBgcICQoL"; // 12 bytes
+    const ct = "A".repeat(22);
+
+    it("round-trips", () => {
+      const s = formatWrappedPrivateKey(iv, ct);
+      expect(s).toBe(`k1.${iv}.${ct}`);
+      expect(parseWrappedPrivateKey(s)).toEqual({ iv, ct });
+    });
+
+    it.each([
+      "",
+      "k1..",
+      `k2.${iv}.${ct}`,
+      `v1.3.${iv}.${ct}`,
+      `k1.${iv}A.${ct}`,
+      `k1.${iv}.${ct.slice(1)}`,
+      `k1.${iv}.${ct}.x`,
+      `k1.${iv}.${ct}+`,
+    ])("rejects %p", (s) => {
+      expect(isWrappedPrivKey(s)).toBe(false);
+      expect(() => parseWrappedPrivateKey(s)).toThrow(CiphertextFormatError);
+    });
+
+    it("format rejects a too-short ct", () => {
+      expect(() => formatWrappedPrivateKey(iv, "A".repeat(21))).toThrow(
+        CiphertextFormatError,
+      );
+    });
+  });
 });

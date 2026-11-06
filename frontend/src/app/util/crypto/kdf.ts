@@ -40,7 +40,9 @@ export function validateKdfParams(params: KdfParams) {
   } catch (e) {
     if (e instanceof CiphertextFormatError)
       throw new InvalidKdfParamsError('cannot decode salt');
-    throw e;
+    throw new InvalidKdfParamsError(
+      e instanceof Error ? e.name : 'unknown error',
+    );
   }
   if (salt.length !== 16) throw new InvalidKdfParamsError('invalid salt');
   if (!Number.isInteger(params.memoryKiB))
@@ -58,7 +60,7 @@ export function validateKdfParams(params: KdfParams) {
     throw new InvalidKdfParamsError('too many iterations');
 }
 
-export function deriveKeyBytes(passphrase: string, params: KdfParams) {
+export async function deriveKeyBytes(passphrase: string, params: KdfParams) {
   const normalisedPassphrase = passphrase.normalize('NFC');
   validateKdfParams(params);
 

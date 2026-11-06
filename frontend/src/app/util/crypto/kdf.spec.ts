@@ -51,6 +51,78 @@ describe('kdf', () => {
       parallelism: 1,
     };
 
+    it('rejects NaN / fractional memory', () => {
+      expect(() =>
+        validateKdfParams({
+          ...knownParams,
+          memoryKiB: NaN,
+        }),
+      ).toThrowError(InvalidKdfParamsError);
+      expect(() =>
+        validateKdfParams({
+          ...knownParams,
+          memoryKiB: 1023.5,
+        }),
+      ).toThrowError(InvalidKdfParamsError);
+    });
+    it('rejects 11 iterations', () => {
+      /* … */
+      expect(() =>
+        validateKdfParams({
+          ...knownParams,
+          iterations: 11,
+        }),
+      ).toThrowError(InvalidKdfParamsError);
+    });
+    it('rejects invalid salt characters', () => {
+      expect(() =>
+        validateKdfParams({
+          ...knownParams,
+          salt: '!'.repeat(22),
+        }),
+      ).toThrowError(InvalidKdfParamsError);
+    });
+    it('rejects a 15-byte salt', () => {
+      /* salt: toB64Url(new Uint8Array(15)) */
+      expect(() =>
+        validateKdfParams({
+          ...knownParams,
+          salt: toB64Url(new Uint8Array(15)),
+        }),
+      ).toThrowError(InvalidKdfParamsError);
+    });
+
+    for (const field of [
+      'alg',
+      'salt',
+      'memoryKiB',
+      'iterations',
+      'parallelism',
+    ] as const) {
+      it(`rejects missing ${field}`, () => {
+        const p: Partial<KdfParams> = { ...validParams };
+        delete p[field];
+        expect(() => validateKdfParams(p as KdfParams)).toThrowError(
+          InvalidKdfParamsError,
+        );
+      });
+    }
+
+    // deriveKeyBytes
+    it('NFD passphrase yields the KAT value', async () => {
+      const bytes = await deriveKeyBytes(
+        knownPassphrase.normalize('NFD'),
+        knownParams,
+      );
+      expect(toB64Url(bytes)).toBe(expectedKeyB64Url);
+    });
+
+    it('rejects invalid params', async () => {
+      await expectAsync(
+        deriveKeyBytes('x', { ...knownParams, iterations: 0 }),
+      ).toBeRejectedWithError(InvalidKdfParamsError);
+    });
+
     it('throws InvalidKdfParamsError on bad salt', () => {
       const badParams = { ...validParams, salt: validSaltStr + 'A' };
       expect(() => validateKdfParams(badParams)).toThrowError(
@@ -103,6 +175,11 @@ describe('kdf', () => {
   });
 
   describe('deriveKeyBytes', () => {
+    it('accepts valid params and the defaults', () => {
+      expect(() => validateKdfParams(knownParams)).not.toThrow();
+      expect(() => validateKdfParams(newKdfParams())).not.toThrow();
+    });
+
     it('derives known key bytes', async () => {
       const bytes = await deriveKeyBytes(knownPassphrase, knownParams);
 

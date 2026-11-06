@@ -170,7 +170,7 @@ export function isEnvelope(x: unknown): boolean {
   return typeof x === "string" && ENVELOPE_REGEX.test(x);
 }
 
-const WRAPPED_PRIV_KEY_REGEX = /^k1\.<16 chars>\.<22+ chars>$/;
+const WRAPPED_PRIV_KEY_REGEX = /^k1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{22,}$/;
 
 export function isWrappedPrivKey(x: unknown): boolean {
   return typeof x === "string" && WRAPPED_PRIV_KEY_REGEX.test(x);
