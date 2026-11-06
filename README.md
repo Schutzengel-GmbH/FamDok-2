@@ -13,6 +13,7 @@ Digitale Fachanwendung zur Dokumentation von Fällen im Bereich **Frühe Hilfen*
 - [Umgebungsvariablen](#umgebungsvariablen)
 - [Datenbankschema](#datenbankschema)
 - [Rollen & Berechtigungen](#rollen--berechtigungen)
+- [Verschlüsselung personenbezogener Daten](#verschlüsselung-personenbezogener-daten)
 - [Anwendungsrouten](#anwendungsrouten)
 - [API-Übersicht](#api-übersicht)
 - [Produktiv-Deployment](#produktiv-deployment)
@@ -267,6 +268,23 @@ Das Dashboard (Route `/`) leitet nach dem Login automatisch rollenabhängig weit
 `CaseForm`/`GeneralForm`-Definitionen können global (für alle Organisationen sichtbar) oder einer einzelnen Organisation zugeordnet sein. `Controller` verwaltet globale Formulare, `OrgController` nur die seiner eigenen Organisation.
 
 ---
+
+## Verschlüsselung personenbezogener Daten
+
+Personenbezogene Daten (Familien, Kinder, Bezugspersonen, Dokumentationstexte, Zielvereinbarungs-
+beschreibungen, Übergabenotizen, Antworten personenbezogener Fragebögen, Anhänge) werden nur im
+Browser mit dem Schlüssel der Organisation ver- und entschlüsselt. Server und Datenbank speichern
+ausschließlich Chiffrat, öffentliche Schlüssel und verpackte Schlüssel.
+
+- Benutzer*innen richten unter **Verschlüsselung** (`/verschluesselung`) einmalig eine
+  Verschlüsselungs-Passphrase ein und entsperren damit pro Tab.
+- OrgCoordinators richten die Verschlüsselung ihrer Organisation ein, geben Zugänge nach
+  Fingerabdruck-Vergleich frei, frieren ein und erneuern den Schlüssel unter
+  **Schlüsselverwaltung** (`/schluesselverwaltung`).
+- Bestandsdaten werden unter `/schluesselverwaltung/migration` verschlüsselt; die Migration zum
+  Löschen der Klartextspalten liegt separat in `backend/prisma/pending-migrations/`.
+
+Wie die Verschlüsselung durch den Code läuft, beschreibt [OrgEncryption.md](OrgEncryption.md).
 
 ## Anwendungsrouten
 

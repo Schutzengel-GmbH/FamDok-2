@@ -55,7 +55,7 @@ export class EncryptionPage {
   protected orgName = computed(() => this.session.status()?.org?.name ?? '');
   protected hasKeyPair = computed(() => !!this.session.status()?.userKey);
 
-  private returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+  protected returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
 
   constructor() {
     this.session.ensureLoaded().catch(() =>
@@ -93,10 +93,19 @@ export class EncryptionPage {
     return 'Der Vorgang ist fehlgeschlagen. Bitte versuchen Sie es erneut.';
   }
 
-  /** Back to the page the guard sent the user away from, once the keys are ready. */
+  /**
+   * Back to the page the guard sent the user away from, once the keys are ready. Stays here if
+   * the org key was renewed since this browser last saw it, so the user reads the notice.
+   */
   private continue() {
-    if (this.session.isUnlocked() && this.returnUrl)
+    if (this.session.isUnlocked() && this.returnUrl && !this.session.rotationNotice())
       this.router.navigateByUrl(this.returnUrl);
+  }
+
+  /** Leaves the page after reading a notice. */
+  protected goBack() {
+    this.session.rotationNotice.set(null);
+    if (this.returnUrl) this.router.navigateByUrl(this.returnUrl);
   }
 
   /** Creates the user's key pair (first time, or `replace` after a forgotten passphrase). */

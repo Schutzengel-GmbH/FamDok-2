@@ -169,6 +169,11 @@
             Der Schlüssel Ihrer Organisation wurde erneuert (Version
             {{ notice.from }} → {{ notice.to }}). Vergleichen Sie bei Zweifeln
             den Fingerabdruck unten mit Ihrer Koordination.
+            @if (returnUrl) {
+              <div class="mt-2">
+                <button class="btn btn-sm btn-primary" (click)="goBack()">Weiter</button>
+              </div>
+            }
           </div>
         }
         <ng-container *ngTemplateOutlet="fingerprint"></ng-container>
