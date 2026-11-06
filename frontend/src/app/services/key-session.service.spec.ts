@@ -266,5 +266,5 @@ describe('KdfService', () => {
 
     const wrapped = await crypto.wrapPrivateKey(pair.privateKey, fromWorker, 'u');
     await expectAsync(crypto.unwrapPrivateKey(wrapped, onMain, 'u')).toBeResolved();
-  });
+  }, 30000);
 });

@@ -107,6 +107,8 @@ function selectFor(mode: ReencryptMode, model: EncryptedModel) {
       : mode === 'migration' && model === 'Answer'
         ? [...ANSWER_VALUE_FIELDS]
         : [...ENCRYPTED_COLUMNS[model]];
+  // answers are bound to response and question, so the browser needs both to build the context
+  if (model === 'Answer') columns.push('caseFormResponseId', 'questionId');
   return Object.fromEntries([['id', true], ...columns.map((c) => [c, true])]);
 }
 

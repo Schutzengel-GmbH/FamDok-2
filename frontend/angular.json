@@ -20,7 +20,7 @@
               "browser": ""
             },
             "index": "src/index.html",
-            "allowedCommonJsDependencies": ["hammerjs"],
+            "allowedCommonJsDependencies": ["hammerjs", "pdfmake", "jszip"],
             "polyfills": ["src/polyfills.ts", "@angular/localize/init"],
             "tsConfig": "tsconfig.app.json",
             "webWorkerTsConfig": "tsconfig.worker.json",

@@ -23,6 +23,19 @@ const fileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
   cb(null, true);
 };
 
+/**
+ * Case attachments of encrypted orgs arrive as opaque `application/octet-stream`; their real type
+ * travels in the request body. CaseController.createCaseAttachment checks which kind an org may
+ * upload and that encrypted uploads really are encrypted.
+ */
+const caseAttachmentFileFilter: multer.Options['fileFilter'] = (req, file, cb) => {
+  if (file.mimetype === 'application/octet-stream') {
+    cb(null, true);
+    return;
+  }
+  fileFilter(req, file, cb);
+};
+
 function storageFor(kind: StorageKind) {
   const dir = storageDirFor(kind);
   fs.mkdirSync(dir, { recursive: true });
@@ -44,7 +57,7 @@ export const documentUpload = multer({
 
 export const caseAttachmentUpload = multer({
   storage: storageFor('case-attachments'),
-  fileFilter,
+  fileFilter: caseAttachmentFileFilter,
   limits,
 });
 

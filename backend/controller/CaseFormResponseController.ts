@@ -26,6 +26,12 @@ import {
   CaseFormResponseWhere,
 } from '../../shared/api';
 import { answerWrites, answersFor, relationWrite } from '../util/formWrites';
+import {
+  assertAnswersWrite,
+  assertClientId,
+  encryptionPolicyFor,
+} from '../util/encryptionPolicy';
+import { clearedAnswerFields } from '../../shared/utils/encryptedModels';
 
 export class CaseFormResponseController {
   static async getAll(user: FullUser) {
@@ -78,6 +84,14 @@ export class CaseFormResponseController {
           'case form not found (do you have all required permissions?)'
         );
 
+      const c = await tx.case.findUnique({
+        where: { id: caseId },
+        select: { organisationId: true },
+      });
+      const policy = await encryptionPolicyFor(c?.organisationId);
+      assertClientId(policy, data.id, 'CaseFormResponse');
+      assertAnswersWrite(policy, definition.containsPersonalData, data.answers);
+
       if (definition.type === 'single') {
         const count = await tx.caseFormResponse.count({
           where: {
@@ -94,6 +108,7 @@ export class CaseFormResponseController {
 
       return tx.caseFormResponse.create({
         data: {
+          id: policy.active ? data.id : undefined,
           case: { connect: { id: caseId } },
           caseForm: { connect: { id: caseFormId } },
           createdBy: { connect: { id: user.id } },
@@ -124,12 +139,21 @@ export class CaseFormResponseController {
     if (!isFamilyMember(existing.case.family, data))
       throw new BadRequestError('Person gehört nicht zur Familie des Falls');
 
+    const policy = await encryptionPolicyFor(existing.case.organisationId);
+    const personal = !!existing.caseForm?.containsPersonalData;
+    assertAnswersWrite(policy, personal, data.answers);
+    // writing an encrypted answer also clears plaintext left over from before the migration
+    const answers =
+      policy.active && personal
+        ? data.answers.map((a) => ({ ...a, ...clearedAnswerFields() }))
+        : data.answers;
+
     return prisma.caseFormResponse.update({
       where: { id },
       data: {
         caregiver: relationWrite(data.caregiverId),
         child: relationWrite(data.childId),
-        answers: answerWrites(data.answers),
+        answers: answerWrites(answers),
       },
       include: CASEFORMRESPONSE_DEFAULT_INCLUDE,
     });

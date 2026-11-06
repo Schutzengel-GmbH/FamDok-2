@@ -35,7 +35,7 @@
           class="m-1 btn btn-outline-secondary"
           aria-label="PDF herunterladen"
           (click)="
-            documentationService.downloadContactDocumentationPDF(
+            exportService.downloadContactDocumentation(
               doc().caseId,
               doc().id
             )

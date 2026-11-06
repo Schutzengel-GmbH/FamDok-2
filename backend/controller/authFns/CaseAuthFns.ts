@@ -51,20 +51,6 @@ export function canSeeCase(user: FullUser, c: CaseWithScope): boolean {
 }
 
 /**
- * Whether the user may export a case's full, non-anonymized data (Stammdaten PDF / case ZIP).
- * Unlike canSeeCase, Controller/OrgController are excluded - they only ever get anonymized data.
- */
-export function canExportCase(user: FullUser, c: CaseWithScope): boolean {
-  if (user.role === Role.Admin) return true;
-  if (c.responsibleUsers?.some((ru) => ru.id === user.id)) return true;
-  if (user.role === Role.OrgCoordinator)
-    return isSameOrg(user, c.organisationId);
-  if (user.role === Role.SubOrgCoordinator)
-    return isSameSubOrg(user, c.subOrganisationId);
-  return false;
-}
-
-/**
  * {@link canSeeCase} as a filter. Lists always apply it, so a client-supplied filter can only ever
  * match what the user may see, and can't be used to probe the rest.
  */

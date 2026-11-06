@@ -147,18 +147,17 @@ export function assertAnswersWrite(
 
 /**
  * Checks the id a browser chose for a new row. Ciphertext is bound to the row id, so in active
- * orgs the browser must pick it (a UUID); in legacy orgs the database still generates it.
+ * orgs the browser must pick it (a UUID). In legacy orgs it is optional; the request schemas
+ * already only let UUIDs through.
  */
 export function assertClientId(
   policy: EncryptionPolicy,
   id: unknown,
   model: string
 ) {
-  if (id === undefined || id === null) {
-    if (policy.active)
-      throw new BadRequestError(`${model}: id is required for encrypted rows`);
-    return;
-  }
+  if (!policy.active) return;
+  if (id === undefined || id === null)
+    throw new BadRequestError(`${model}: id is required for encrypted rows`);
   if (typeof id !== 'string' || !UUID.test(id))
     throw new BadRequestError(`${model}: id must be a UUID`);
 }

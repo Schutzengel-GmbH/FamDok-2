@@ -92,3 +92,34 @@ export const ROLES_NEEDING_KEYS = [
 
 /** Roles that may grant the org data key, freeze the org and run a rotation. */
 export const KEY_MANAGER_ROLES = ["OrgCoordinator"] as const;
+
+/** The row data an encryption context is built from. */
+export type ContextRow = {
+  id: string;
+  caseFormResponseId?: string | null;
+  questionId?: string;
+};
+
+/**
+ * The AES-GCM context of an encrypted column: `<model>:<row id>:<column>`. Answers are the one
+ * exception: they are bound to their response and question (`Answer:<response id>:<question
+ * id>`), so a value can't be moved to another question and the browser never needs to choose
+ * ids for answer rows. Used for writing, reading, rotation and migration alike.
+ */
+export function encryptionContext(
+  model: EncryptedModel,
+  row: ContextRow,
+  column: string,
+): { table: string; rowId: string; field: string } {
+  if (model === "Answer") {
+    if (!row.caseFormResponseId || !row.questionId)
+      throw new Error("Answer context needs caseFormResponseId and questionId");
+    return { table: "Answer", rowId: row.caseFormResponseId, field: row.questionId };
+  }
+  return { table: model, rowId: row.id, field: column };
+}
+
+/** Context of an attachment's file content. */
+export function attachmentContentContext(id: string) {
+  return { table: "CaseAttachment", rowId: id, field: "content" };
+}

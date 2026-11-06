@@ -18,10 +18,10 @@ import {
 } from 'src/app/util/tableTransformPipes';
 import { FamilienstandPipe } from 'src/app/pipes/familienstand.pipe';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Observable } from 'rxjs';
+import { from, Observable } from 'rxjs';
+import { ExportService } from 'src/app/services/export.service';
 import { Role } from '../../../../../../shared/generated/prisma/enums';
 import { MeService } from 'src/app/services/me.service';
-import { CaseService } from 'src/app/services/case.service';
 import { ToastService } from 'src/app/services/toast.service';
 
 @Component({
@@ -34,7 +34,7 @@ import { ToastService } from 'src/app/services/toast.service';
 export class TabStammdatenComponent implements OnChanges {
   private router = inject(Router);
   private meService = inject(MeService);
-  private caseService = inject(CaseService);
+  private exportService = inject(ExportService);
   private toast = inject(ToastService);
 
   @Input({ required: true }) selectedCase!: FullCase;
@@ -44,8 +44,9 @@ export class TabStammdatenComponent implements OnChanges {
 
   protected downloading = signal<'stammdaten' | 'zip' | null>(null);
 
-  /** Mirrors the backend's canExportCase: Admin, responsible users, and Org/SubOrgCoordinators
-   * within their own org/suborg. Not a computed() - selectedCase is a plain @Input. */
+  /** Who may export a case: Admin, responsible users, and Org/SubOrgCoordinators within their
+   * own org/suborg. The export is built in the browser from the decrypted data, so in encrypted
+   * orgs it also needs the unlocked key. Not a computed() - selectedCase is a plain @Input. */
   protected canExport(): boolean {
     const user = this.currentUser();
     const c = this.selectedCase;
@@ -65,20 +66,14 @@ export class TabStammdatenComponent implements OnChanges {
   protected downloadStammdaten() {
     this.runDownload(
       'stammdaten',
-      this.caseService.downloadStammdatenPDF(
-        this.selectedCase.id,
-        this.selectedCase.family?.name ?? '',
-      ),
+      from(this.exportService.downloadStammdaten(this.selectedCase.id)),
     );
   }
 
   protected downloadCaseExport() {
     this.runDownload(
       'zip',
-      this.caseService.downloadCaseExport(
-        this.selectedCase.id,
-        this.selectedCase.family?.name ?? '',
-      ),
+      from(this.exportService.downloadCaseExport(this.selectedCase.id)),
     );
   }
 

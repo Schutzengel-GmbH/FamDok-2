@@ -14,7 +14,14 @@ const AnswerFields = AnswerCreateManyInputObjectZodSchema.pick({
   answerInt: true,
   answerNum: true,
   answerText: true,
-}).extend({ answerSelectId: z.array(z.number().int()).optional() });
+}).extend({
+  answerSelectId: z.array(z.number().int()).optional(),
+  /**
+   * For forms with personal data in encrypted orgs: a v1. envelope of the typed values above,
+   * bound to the response id and the question id.
+   */
+  answerEncrypted: z.string().nullish(),
+});
 
 export const AnswerCreate = AnswerFields.strict();
 export type AnswerCreate = Wire<typeof AnswerCreate>;
@@ -25,8 +32,9 @@ export const AnswerUpdate = AnswerFields.extend({
 }).strict();
 export type AnswerUpdate = Wire<typeof AnswerUpdate>;
 
-/** Body of `POST /case-form-response` */
+/** Body of `POST /case-form-response`. The id binds encrypted answers to the response. */
 export const CaseFormResponseCreateRequest = z.strictObject({
+  id: z.uuid().optional(),
   caseId: z.string(),
   caseFormId: z.string(),
   caregiverId: z.string().nullish(),

@@ -8,12 +8,14 @@ import type {
   CaseFormUpdateRequest,
 } from '../../../../shared/api';
 import { toAnswerRequest, toQuery } from '../util/apiUtils';
-import { Observable } from 'rxjs';
+import { firstValueFrom, map, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { FullCaseForm, FullCaseFormResponse } from '../../../../shared/types';
 import { environment } from 'src/environments/environment';
 import { AnswerModel as Answer } from '../../../../shared/generated/prisma/models';
 import { WarningsService } from './warnings.service';
+import { PersonalDataService } from './personal-data.service';
+import { matchesResponse, splitResponseWhere } from '../util/crypto/clientFilters';
 
 @Injectable({
   providedIn: 'root',
@@ -21,6 +23,7 @@ import { WarningsService } from './warnings.service';
 export class CaseFormService {
   private http = inject(HttpClient);
   private warningsService = inject(WarningsService);
+  private personal = inject(PersonalDataService);
 
   protected caseFormResponseApiUrl = environment.apiUrl + '/case-form-response';
   protected caseFormApiUrl = environment.apiUrl + '/case-form-definition';
@@ -53,9 +56,18 @@ export class CaseFormService {
   getCaseFormResponses(
     filter?: CaseFormResponseWhere,
   ): Observable<FullCaseFormResponse[]> {
-    return this.http.get<FullCaseFormResponse[]>(
-      this.caseFormResponseApiUrl + toQuery({ where: filter }),
-    );
+    // in encrypted orgs answers of personal forms and family names can only be filtered here
+    const { server, client } = this.personal.active()
+      ? splitResponseWhere(filter)
+      : { server: filter, client: undefined };
+    return this.http
+      .get<FullCaseFormResponse[]>(this.caseFormResponseApiUrl + toQuery({ where: server }))
+      .pipe(
+        this.personal.decrypting<FullCaseFormResponse[]>('CaseFormResponse'),
+        map((responses) =>
+          client ? responses.filter((r) => matchesResponse(r, client)) : responses,
+        ),
+      );
   }
 
   /**
@@ -81,9 +93,9 @@ export class CaseFormService {
    * @returns {Observable<FullCaseFormResponse>} Observable emitting the form response
    */
   getCaseFormResponse(id: string): Observable<FullCaseFormResponse> {
-    return this.http.get<FullCaseFormResponse>(
-      this.caseFormResponseApiUrl + '/i/' + id,
-    );
+    return this.http
+      .get<FullCaseFormResponse>(this.caseFormResponseApiUrl + '/i/' + id)
+      .pipe(this.personal.decrypting('CaseFormResponse'));
   }
 
   /**
@@ -136,21 +148,37 @@ export class CaseFormService {
   }) {
     const { responseId, caregiverId, childId, caseId, formId, answers } =
       response;
-    if (responseId) {
-      return this.updateCaseFormResponse(responseId, {
-        caregiverId: caregiverId ?? null,
-        childId: childId ?? null,
-        answers: answers.map(toAnswerRequest),
-      });
-    }
+    const plainAnswers = responseId
+      ? answers.map(toAnswerRequest)
+      : answers.map(({ id: _answerId, ...answer }) => toAnswerRequest(answer));
+    // answers of personal forms are bound to the response id, so a new response gets one here
+    const id = responseId ?? this.personal.newId();
 
-    return this.createCaseFormResponse({
-      caseId: caseId!,
-      caseFormId: formId,
-      caregiverId,
-      childId,
-      answers: answers.map(({ id, ...answer }) => toAnswerRequest(answer)),
-    });
+    return this.personal.send(
+      { id: undefined as string | undefined, answers: plainAnswers },
+      async () => {
+        const form = await firstValueFrom(this.getCaseForm(formId));
+        return {
+          id,
+          answers: await this.personal.prepareAnswers(id, form.containsPersonalData, plainAnswers),
+        };
+      },
+      (body) =>
+        responseId
+          ? this.updateCaseFormResponse(responseId, {
+              caregiverId: caregiverId ?? null,
+              childId: childId ?? null,
+              answers: body.answers,
+            })
+          : this.createCaseFormResponse({
+              ...(body.id ? { id: body.id } : {}),
+              caseId: caseId!,
+              caseFormId: formId,
+              caregiverId,
+              childId,
+              answers: body.answers,
+            }),
+    );
   }
 
   /**
@@ -166,7 +194,10 @@ export class CaseFormService {
         this.caseFormResponseApiUrl,
         caseFormResponsedata,
       )
-      .pipe(this.warningsService.refreshAfter());
+      .pipe(
+        this.personal.decrypting('CaseFormResponse'),
+        this.warningsService.refreshAfter(),
+      );
   }
 
   /**
@@ -184,7 +215,10 @@ export class CaseFormService {
         this.caseFormResponseApiUrl + '/i/' + id,
         update,
       )
-      .pipe(this.warningsService.refreshAfter());
+      .pipe(
+        this.personal.decrypting('CaseFormResponse'),
+        this.warningsService.refreshAfter(),
+      );
   }
 
   /**
@@ -195,6 +229,9 @@ export class CaseFormService {
   deleteCaseFormResponse(id: string): Observable<FullCaseFormResponse> {
     return this.http
       .delete<FullCaseFormResponse>(this.caseFormResponseApiUrl + '/i/' + id)
-      .pipe(this.warningsService.refreshAfter());
+      .pipe(
+        this.personal.decrypting('CaseFormResponse'),
+        this.warningsService.refreshAfter(),
+      );
   }
 }

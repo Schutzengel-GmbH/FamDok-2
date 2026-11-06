@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, Injector, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type { KeyStatus } from '../../../../shared/api';
 import { CryptoService, KeyResolver, UnlockedDataKey } from './crypto.service';
@@ -46,7 +46,8 @@ export class KeySessionService {
   private api = inject(KeyApiService);
   private crypto = inject(CryptoService);
   private kdf = inject(KdfService);
-  private meService = inject(MeService);
+  // resolved on first use: MeService needs Keycloak, which pages without login don't provide
+  private injector = inject(Injector);
 
   /** The last status fetched from `/keys/me`. */
   readonly status = signal<KeyStatus | null>(null);
@@ -90,7 +91,7 @@ export class KeySessionService {
   async refresh(): Promise<void> {
     const [status, me] = await Promise.all([
       this.api.getStatus(),
-      firstValueFrom(this.meService.getMe()),
+      firstValueFrom(this.injector.get(MeService).getMe()),
     ]);
     this.userId = me.id;
     this.status.set(status);

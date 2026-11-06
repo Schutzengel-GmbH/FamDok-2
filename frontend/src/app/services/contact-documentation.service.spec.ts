@@ -137,20 +137,4 @@ describe('ContactDocumentationService', () => {
 
     httpMock.expectNone(`${environment.apiUrl}/warnings`);
   });
-
-  it('downloadContactDocumentationPDF fetches the PDF as a blob and triggers a save', () => {
-    const clickSpy = spyOn(HTMLAnchorElement.prototype, 'click');
-    spyOn(URL, 'createObjectURL').and.returnValue('blob:mock');
-    spyOn(URL, 'revokeObjectURL');
-
-    service.downloadContactDocumentationPDF('case-1', 'doc-1');
-
-    const req = httpMock.expectOne(
-      `${environment.apiUrl}/case/i/case-1/documentation/i/doc-1/download`,
-    );
-    expect(req.request.responseType).toBe('blob');
-    req.flush(new Blob());
-
-    expect(clickSpy).toHaveBeenCalled();
-  });
 });
