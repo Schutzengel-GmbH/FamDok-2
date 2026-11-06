@@ -219,8 +219,8 @@ export function getSizeForMonth(
  * @returns {strg} The age, expressed in Months or years
  */
 export function ageString(child: Child, date?: Date) {
-  const ageInYears = differenceInYears(date || new Date(), child.dateOfBirth);
+  const ageInYears = differenceInYears(date || new Date(), child.dateOfBirth!);
   if (ageInYears >= 3) return `${ageInYears} Jahre`;
-  const ageInMonths = differenceInMonths(date || new Date(), child.dateOfBirth);
+  const ageInMonths = differenceInMonths(date || new Date(), child.dateOfBirth!);
   return `${ageInMonths} Monate`;
 }

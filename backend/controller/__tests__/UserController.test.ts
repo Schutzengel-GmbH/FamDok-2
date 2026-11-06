@@ -11,6 +11,7 @@ const mockAdminClient = {
     del: jest.fn(),
     executeActionsEmail: jest.fn(),
     resetPassword: jest.fn(),
+    logout: jest.fn(() => Promise.resolve()),
   },
 };
 jest.mock('../../kcAdminClient', () => ({
@@ -56,6 +57,9 @@ describe('UserController', () => {
     Object.values(mockAdminClient.users).forEach((fn) => fn.mockReset());
     Object.values(prismaMock.user).forEach((fn: any) => fn.mockReset?.());
     mockAdminClient.users.find.mockResolvedValue([]);
+    prismaMock.orgKeyGrant.deleteMany.mockReset().mockResolvedValue({ count: 0 });
+    prismaMock.userKey.deleteMany.mockReset().mockResolvedValue({ count: 0 });
+    prismaMock.orgKeyEvent.create.mockReset();
   });
 
   describe('getAll', () => {
@@ -1068,6 +1072,41 @@ describe('UserController', () => {
         { id: target.kcId },
         { enabled: false }
       );
+    });
+
+    it('ends the sessions and deletes key pair and grants of a locked user', async () => {
+      const admin = buildUser({ role: Role.Admin });
+      const target = buildUser();
+      prismaMock.user.findUnique.mockResolvedValue(target);
+      prismaMock.orgKeyGrant.deleteMany.mockResolvedValue({ count: 1 });
+
+      await setEnabled(admin, target.id, { enabled: false });
+
+      expect(mockAdminClient.users.logout).toHaveBeenCalledWith({ id: target.kcId });
+      expect(prismaMock.orgKeyGrant.deleteMany).toHaveBeenCalledWith({
+        where: { userId: target.id },
+      });
+      expect(prismaMock.userKey.deleteMany).toHaveBeenCalledWith({
+        where: { userId: target.id },
+      });
+      expect(prismaMock.orgKeyEvent.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          organisationId: target.organisationId,
+          type: 'revoke',
+          subjectId: target.id,
+        }),
+      });
+    });
+
+    it('keeps the keys of a user who is unlocked', async () => {
+      const admin = buildUser({ role: Role.Admin });
+      const target = buildUser();
+      prismaMock.user.findUnique.mockResolvedValue(target);
+
+      await setEnabled(admin, target.id, { enabled: true });
+
+      expect(mockAdminClient.users.logout).not.toHaveBeenCalled();
+      expect(prismaMock.orgKeyGrant.deleteMany).not.toHaveBeenCalled();
     });
 
     it('does not let admins lock themselves out', async () => {

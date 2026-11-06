@@ -83,18 +83,31 @@ describe('StatsController', () => {
   describe('getCities', () => {
     it('returns the list of cities', async () => {
       const admin = buildUser({ role: Role.Admin });
-      prismaMock.$queryRaw.mockResolvedValue([{ city: 'Berlin' }, { city: 'Munich' }]);
+      prismaMock.case.findMany.mockResolvedValue([{ city: 'Berlin' }, { city: 'Munich' }]);
 
       const result = await StatsController.getCities(admin);
 
       expect(result).toEqual(['Berlin', 'Munich']);
+      expect(prismaMock.case.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { city: { not: null } }, distinct: ['city'] })
+      );
+    });
+
+    it('scopes the list to the own org for scoped roles', async () => {
+      const coordinator = buildUser({ role: Role.OrgCoordinator, organisationId: 'org-9' });
+      prismaMock.case.findMany.mockResolvedValue([{ city: 'Kiel' }]);
+
+      expect(await StatsController.getCities(coordinator)).toEqual(['Kiel']);
+      expect(prismaMock.case.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { city: { not: null }, organisationId: 'org-9' } })
+      );
     });
 
     it('throws ForbiddenError for a plain user', async () => {
       const user = buildUser({ role: Role.User });
 
       await expect(StatsController.getCities(user)).rejects.toThrow(ForbiddenError);
-      expect(prismaMock.$queryRaw).not.toHaveBeenCalled();
+      expect(prismaMock.case.findMany).not.toHaveBeenCalled();
     });
   });
 });

@@ -362,3 +362,28 @@ export function parseBytesEnvelope(bytes: Uint8Array): {
     ct: bytes.slice(BYTES_HEADER_LENGTH),
   };
 }
+
+/** DER prefix of an uncompressed P-256 SPKI public key (91 bytes in total). */
+const P256_SPKI_PREFIX = [
+  0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01,
+  0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x03, 0x42, 0x00,
+  0x04,
+];
+
+/**
+ * Whether `x` is a base64url SPKI encoding of an uncompressed ECDH P-256 public key, the only
+ * kind of user key the encryption uses. Checks the structure, not that the point is on the curve
+ * (WebCrypto does that on import).
+ */
+export function isP256PublicKey(x: unknown): boolean {
+  if (typeof x !== "string" || x.length !== 122) return false;
+  let bytes: Uint8Array;
+  try {
+    bytes = fromB64Url(x);
+  } catch {
+    return false;
+  }
+  return (
+    bytes.length === 91 && P256_SPKI_PREFIX.every((b, i) => bytes[i] === b)
+  );
+}

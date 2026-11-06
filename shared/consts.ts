@@ -29,7 +29,12 @@ export const SUBORGANISATION_DEFAULT_INCLUDE =
   {} satisfies SubOrganisationInclude;
 
 export const USER_DEFAULT_INCLUDE = {
-  organisation: { include: ORGANISATION_DEFAULT_INCLUDE },
+  // The recovery-wrapped key is useless without the offline code, but it has no business in
+  // every user payload either; coordinators fetch it from /keys when they need it.
+  organisation: {
+    include: ORGANISATION_DEFAULT_INCLUDE,
+    omit: { recoveryWrappedKey: true },
+  },
   subOrganisations: { include: SUBORGANISATION_DEFAULT_INCLUDE },
 } satisfies UserInclude;
 

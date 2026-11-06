@@ -45,6 +45,9 @@ export function createPrismaMock() {
     tag: createModelMock(),
     document: createModelMock(),
     caseAttachment: createModelMock(),
+    userKey: createModelMock(),
+    orgKeyGrant: createModelMock(),
+    orgKeyEvent: createModelMock(),
     $queryRaw: jest.fn(),
     // Real Prisma $transaction has two overloads: an array of operations, and a callback
     // that receives a transaction-scoped client. Support both; the callback gets the same

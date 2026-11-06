@@ -8,6 +8,7 @@ import {
   formatRecoveryWrappedKey,
   isBytesEnvelope,
   isGrant,
+  isP256PublicKey,
   isRecoveryWrappedKey,
   parseBytesEnvelope,
   parseGrant,
@@ -312,5 +313,30 @@ describe("bytes envelope", () => {
     expect(() => formatBytesEnvelope(-1, iv, ct)).toThrow(CiphertextFormatError);
     expect(() => formatBytesEnvelope(1, iv.slice(1), ct)).toThrow(CiphertextFormatError);
     expect(() => formatBytesEnvelope(1, iv, ct.slice(0, 15))).toThrow(CiphertextFormatError);
+  });
+});
+
+describe("isP256PublicKey", () => {
+  const prefix = [
+    0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01,
+    0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x03, 0x42, 0x00,
+    0x04,
+  ];
+  const key = new Uint8Array(91);
+  key.set(prefix);
+  key.fill(7, prefix.length);
+
+  it("accepts an uncompressed P-256 SPKI", () => {
+    expect(isP256PublicKey(toB64Url(key))).toBe(true);
+  });
+
+  it("rejects other curves, compressed points and garbage", () => {
+    const other = key.slice();
+    other[20] = 0x22;
+    expect(isP256PublicKey(toB64Url(other))).toBe(false);
+    expect(isP256PublicKey(toB64Url(key.slice(0, 60)))).toBe(false);
+    expect(isP256PublicKey("A".repeat(122))).toBe(false);
+    expect(isP256PublicKey("!".repeat(122))).toBe(false);
+    expect(isP256PublicKey(42)).toBe(false);
   });
 });

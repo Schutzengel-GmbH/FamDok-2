@@ -143,25 +143,26 @@ export class StatsController {
   }
 
   /**
-   * Get an array of all unique cities in the dataset of families' addresses.
+   * Get an array of all unique cities of cases. Reads the plaintext `Case.city` that is kept for
+   * statistics, not the family's address, which is encrypted.
    * @returns {Promise<string[]>}
    */
   static async getCities(user: FullUser): Promise<string[]> {
-    if (canAccessAllStats(user)) {
-      const result: { city: string }[] =
-        await prisma.$queryRaw`SELECT adress->>'city' AS city FROM (SELECT DISTINCT ON (adress->'city') adress FROM "Family") AS query`;
-      return result.map((c) => c.city);
+    let where: Prisma.CaseWhereInput = { city: { not: null } };
+    if (!canAccessAllStats(user)) {
+      if (!canAccessScopedStats(user) || !user.organisationId)
+        throw new ForbiddenError();
+      // City list is org-scoped (not suborg-scoped) for every scoped-access role - it's just a
+      // set of city names for a filter dropdown, not case-level data.
+      where = { ...where, organisationId: user.organisationId };
     }
 
-    if (!canAccessScopedStats(user) || !user.organisationId)
-      throw new ForbiddenError();
-
-    // City list is org-scoped (not suborg-scoped) for every scoped-access role - it's just a
-    // set of city names for a filter dropdown, not case-level data.
-    const result: { city: string }[] = await prisma.$queryRaw`
-      SELECT adress->>'city' AS city FROM (
-        SELECT DISTINCT ON (adress->'city') adress FROM "Family" WHERE "organisationId" = ${user.organisationId}
-      ) AS query`;
-    return result.map((c) => c.city);
+    const result = await prisma.case.findMany({
+      where,
+      distinct: ['city'],
+      select: { city: true },
+      orderBy: { city: 'asc' },
+    });
+    return result.map((c) => c.city!);
   }
 }

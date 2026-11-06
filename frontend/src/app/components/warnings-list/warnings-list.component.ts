@@ -75,7 +75,9 @@ export class WarningsListComponent implements OnInit {
   }
 
   protected familyName(w: Warning): string | undefined {
-    return this.cases().find((c) => c.id === w.data.caseId)?.family?.name;
+    return (
+      this.cases().find((c) => c.id === w.data.caseId)?.family?.name ?? undefined
+    );
   }
 
   protected icon(w: Warning): string {

@@ -219,5 +219,14 @@ declare global {
       weightKg?: number;
       sizeCm?: number;
     };
+
+    /** Argon2id parameters of a wrapped private key, see frontend util/crypto/kdf.ts */
+    type KdfParams = {
+      alg: "argon2id";
+      salt: string;
+      memoryKiB: number;
+      iterations: number;
+      parallelism: 1;
+    };
   }
 }
