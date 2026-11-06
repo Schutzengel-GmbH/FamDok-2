@@ -82,6 +82,8 @@ function containsEnvelope(value: unknown, depth = 0): boolean {
 export class PersonalDataService {
   private session = inject(KeySessionService);
   private crypto = inject(CryptoService);
+  /** Rows whose ciphertext this tab couldn't decrypt; they must never be re-encrypted. */
+  private unreadable = new WeakSet<object>();
 
   /** Whether writes must be encrypted. */
   active(): boolean {
@@ -125,14 +127,20 @@ export class PersonalDataService {
       if (!isEnvelope(row['encrypted'])) return;
       const fields = await this.tryDecryptJson(model, row, 'encrypted');
       if (fields) Object.assign(row, fields);
-      else row['name'] = UNREADABLE;
+      else {
+        row['name'] = UNREADABLE;
+        this.unreadable.add(row);
+      }
       return;
     }
     if (model === 'Answer') {
       if (!isEnvelope(row['answerEncrypted'])) return;
       const fields = await this.tryDecryptJson(model, row, 'answerEncrypted');
       if (fields) Object.assign(row, fields);
-      else row['answerText'] = UNREADABLE;
+      else {
+        row['answerText'] = UNREADABLE;
+        this.unreadable.add(row);
+      }
       return;
     }
     for (const column of ENCRYPTED_COLUMNS[model]) {
@@ -145,8 +153,18 @@ export class PersonalDataService {
         );
       } catch {
         row[column] = UNREADABLE;
+        this.unreadable.add(row);
       }
     }
+  }
+
+  /**
+   * Throws if `row` came from a payload this tab couldn't fully decrypt. Merging such a row into
+   * a new blob would overwrite the real data with the placeholder.
+   */
+  private assertReadable(row: object) {
+    if (this.unreadable.has(row))
+      throw new Error('Diese Daten konnten nicht entschlüsselt werden und werden nicht überschrieben.');
   }
 
   /** Decrypts a JSON blob, `null` if this tab can't. */
@@ -168,17 +186,20 @@ export class PersonalDataService {
 
   /**
    * Encrypts one string column. Empty values become `null`, so the server can still tell that a
-   * field was left empty (warnings about unfinished documentation rely on that).
+   * field was left empty (warnings about unfinished documentation rely on that). Columns that
+   * can't be null (`required`) get an envelope of the empty string instead.
    */
   async encryptField(
     model: EncryptedModel,
     row: ContextRow,
     column: string,
     value: string | null | undefined,
+    required = false,
   ): Promise<string | null | undefined> {
     if (!this.active()) return value;
     if (value === undefined) return undefined;
-    if (value === null || value === '') return null;
+    if ((value === null || value === '') && !required) return null;
+    value ??= '';
     return this.crypto.encryptField(
       value,
       this.session.currentKey(),
@@ -270,6 +291,9 @@ export class PersonalDataService {
     current: FullFamily,
     update: FamilyUpdateRequest,
   ): Promise<FamilyUpdateRequest> {
+    if (this.active())
+      for (const row of [current, current.case, ...current.children, ...current.caregiver])
+        if (row) this.assertReadable(row);
     const caseId = current.case?.id;
     const caseFields = (update.case || update.adress) && {
       ...update.case,
@@ -312,6 +336,7 @@ export class PersonalDataService {
     healthData: NonNullable<ChildHealthDataRequest['healthData']>,
   ): Promise<ChildHealthDataRequest> {
     if (!this.active()) return { healthData };
+    this.assertReadable(child);
     return { encrypted: await this.encryptBlob('Child', child.id, { ...child, healthData }) };
   }
 
@@ -330,8 +355,8 @@ export class PersonalDataService {
   /** A Zielvereinbarung with its description encrypted. */
   async prepareZiel<T extends ZielCreateRequest | ZielUpdateRequest>(id: string, req: T): Promise<T> {
     if (req.description === undefined) return req;
-    const description = await this.encryptField('Zielvereinbarung', { id }, 'description', req.description);
-    return { ...req, description: description ?? '' };
+    const description = await this.encryptField('Zielvereinbarung', { id }, 'description', req.description, true);
+    return { ...req, description: description! };
   }
 
   /** A handover with a new id and its notes encrypted. */
@@ -393,7 +418,7 @@ export class PersonalDataService {
     return {
       id,
       content: new Blob([content as BlobPart], { type: 'application/octet-stream' }),
-      filename: (await this.encryptField('CaseAttachment', { id }, 'filename', file.name))!,
+      filename: (await this.encryptField('CaseAttachment', { id }, 'filename', file.name, true))!,
       mimeType: file.type,
       note: (await this.encryptField('CaseAttachment', { id }, 'note', note)) ?? undefined,
       encrypted: true,

@@ -129,6 +129,22 @@ describe('PersonalDataService', () => {
     expect(update.adress).toBeUndefined();
   });
 
+  it('refuses to re-encrypt a family it could not decrypt', async () => {
+    const stored = asStoredCase(await service.prepareCaseCreate(createRequest()));
+    unlocked.set(false);
+    const current = await service.decrypt('Family', { ...stored.family, case: { id: stored.id } } as any);
+    unlocked.set(true);
+    await expectAsync(service.prepareFamilyUpdate(current, { note: 'neu' })).toBeRejected();
+    await expectAsync(service.prepareHealthData(current.children[0], [])).toBeRejected();
+  });
+
+  it('encrypts an empty description of a Zielvereinbarung, whose column can not be null', async () => {
+    const ziel = await service.prepareZiel('z1', { description: '' });
+    expect(isEnvelope(ziel.description)).toBeTrue();
+    const back = await service.decrypt('Zielvereinbarung', { id: 'z1', description: ziel.description });
+    expect(back.description).toBe('');
+  });
+
   it('encrypts answers of personal forms bound to response and question, keeps empty ones empty', async () => {
     const answers: any[] = await service.prepareAnswers('resp-1', true, [
       { questionId: 'q1', answerText: 'vertraulich' },

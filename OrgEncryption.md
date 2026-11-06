@@ -363,6 +363,13 @@ cannot be recovered; the setup page says so.
 - **Metadata** stays visible by design (statistics fields).
 - **Pins are per browser.** A new browser trusts the first key it sees, like the very first
   login.
+- **Coordinators rewrite data in bulk.** Migration and rotation let an OrgCoordinator replace any
+  encrypted value in their org, beyond the per-case edit rights (`canEditCase`): the server can
+  store ciphertext but not check what it says. That is inherent to running these jobs in a
+  coordinator's browser; the key log shows when a rotation ran.
+- **Unreadable rows are never overwritten.** If a blob can't be decrypted (shown as
+  `[verschlüsselt]`), `PersonalDataService` refuses to build an update on it rather than replace
+  the real data with the placeholder.
 
 ## Operational notes
 
