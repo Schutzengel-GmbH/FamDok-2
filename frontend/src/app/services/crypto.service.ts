@@ -446,6 +446,26 @@ export class CryptoService {
   }
 
   /**
+   * {@link sealRecovery} for a key the session only holds non-extractable: the bytes come from
+   * the coordinator's own grant, are wrapped under the recovery code, and are wiped. Used when a
+   * rotation creates the new recovery code.
+   */
+  async sealRecoveryViaGrant(
+    myGrant: string,
+    me: CryptoKeyPair,
+    recoveryCode: string,
+    ctx: OrgKeyContext,
+  ): Promise<string> {
+    const bytes = await this.openGrantBytes(myGrant, me, ctx);
+    try {
+      const raw = await crypto.subtle.importKey('raw', bytes, 'AES-GCM', true, ['encrypt']);
+      return await this.sealRecovery(raw, recoveryCode, ctx);
+    } finally {
+      bytes.fill(0);
+    }
+  }
+
+  /**
    * Opens a recovery-wrapped key with the recovery code and grants it to `recipientPub` (a
    * coordinator's new key pair). Returns the grant to upload and the unlocked key.
    */
