@@ -133,13 +133,31 @@ describe('MenuComponent', () => {
     expect(links.some((l) => l.link === '/user-admin')).toBeFalse();
   });
 
-  it('always exposes a single "Einstellungen" bottom link', async () => {
+  it('gives case workers the encryption page and the settings at the bottom', async () => {
     await setup(Role.User);
 
     expect(component.bottomLinks()).toEqual([
+      { icon: 'bi-shield-lock', label: 'Verschlüsselung', link: '/verschluesselung' },
       { icon: 'bi-gear', label: 'Einstellungen', link: '/einstellungen' },
     ] as any);
   });
+
+  it('adds the key management for OrgCoordinators', async () => {
+    await setup(Role.OrgCoordinator);
+
+    expect(component.bottomLinks().map((l) => l.link)).toEqual([
+      '/verschluesselung',
+      '/schluesselverwaltung',
+      '/einstellungen',
+    ]);
+  });
+
+  for (const role of [Role.Admin, Role.Controller, Role.OrgController]) {
+    it(`gives ${role} only the settings at the bottom`, async () => {
+      await setup(role);
+      expect(component.bottomLinks().map((l) => l.link)).toEqual(['/einstellungen']);
+    });
+  }
 
   it('logs out via keycloak', async () => {
     await setup(Role.User);

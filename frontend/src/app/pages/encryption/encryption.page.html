@@ -1,0 +1,307 @@
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-shield-lock"></i>{{ " " }}
+    <strong>Verschlüsselung</strong>
+    @if (orgName()) {
+      <span class="text-body-secondary"> – {{ orgName() }}</span>
+    }
+  </div>
+
+  <div class="card-body" style="max-width: 48rem">
+    @if (error()) {
+      <div class="alert alert-danger">{{ error() }}</div>
+    }
+
+    @switch (session.state()) {
+      @case ("loading") {
+        <div class="spinner-border spinner-border-sm"></div>
+        Status wird geladen …
+      }
+
+      @case ("notNeeded") {
+        <p>
+          Ihre Rolle arbeitet nicht mit personenbezogenen Daten. Sie benötigen
+          keinen persönlichen Schlüssel.
+        </p>
+      }
+
+      @case ("orgNotSetUp") {
+        @if (canManage()) {
+          <h5>Verschlüsselung der Organisation einrichten</h5>
+          <p>
+            Personenbezogene Daten werden danach nur noch im Browser ver- und
+            entschlüsselt. Der Server speichert ausschließlich verschlüsselte
+            Daten.
+          </p>
+          @if (!hasKeyPair()) {
+            <p>Richten Sie zuerst Ihren persönlichen Schlüssel ein.</p>
+            <ng-container *ngTemplateOutlet="enrolForm"></ng-container>
+          } @else if (!session.keyPairReady()) {
+            <ng-container *ngTemplateOutlet="unlockForm"></ng-container>
+          } @else if (!recoveryCode()) {
+            <button
+              class="btn btn-primary"
+              [disabled]="busy()"
+              (click)="startOrgSetup()">
+              Schlüssel der Organisation erzeugen
+            </button>
+          } @else {
+            <div class="alert alert-warning">
+              <strong>Wiederherstellungscode – nur jetzt sichtbar.</strong>
+              Drucken oder notieren Sie ihn und bewahren Sie ihn offline auf, z.
+              B. im Tresor. Gehen allen Koordinator*innen die Passphrasen
+              verloren und fehlt dieser Code, sind die Daten
+              <strong>nicht wiederherstellbar</strong>.
+            </div>
+            <p class="font-monospace fs-4 text-center user-select-all">
+              {{ recoveryCode() }}
+            </p>
+            <label class="form-label" for="recovery-confirm"
+              >Code zur Bestätigung abtippen</label
+            >
+            <input
+              id="recovery-confirm"
+              class="form-control font-monospace mb-2"
+              autocomplete="off"
+              [ngModel]="recoveryTyped()"
+              (ngModelChange)="recoveryTyped.set($event)" />
+            <button
+              class="btn btn-primary"
+              [disabled]="busy() || !recoveryConfirmed()"
+              (click)="finishOrgSetup()">
+              Verschlüsselung aktivieren
+            </button>
+          }
+        } @else {
+          <p>
+            Ihre Organisation hat die Verschlüsselung noch nicht eingerichtet.
+            Bis dahin werden Daten wie bisher gespeichert.
+          </p>
+          @if (!hasKeyPair()) {
+            <p>Sie können Ihren persönlichen Schlüssel schon jetzt einrichten.</p>
+            <ng-container *ngTemplateOutlet="enrolForm"></ng-container>
+          } @else {
+            <ng-container *ngTemplateOutlet="fingerprint"></ng-container>
+          }
+        }
+      }
+
+      @case ("needsEnrolment") {
+        <h5>Persönlichen Schlüssel einrichten</h5>
+        <p>
+          Wählen Sie eine Verschlüsselungs-Passphrase. Sie ist
+          <strong>nicht</strong> Ihr Anmeldepasswort und verlässt nie diesen
+          Browser. Ohne sie können Sie die Daten Ihrer Organisation nicht lesen.
+        </p>
+        <ng-container *ngTemplateOutlet="enrolForm"></ng-container>
+      }
+
+      @case ("locked") {
+        <h5>Entsperren</h5>
+        <p>
+          Geben Sie Ihre Verschlüsselungs-Passphrase ein, um die Daten Ihrer
+          Organisation in diesem Tab zu lesen.
+        </p>
+        <ng-container *ngTemplateOutlet="unlockForm"></ng-container>
+        <ng-container *ngTemplateOutlet="reenrol"></ng-container>
+      }
+
+      @case ("awaitingGrant") {
+        <h5>Warten auf Freigabe</h5>
+        <p>
+          Ihr Schlüssel ist eingerichtet. Eine Koordinator*in muss Ihnen den
+          Zugang noch freigeben. Nennen Sie ihr dafür persönlich oder telefonisch
+          diesen Fingerabdruck:
+        </p>
+        <ng-container *ngTemplateOutlet="fingerprint"></ng-container>
+        <button
+          class="btn btn-outline-primary mt-3"
+          [disabled]="busy()"
+          (click)="checkAgain()">
+          Erneut prüfen
+        </button>
+        @if (canManage()) {
+          <ng-container *ngTemplateOutlet="recoverForm"></ng-container>
+        }
+      }
+
+      @case ("frozen") {
+        <div class="alert alert-info">
+          Ihre Organisation ist vorübergehend eingefroren, z. B. während der
+          Schlüssel erneuert wird. Versuchen Sie es später erneut.
+        </div>
+        <button class="btn btn-outline-primary" (click)="checkAgain()">
+          Erneut prüfen
+        </button>
+      }
+
+      @case ("keyMismatch") {
+        <div class="alert alert-danger">
+          <strong>Achtung: unerwarteter Schlüssel.</strong>
+          {{ session.mismatchReason() }}
+          Das kann auf einen Angriff hindeuten. Es wurden keine Daten
+          entschlüsselt oder gespeichert. Klären Sie das mit Ihrer Koordination,
+          bevor Sie weiterarbeiten.
+        </div>
+        <details>
+          <summary>Neuen Schlüssel übernehmen</summary>
+          <p class="mt-2">
+            Nur, wenn Ihre Koordination bestätigt hat, dass der Schlüssel
+            erneuert wurde, und der Fingerabdruck des Organisationsschlüssels
+            übereinstimmt.
+          </p>
+          <button
+            class="btn btn-outline-danger"
+            [disabled]="busy()"
+            (click)="acceptNewKey()">
+            Schlüssel übernehmen
+          </button>
+        </details>
+      }
+
+      @case ("unlocked") {
+        <div class="alert alert-success">
+          <i class="bi bi-unlock"></i> Entsperrt. Personenbezogene Daten werden
+          in diesem Tab ver- und entschlüsselt.
+        </div>
+        @if (session.rotationNotice(); as notice) {
+          <div class="alert alert-info">
+            Der Schlüssel Ihrer Organisation wurde erneuert (Version
+            {{ notice.from }} → {{ notice.to }}). Vergleichen Sie bei Zweifeln
+            den Fingerabdruck unten mit Ihrer Koordination.
+          </div>
+        }
+        <ng-container *ngTemplateOutlet="fingerprint"></ng-container>
+        <dl class="row mt-2">
+          <dt class="col-sm-4">Organisationsschlüssel</dt>
+          <dd class="col-sm-8 font-monospace">
+            {{ session.orgKeyFingerprint() }}
+            (Version {{ session.status()?.org?.keyVersion }})
+          </dd>
+        </dl>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-outline-secondary" (click)="lock()">
+            <i class="bi bi-lock"></i> Sperren
+          </button>
+          <button
+            class="btn btn-outline-secondary"
+            (click)="showChange.set(!showChange())">
+            Passphrase ändern
+          </button>
+          @if (canManage()) {
+            <a class="btn btn-outline-primary" routerLink="/schluesselverwaltung"
+              >Schlüsselverwaltung</a
+            >
+          }
+        </div>
+        @if (showChange()) {
+          <div class="mt-3">
+            <label class="form-label" for="old-pass">Bisherige Passphrase</label>
+            <input
+              id="old-pass"
+              type="password"
+              class="form-control mb-2"
+              autocomplete="current-password"
+              [ngModel]="changeOld()"
+              (ngModelChange)="changeOld.set($event)" />
+            <app-passphrase-input
+              idPrefix="change"
+              [userInputs]="userInputs()"
+              [(passphrase)]="newPassphrase"
+              [(valid)]="newPassphraseValid" />
+            <button
+              class="btn btn-primary"
+              [disabled]="busy() || !newPassphraseValid() || !changeOld()"
+              (click)="changePassphrase()">
+              Passphrase ändern
+            </button>
+          </div>
+        }
+      }
+    }
+  </div>
+</div>
+
+<ng-template #enrolForm>
+  <app-passphrase-input
+    idPrefix="enrol"
+    [userInputs]="userInputs()"
+    [(passphrase)]="newPassphrase"
+    [(valid)]="newPassphraseValid" />
+  <button
+    class="btn btn-primary"
+    [disabled]="busy() || !newPassphraseValid()"
+    (click)="enrol()">
+    @if (busy()) {
+      <span class="spinner-border spinner-border-sm"></span>
+    }
+    Schlüssel einrichten
+  </button>
+</ng-template>
+
+<ng-template #unlockForm>
+  <form (ngSubmit)="unlock()">
+    <label class="form-label" for="unlock-pass">Verschlüsselungs-Passphrase</label>
+    <input
+      id="unlock-pass"
+      name="passphrase"
+      type="password"
+      class="form-control mb-2"
+      autocomplete="current-password"
+      [ngModel]="passphrase()"
+      (ngModelChange)="passphrase.set($event)" />
+    <button class="btn btn-primary" type="submit" [disabled]="busy() || !passphrase()">
+      @if (busy()) {
+        <span class="spinner-border spinner-border-sm"></span>
+      }
+      Entsperren
+    </button>
+  </form>
+</ng-template>
+
+<ng-template #fingerprint>
+  <dl class="row mb-0">
+    <dt class="col-sm-4">Ihr Fingerabdruck</dt>
+    <dd class="col-sm-8 font-monospace fs-5">
+      {{ session.ownFingerprint() ?? "(nach dem Entsperren sichtbar)" }}
+    </dd>
+  </dl>
+</ng-template>
+
+<ng-template #reenrol>
+  <details class="mt-4" [open]="showReenrol()">
+    <summary (click)="showReenrol.set(!showReenrol())">
+      Passphrase vergessen?
+    </summary>
+    <p class="mt-2">
+      Die Passphrase lässt sich nicht zurücksetzen. Sie können einen neuen
+      Schlüssel einrichten; danach muss Ihre Koordination Ihnen den Zugang neu
+      freigeben und den neuen Fingerabdruck prüfen.
+    </p>
+    <ng-container *ngTemplateOutlet="enrolForm"></ng-container>
+  </details>
+</ng-template>
+
+<ng-template #recoverForm>
+  <details class="mt-4" [open]="showRecover()">
+    <summary (click)="showRecover.set(!showRecover())">
+      Mit Wiederherstellungscode freischalten
+    </summary>
+    <p class="mt-2">
+      Wenn keine andere Koordinator*in Zugang hat, schalten Sie sich mit dem
+      Wiederherstellungscode Ihrer Organisation selbst frei.
+    </p>
+    <input
+      class="form-control font-monospace mb-2"
+      autocomplete="off"
+      placeholder="XXXX-XXXX-…"
+      [ngModel]="recoverInput()"
+      (ngModelChange)="recoverInput.set($event)" />
+    <button
+      class="btn btn-outline-primary"
+      [disabled]="busy() || !recoverInput()"
+      (click)="recover()">
+      Freischalten
+    </button>
+  </details>
+</ng-template>

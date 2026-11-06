@@ -181,6 +181,24 @@ export class MenuComponent {
   bottomLinks = computed(
     () =>
       [
+        ...(this.isAdmin() || this.isController() || this.isOrgController()
+          ? []
+          : [
+              {
+                icon: 'bi-shield-lock',
+                label: 'Verschlüsselung',
+                link: '/verschluesselung',
+              },
+            ]),
+        ...(this.isOrgCoordinator()
+          ? [
+              {
+                icon: 'bi-key',
+                label: 'Schlüsselverwaltung',
+                link: '/schluesselverwaltung',
+              },
+            ]
+          : []),
         {
           icon: 'bi-gear',
           label: 'Einstellungen',

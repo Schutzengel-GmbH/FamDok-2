@@ -326,6 +326,37 @@ export class CryptoService {
   }
 
   /**
+   * Re-wraps the private key under a new passphrase key. The key is unwrapped as extractable
+   * only inside this call, to be wrapped again, and is never returned.
+   */
+  async rewrapPrivateKey(
+    wrapped: string,
+    oldKek: CryptoKey,
+    newKek: CryptoKey,
+    userId: string,
+  ): Promise<string> {
+    const { iv, ct } = parseWrappedPrivateKey(wrapped);
+    const additionalData = new TextEncoder().encode(buildUserkey(userId));
+    let priv: CryptoKey;
+    try {
+      priv = await crypto.subtle.unwrapKey(
+        'pkcs8',
+        fromB64Url(ct),
+        oldKek,
+        { name: 'AES-GCM', iv: fromB64Url(iv), additionalData },
+        { name: 'ECDH', namedCurve: 'P-256' },
+        true,
+        ['deriveBits'],
+      );
+    } catch (e) {
+      if (e instanceof Error && e.name === 'OperationError')
+        throw new WrongPassphraseError();
+      throw e;
+    }
+    return this.wrapPrivateKey(priv, newKek, userId);
+  }
+
+  /**
    * Grants a freshly generated, still extractable data key to a user: HPKE-seals its 32 bytes
    * to the user's public key, bound to org and key version. Used at org setup and rotation.
    */
