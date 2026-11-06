@@ -25,6 +25,7 @@ import { authenticatedGuard } from './auth/guards/authenticatedGuard';
 import { encryptionGuard } from './auth/guards/encryptionGuard';
 import { EncryptionPage } from './pages/encryption/encryption.page';
 import { KeyManagementPage } from './pages/key-management/key-management.page';
+import { KeyMigrationPage } from './pages/key-migration/key-migration.page';
 import { unsavedChangesGuard } from './auth/guards/unsavedChangesGuard';
 import { AllContactData } from './pages/all-contact-documentation/all-contact-documentation.page';
 import { EditContactDocumentationPage } from './pages/edit-contact-documentation/edit-contact-documentation.page';
@@ -318,6 +319,12 @@ export const routes: Routes = [
   {
     path: 'schluesselverwaltung',
     component: KeyManagementPage,
+    canActivate: [roleGuard([Role.OrgCoordinator])],
+  },
+  {
+    // Encrypts data stored before the org set up its encryption (P5)
+    path: 'schluesselverwaltung/migration',
+    component: KeyMigrationPage,
     canActivate: [roleGuard([Role.OrgCoordinator])],
   },
   {
