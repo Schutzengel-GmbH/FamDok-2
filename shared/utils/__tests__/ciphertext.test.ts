@@ -1,10 +1,25 @@
 import {
   buildAad,
+  buildGrantInfo,
+  buildRecoveryAad,
+  envelopeKeyVersion,
+  formatBytesEnvelope,
+  formatGrant,
+  formatRecoveryWrappedKey,
+  isBytesEnvelope,
+  isGrant,
+  isRecoveryWrappedKey,
+  parseBytesEnvelope,
+  parseGrant,
+  parseRecoveryWrappedKey,
   CiphertextFormatError,
   formatEnvelope,
+  formatWrappedPrivateKey,
   fromB64Url,
   isEnvelope,
+  isWrappedPrivKey,
   parseEnvelope,
+  parseWrappedPrivateKey,
   toB64Url,
 } from "../ciphertext";
 
@@ -187,5 +202,115 @@ describe("isEnvelope", () => {
         CiphertextFormatError,
       );
     });
+  });
+});
+
+describe("grants (g1)", () => {
+  const enc = "B" + "A".repeat(86);
+  const ct = "A".repeat(64);
+
+  it("round-trips", () => {
+    const g = formatGrant(enc, ct);
+    expect(g).toBe(`g1.${enc}.${ct}`);
+    expect(g.length).toBe(155);
+    expect(parseGrant(g)).toEqual({ enc, ct });
+  });
+
+  it.each([
+    "",
+    `g2.${enc}.${ct}`,
+    `g1.${enc.slice(1)}.${ct}`,
+    `g1.${enc}A.${ct}`,
+    `g1.${enc}.${ct.slice(1)}`,
+    `g1.${enc}.${ct}A`,
+    `g1.${enc}.${ct.slice(1)}!`,
+    `g1.${enc}.${ct}.x`,
+  ])("rejects %p", (s) => {
+    expect(isGrant(s)).toBe(false);
+    expect(() => parseGrant(s)).toThrow(CiphertextFormatError);
+  });
+
+  it("builds the info string", () => {
+    expect(buildGrantInfo({ orgId: "org-1", keyVersion: 2 })).toBe(
+      "famdok-grant-v1:org-1:2",
+    );
+  });
+
+  it.each([
+    { orgId: "", keyVersion: 1 },
+    { orgId: "a:b", keyVersion: 1 },
+    { orgId: "org", keyVersion: -1 },
+    { orgId: "org", keyVersion: 1.5 },
+  ])("rejects context %p", (ctx) => {
+    expect(() => buildGrantInfo(ctx)).toThrow(CiphertextFormatError);
+    expect(() => buildRecoveryAad(ctx)).toThrow(CiphertextFormatError);
+  });
+});
+
+describe("recovery-wrapped key (r1)", () => {
+  const iv = "AAECAwQFBgcICQoL";
+  const ct = "A".repeat(64);
+
+  it("round-trips", () => {
+    const s = formatRecoveryWrappedKey(4, iv, ct);
+    expect(parseRecoveryWrappedKey(s)).toEqual({ keyVersion: 4, iv, ct });
+    expect(buildRecoveryAad({ orgId: "o", keyVersion: 4 })).toBe(
+      "famdok-recovery-v1:o:4",
+    );
+  });
+
+  it.each(["", `r1.x.${iv}.${ct}`, `r1.1.${iv}.${ct.slice(1)}`, `r1.01.${iv}.${ct}`])(
+    "rejects %p",
+    (s) => {
+      expect(isRecoveryWrappedKey(s)).toBe(false);
+      expect(() => parseRecoveryWrappedKey(s)).toThrow(CiphertextFormatError);
+    },
+  );
+});
+
+describe("envelopeKeyVersion", () => {
+  it("reads the version of an envelope", () => {
+    expect(
+      envelopeKeyVersion("v1.12.abcdABCDabcdABCD.abcdABCDabcdABCDabcdABCD"),
+    ).toBe(12);
+  });
+  it("is undefined for anything else", () => {
+    expect(envelopeKeyVersion("plain text")).toBeUndefined();
+    expect(envelopeKeyVersion(null)).toBeUndefined();
+  });
+  it("rejects key versions with more than 9 digits", () => {
+    expect(
+      isEnvelope("v1.1234567890.abcdABCDabcdABCD.abcdABCDabcdABCDabcdABCD"),
+    ).toBe(false);
+  });
+});
+
+describe("bytes envelope", () => {
+  const iv = Uint8Array.from({ length: 12 }, (_, i) => i);
+  const ct = Uint8Array.from({ length: 40 }, (_, i) => 255 - i);
+
+  it("round-trips", () => {
+    const b = formatBytesEnvelope(7, iv, ct);
+    expect(isBytesEnvelope(b)).toBe(true);
+    expect(Array.from(b.slice(0, 4))).toEqual([0x46, 0x44, 0x4b, 0x31]);
+    expect(parseBytesEnvelope(b)).toEqual({ keyVersion: 7, iv, ct });
+  });
+
+  it("parses a subarray with an offset", () => {
+    const b = formatBytesEnvelope(7, iv, ct);
+    const padded = new Uint8Array(b.length + 3);
+    padded.set(b, 3);
+    expect(parseBytesEnvelope(padded.subarray(3)).keyVersion).toBe(7);
+  });
+
+  it("rejects plain bytes", () => {
+    expect(isBytesEnvelope(new TextEncoder().encode("%PDF-1.7 ......................................"))).toBe(false);
+    expect(() => parseBytesEnvelope(new Uint8Array(10))).toThrow(CiphertextFormatError);
+  });
+
+  it("rejects bad parts", () => {
+    expect(() => formatBytesEnvelope(-1, iv, ct)).toThrow(CiphertextFormatError);
+    expect(() => formatBytesEnvelope(1, iv.slice(1), ct)).toThrow(CiphertextFormatError);
+    expect(() => formatBytesEnvelope(1, iv, ct.slice(0, 15))).toThrow(CiphertextFormatError);
   });
 });
