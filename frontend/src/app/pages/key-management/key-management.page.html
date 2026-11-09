@@ -12,22 +12,27 @@
         <dt class="col-sm-4">Status</dt>
         <dd class="col-sm-8">
           @switch (o.keyState) {
-            @case ("uninitialized") { Nicht eingerichtet }
+            @case ("uninitialized") { Nicht aktiviert (optional) }
             @case ("active") { Aktiv }
             @case ("frozen") { Eingefroren seit {{ o.frozenAt | date: "short" }} }
             @case ("rotating") { Schlüssel wird erneuert (Version {{ o.pendingKeyVersion }}) }
           }
         </dd>
-        <dt class="col-sm-4">Schlüsselversion</dt>
-        <dd class="col-sm-8">{{ o.keyVersion }}</dd>
-        <dt class="col-sm-4">Fingerabdruck Organisationsschlüssel</dt>
-        <dd class="col-sm-8 font-monospace">
-          {{ session.orgKeyFingerprint() ?? "(nach dem Entsperren sichtbar)" }}
-        </dd>
+        @if (o.keyState !== "uninitialized") {
+          <dt class="col-sm-4">Schlüsselversion</dt>
+          <dd class="col-sm-8">{{ o.keyVersion }}</dd>
+          <dt class="col-sm-4">Fingerabdruck Organisationsschlüssel</dt>
+          <dd class="col-sm-8 font-monospace">
+            {{ session.orgKeyFingerprint() ?? "(nach dem Entsperren sichtbar)" }}
+          </dd>
+        }
       </dl>
 
       @if (o.keyState === "uninitialized") {
-        <a class="btn btn-primary" routerLink="/verschluesselung">Verschlüsselung einrichten</a>
+        <app-encryption-opt-in />
+        <a class="btn btn-outline-primary" routerLink="/verschluesselung"
+          >Verschlüsselung aktivieren …</a
+        >
       } @else {
         <div class="d-flex flex-wrap gap-2">
           @if (o.keyState === "active") {

@@ -27,13 +27,24 @@
 
       @case ("orgNotSetUp") {
         @if (canManage()) {
-          <h5>Verschlüsselung der Organisation einrichten</h5>
-          <p>
-            Personenbezogene Daten werden danach nur noch im Browser ver- und
-            entschlüsselt. Der Server speichert ausschließlich verschlüsselte
-            Daten.
-          </p>
-          @if (!hasKeyPair()) {
+          <h5>Verschlüsselung der Organisation aktivieren (optional)</h5>
+          <app-encryption-opt-in />
+          <div class="form-check mb-3">
+            <input
+              id="opt-in-understood"
+              class="form-check-input"
+              type="checkbox"
+              [disabled]="!!recoveryCode()"
+              [ngModel]="optInUnderstood()"
+              (ngModelChange)="optInUnderstood.set($event)" />
+            <label class="form-check-label" for="opt-in-understood">
+              Ich habe verstanden, dass die Verschlüsselung nach der Aktivierung
+              nicht wieder abgeschaltet werden kann.
+            </label>
+          </div>
+          @if (!optInUnderstood()) {
+            <!-- nothing to do before the acknowledgement -->
+          } @else if (!hasKeyPair()) {
             <p>Richten Sie zuerst Ihren persönlichen Schlüssel ein.</p>
             <ng-container *ngTemplateOutlet="enrolForm"></ng-container>
           } @else if (!session.keyPairReady()) {
@@ -67,19 +78,25 @@
               (ngModelChange)="recoveryTyped.set($event)" />
             <button
               class="btn btn-primary"
-              [disabled]="busy() || !recoveryConfirmed()"
+              [disabled]="busy() || !recoveryConfirmed() || !optInUnderstood()"
               (click)="finishOrgSetup()">
-              Verschlüsselung aktivieren
+              Verschlüsselung endgültig aktivieren
             </button>
           }
         } @else {
           <p>
-            Ihre Organisation hat die Verschlüsselung noch nicht eingerichtet.
-            Bis dahin werden Daten wie bisher gespeichert.
+            Ihre Organisation nutzt die optionale Verschlüsselung nicht. Daten
+            werden wie bisher gespeichert; Sie müssen nichts tun.
           </p>
           @if (!hasKeyPair()) {
-            <p>Sie können Ihren persönlichen Schlüssel schon jetzt einrichten.</p>
-            <ng-container *ngTemplateOutlet="enrolForm"></ng-container>
+            <details>
+              <summary>Persönlichen Schlüssel vorab einrichten</summary>
+              <p class="mt-2">
+                Nur sinnvoll, wenn Ihre Organisation die Verschlüsselung bald
+                aktivieren will. Sonst werden Sie danach dazu aufgefordert.
+              </p>
+              <ng-container *ngTemplateOutlet="enrolForm"></ng-container>
+            </details>
           } @else {
             <ng-container *ngTemplateOutlet="fingerprint"></ng-container>
           }

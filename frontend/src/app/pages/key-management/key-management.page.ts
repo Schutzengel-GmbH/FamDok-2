@@ -8,6 +8,7 @@ import { CryptoService } from 'src/app/services/crypto.service';
 import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
 import { ToastService } from 'src/app/services/toast.service';
 
+import { EncryptionOptInComponent } from 'src/app/components/encryption-opt-in/encryption-opt-in.component';
 /** A member row with the fingerprint this browser computed from their public key. */
 type MemberRow = OrgKeyMember & {
   fingerprint: string | null;
@@ -36,7 +37,7 @@ const EVENT_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-key-management-page',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, EncryptionOptInComponent],
   templateUrl: './key-management.page.html',
 })
 export class KeyManagementPage {

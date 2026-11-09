@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { MeService } from 'src/app/services/me.service';
+import { KeySessionService } from 'src/app/services/key-session.service';
 import { sortByNumProperty } from 'src/app/util/generalUtils';
 import Keycloak from 'keycloak-js';
 import { Role } from '../../../../../shared/generated/prisma/enums';
@@ -24,6 +25,8 @@ export class MenuComponent {
   private meService = inject(MeService);
   private keycloak = inject(Keycloak);
   private activatedRoute = inject(ActivatedRoute);
+  // the header loads the key status; the menu only reads it
+  private keys = inject(KeySessionService);
 
   isController = signal(false);
   isAdmin = signal(false);
@@ -166,13 +169,22 @@ export class MenuComponent {
       label: 'Benutzerverwaltung',
       link: '/user-admin',
     };
+    // key managers only; listed right after the user admin (the sort is stable)
+    const keyManagementLink: LinkData = {
+      priority: 0,
+      icon: 'bi-key',
+      label: 'Schlüsselverwaltung',
+      link: '/schluesselverwaltung',
+    };
     if (this.isAdmin()) return adminLinks.sort(sortByNumProperty('priority'));
     if (this.isOrgController())
-      return [userAdminLink, ...controllerLinks].sort(
+      return [userAdminLink, keyManagementLink, ...controllerLinks].sort(
         sortByNumProperty('priority'),
       );
     if (this.isOrgCoordinator())
-      return [userAdminLink, ...baseLinks].sort(sortByNumProperty('priority'));
+      return [userAdminLink, keyManagementLink, ...baseLinks].sort(
+        sortByNumProperty('priority'),
+      );
     if (this.isController())
       return controllerLinks.sort(sortByNumProperty('priority'));
     return baseLinks.sort(sortByNumProperty('priority'));
@@ -181,7 +193,9 @@ export class MenuComponent {
   bottomLinks = computed(
     () =>
       [
-        ...(this.isAdmin() || this.isController()
+        // only once the org activated the (optional) encryption; key managers activate it
+        // from the key management
+        ...(this.isAdmin() || this.isController() || !this.keys.encryptionActive()
           ? []
           : [
               {
@@ -190,15 +204,6 @@ export class MenuComponent {
                 link: '/verschluesselung',
               },
             ]),
-        ...(this.isOrgCoordinator() || this.isOrgController()
-          ? [
-              {
-                icon: 'bi-key',
-                label: 'Schlüsselverwaltung',
-                link: '/schluesselverwaltung',
-              },
-            ]
-          : []),
         {
           icon: 'bi-gear',
           label: 'Einstellungen',

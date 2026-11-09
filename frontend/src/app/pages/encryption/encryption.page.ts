@@ -7,6 +7,8 @@ import { KeySessionService } from 'src/app/services/key-session.service';
 import { MeService } from 'src/app/services/me.service';
 import { ToastService } from 'src/app/services/toast.service';
 import { PassphraseInputComponent } from 'src/app/components/passphrase-input/passphrase-input.component';
+import { EncryptionOptInComponent } from 'src/app/components/encryption-opt-in/encryption-opt-in.component';
+import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
 import {
   InvalidKdfParamsError,
   WrongPassphraseError,
@@ -23,7 +25,13 @@ import { InvalidRecoveryCodeError } from '../../../../../shared/utils/recoveryCo
 @Component({
   selector: 'app-encryption-page',
   standalone: true,
-  imports: [FormsModule, NgTemplateOutlet, RouterLink, PassphraseInputComponent],
+  imports: [
+    FormsModule,
+    NgTemplateOutlet,
+    RouterLink,
+    PassphraseInputComponent,
+    EncryptionOptInComponent,
+  ],
   templateUrl: './encryption.page.html',
 })
 export class EncryptionPage {
@@ -32,6 +40,7 @@ export class EncryptionPage {
   private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
   private meService = inject(MeService);
+  private dialog = inject(ConfirmDialogService);
 
   protected busy = signal(false);
   protected error = signal<string | null>(null);
@@ -44,6 +53,8 @@ export class EncryptionPage {
   protected showReenrol = signal(false);
   protected userInputs = signal<string[]>([]);
 
+  /** The key manager confirmed that activating the encryption can't be undone. */
+  protected optInUnderstood = signal(false);
   protected recoveryCode = signal<string | null>(null);
   protected recoveryTyped = signal('');
   private commitSetup: (() => Promise<void>) | null = null;
@@ -174,8 +185,21 @@ export class EncryptionPage {
     return !!code && norm(code) === norm(this.recoveryTyped());
   });
 
-  /** Uploads the org setup once the recovery code was typed back. */
+  /**
+   * Uploads the org setup once the recovery code was typed back, after a last confirmation:
+   * from then on the org's data is encrypted and there is no way back.
+   */
   protected finishOrgSetup() {
+    this.dialog.open({
+      title: 'Verschlüsselung endgültig aktivieren?',
+      text: `Ab jetzt werden personenbezogene Daten von „${this.orgName()}“ nur noch verschlüsselt gespeichert. Das lässt sich nicht rückgängig machen.`,
+      style: 'warning',
+      confirmAction: () => void this.commitOrgSetup(),
+    });
+  }
+
+  /** The actual setup upload behind {@link finishOrgSetup}'s confirmation. */
+  private commitOrgSetup() {
     return this.run(async () => {
       await this.commitSetup!();
       this.recoveryCode.set(null);

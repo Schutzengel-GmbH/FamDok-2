@@ -93,6 +93,25 @@ browser-chosen ids.
 
 Org state: `uninitialized` → `active`.
 
+**Encryption is optional per organisation.** An org that never activates it keeps working in
+legacy mode indefinitely; nothing in the app requires it. Activation is a deliberate step by a
+key manager and is one-way:
+
+- There is no endpoint that switches an org back to `uninitialized`; `setupOrg` only runs on an
+  uninitialized org, and nothing else writes `keyState = uninitialized`.
+- Going back would mean decrypting every value in a key manager's browser and storing plaintext
+  again. That isn't implemented.
+- Resetting `keyState` in the database doesn't work either: every browser that has seen the org
+  encrypted refuses to write plaintext (`hasSeenEncryption` → `keyMismatch`).
+
+The UI says so wherever activation is offered: `EncryptionOptInComponent` (on
+`/schluesselverwaltung` and the setup on `/verschluesselung`) explains the consequences, the
+setup only starts after the key manager ticks "Ich habe verstanden, dass die Verschlüsselung …
+nicht wieder abgeschaltet werden kann", and the final upload waits for one more confirmation
+dialog. Until activation, members aren't asked for anything: the header shows no key state, the
+"Verschlüsselung" menu entry is hidden (`MenuComponent` reads
+`KeySessionService.encryptionActive`), and `/verschluesselung` tells them there is nothing to do.
+
 1. **Admin creates the org.** `OrgController.createOrg` creates the `Organisation` row; the schema
    defaults are `keyState = uninitialized`, `keyVersion = 0`. Until it is set up, the org works in
    *legacy mode*: data is stored as before, in plaintext. `encryptionPolicyFor` reports
@@ -103,8 +122,10 @@ Org state: `uninitialized` → `active`.
 
 3. **The coordinator logs in.** `HeaderComponent` calls `KeySessionService.ensureLoaded`, which
    fetches `GET /keys/me` (`KeyController.getStatus`). Org `uninitialized` and no `UserKey` →
-   state `orgNotSetUp`. Since `status.canManageKeys` is true, `/verschluesselung`
-   (`EncryptionPage`) offers the setup.
+   state `orgNotSetUp`. Since `status.canManageKeys` is true, "Schlüsselverwaltung" (in the menu
+   right under "Benutzerverwaltung") shows the org as "Nicht aktiviert (optional)" with the
+   explanation and a link to `/verschluesselung` (`EncryptionPage`), which offers the setup after
+   the acknowledgement above.
 
 4. **Coordinator key pair.** The coordinator picks a passphrase (`PassphraseInputComponent`,
    rated by `PassphraseStrengthService` with zxcvbn-ts; at least 12 characters and score 3).
@@ -127,8 +148,8 @@ Org state: `uninitialized` → `active`.
      `famdok-recovery-v1:<orgId>:1`, as `r1.1.<iv>.<ct>`
    Nothing is uploaded yet. The page shows the recovery code once.
 
-6. **Confirm and activate.** The coordinator types the code back (`recoveryConfirmed`), then
-   `commit()` → `POST /keys/orgs/:orgId/setup` → `KeyController.setupOrg`:
+6. **Confirm and activate.** The coordinator types the code back (`recoveryConfirmed`) and
+   confirms the dialog "Verschlüsselung endgültig aktivieren?", then `commit()` → `POST /keys/orgs/:orgId/setup` → `KeyController.setupOrg`:
    `updateMany where keyState = uninitialized` sets `active`, `keyVersion 1` and
    `recoveryWrappedKey`, creates the self-grant, logs `setup`. The `where` makes a second setup
    impossible, so an operator can't quietly re-key an active org.
@@ -378,9 +399,11 @@ Data stored before the org set up its encryption is still plaintext. A coordinat
   (encrypted) in the meantime isn't overwritten; members can keep working during the migration.
 - Plaintext remains in backups until they expire.
 
-Once every org is through, `backend/prisma/pending-migrations/` holds the destructive migration
-that drops the plaintext columns. It isn't in `prisma/migrations`, so `migrate deploy` never
-applies it by accident, and it aborts by itself while any plaintext is left. See its README.
+`backend/prisma/pending-migrations/` holds the destructive migration that drops the plaintext
+columns. It isn't in `prisma/migrations`, so `migrate deploy` never applies it by accident, and it
+aborts by itself while any plaintext is left. Since encryption is optional, it only applies if
+every org has activated and migrated; as long as one org runs without encryption, the plaintext
+columns (and the legacy code paths) stay. See its README.
 
 ## Recovery
 

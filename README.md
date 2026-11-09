@@ -276,9 +276,12 @@ beschreibungen, Übergabenotizen, Antworten personenbezogener Fragebögen, Anhä
 Browser mit dem Schlüssel der Organisation ver- und entschlüsselt. Server und Datenbank speichern
 ausschließlich Chiffrat, öffentliche Schlüssel und verpackte Schlüssel.
 
-- Benutzer*innen richten unter **Verschlüsselung** (`/verschluesselung`) einmalig eine
-  Verschlüsselungs-Passphrase ein und entsperren damit pro Tab.
-- OrgCoordinators und OrgControllers richten die Verschlüsselung ihrer Organisation ein, geben
+Die Verschlüsselung ist **optional** und wird pro Organisation aktiviert. Ohne Aktivierung werden
+Daten wie bisher gespeichert. Die Aktivierung lässt sich **nicht rückgängig machen**.
+
+- Ist sie aktiviert, richten Benutzer*innen unter **Verschlüsselung** (`/verschluesselung`)
+  einmalig eine Verschlüsselungs-Passphrase ein und entsperren damit pro Tab.
+- OrgCoordinators und OrgControllers aktivieren die Verschlüsselung ihrer Organisation, geben
   Zugänge nach Fingerabdruck-Vergleich frei, frieren ein und erneuern den Schlüssel unter
   **Schlüsselverwaltung** (`/schluesselverwaltung`). Jede neue Schlüsselversion trägt einen
   Nachweis, der mit der vorherigen Version erstellt wurde; Browser übernehmen eine neue Version

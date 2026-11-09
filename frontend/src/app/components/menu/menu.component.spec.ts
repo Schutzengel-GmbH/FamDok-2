@@ -8,6 +8,7 @@ import { provideRouter } from '@angular/router';
 import Keycloak from 'keycloak-js';
 
 import { MenuComponent } from './menu.component';
+import { KeySessionService } from 'src/app/services/key-session.service';
 import { mockKeycloak } from 'src/app/testing/keycloak-mock';
 import { buildUser } from 'src/app/testing/fixtures';
 import { Role } from '../../../../../shared/generated/prisma/enums';
@@ -75,6 +76,7 @@ describe('MenuComponent', () => {
     const labels = component.topLinks().map((l) => l.label);
     expect(labels).toEqual([
       'Benutzerverwaltung',
+      'Schlüsselverwaltung',
       'Statistik-Dashboard',
       'Alle Formulardaten',
       'Dokumente',
@@ -106,13 +108,14 @@ describe('MenuComponent', () => {
     );
   });
 
-  it('adds the user-admin link to the base nav for an OrgCoordinator', async () => {
+  it('adds the user-admin and key management links to the base nav for an OrgCoordinator', async () => {
     await setup(Role.OrgCoordinator);
 
     expect(component.isOrgCoordinator()).toBeTrue();
     const labels = component.topLinks().map((l) => l.label);
     expect(labels).toEqual([
       'Benutzerverwaltung',
+      'Schlüsselverwaltung',
       'Dashboard',
       'Familien',
       'Alle Formulardaten',
@@ -133,8 +136,21 @@ describe('MenuComponent', () => {
     expect(links.some((l) => l.link === '/user-admin')).toBeFalse();
   });
 
-  it('gives case workers the encryption page and the settings at the bottom', async () => {
+  /** Pretends the header loaded a key status with the org in `keyState`. */
+  function orgKeyState(keyState: 'uninitialized' | 'active') {
+    TestBed.inject(KeySessionService).status.set({
+      org: { id: 'o', name: 'O', keyState, keyVersion: keyState === 'active' ? 1 : 0, pendingKeyVersion: null, frozenAt: null },
+      userKey: null,
+      grants: [],
+      keyProofs: [],
+      canManageKeys: false,
+      needsKeys: true,
+    });
+  }
+
+  it('gives case workers the encryption page and the settings at the bottom, once the org encrypts', async () => {
     await setup(Role.User);
+    orgKeyState('active');
 
     expect(component.bottomLinks()).toEqual([
       { icon: 'bi-shield-lock', label: 'Verschlüsselung', link: '/verschluesselung' },
@@ -142,21 +158,18 @@ describe('MenuComponent', () => {
     ] as any);
   });
 
-  for (const role of [Role.OrgCoordinator, Role.OrgController]) {
-    it(`adds the key management for ${role}`, async () => {
+  for (const role of [Role.User, Role.OrgCoordinator]) {
+    it(`hides the encryption page from ${role} while the org hasn't activated it`, async () => {
       await setup(role);
-
-      expect(component.bottomLinks().map((l) => l.link)).toEqual([
-        '/verschluesselung',
-        '/schluesselverwaltung',
-        '/einstellungen',
-      ]);
+      orgKeyState('uninitialized');
+      expect(component.bottomLinks().map((l) => l.link)).toEqual(['/einstellungen']);
     });
   }
 
   for (const role of [Role.Admin, Role.Controller]) {
     it(`gives ${role} only the settings at the bottom`, async () => {
       await setup(role);
+      orgKeyState('active');
       expect(component.bottomLinks().map((l) => l.link)).toEqual(['/einstellungen']);
     });
   }

@@ -17,6 +17,10 @@ personal data still use them.
 
 The migration checks both itself and aborts without changing anything if they don't hold.
 
+Encryption is optional per organisation, so this migration is only for an installation where
+every organisation chose to activate it. As long as one organisation works without encryption,
+its data lives in these columns: leave the migration here.
+
 ### Applying it
 
 1. Back up the database.
