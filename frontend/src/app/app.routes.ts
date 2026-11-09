@@ -320,19 +320,19 @@ export const routes: Routes = [
   {
     path: 'schluesselverwaltung',
     component: KeyManagementPage,
-    canActivate: [roleGuard([Role.OrgCoordinator])],
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController])],
   },
   {
     // Encrypts data stored before the org set up its encryption (P5)
     path: 'schluesselverwaltung/migration',
     component: KeyMigrationPage,
-    canActivate: [roleGuard([Role.OrgCoordinator])],
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController])],
   },
   {
     // Rotation of the org data key while the org is frozen (P6)
     path: 'schluesselverwaltung/erneuern',
     component: KeyRotationPage,
-    canActivate: [roleGuard([Role.OrgCoordinator])],
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController])],
   },
   {
     path: 'contact-documentation',

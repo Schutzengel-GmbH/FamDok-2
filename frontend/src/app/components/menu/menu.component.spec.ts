@@ -142,17 +142,19 @@ describe('MenuComponent', () => {
     ] as any);
   });
 
-  it('adds the key management for OrgCoordinators', async () => {
-    await setup(Role.OrgCoordinator);
+  for (const role of [Role.OrgCoordinator, Role.OrgController]) {
+    it(`adds the key management for ${role}`, async () => {
+      await setup(role);
 
-    expect(component.bottomLinks().map((l) => l.link)).toEqual([
-      '/verschluesselung',
-      '/schluesselverwaltung',
-      '/einstellungen',
-    ]);
-  });
+      expect(component.bottomLinks().map((l) => l.link)).toEqual([
+        '/verschluesselung',
+        '/schluesselverwaltung',
+        '/einstellungen',
+      ]);
+    });
+  }
 
-  for (const role of [Role.Admin, Role.Controller, Role.OrgController]) {
+  for (const role of [Role.Admin, Role.Controller]) {
     it(`gives ${role} only the settings at the bottom`, async () => {
       await setup(role);
       expect(component.bottomLinks().map((l) => l.link)).toEqual(['/einstellungen']);

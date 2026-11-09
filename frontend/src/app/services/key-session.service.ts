@@ -6,24 +6,26 @@ import { KeyApiService } from './key-api.service';
 import { KdfService } from './kdf.service';
 import { MeService } from './me.service';
 import { newKdfParams } from '../util/crypto/kdf';
+import { InvalidGrantError, KeysLockedError } from '../util/crypto/errors';
 import {
-  InvalidGrantError,
-  KeyPinMismatchError,
-  KeysLockedError,
-} from '../util/crypto/errors';
-import { checkKeyPin, hasSeenEncryption } from '../util/crypto/keyPins';
+  checkKeyChain,
+  clearKeyPin,
+  hasSeenEncryption,
+  readKeyPin,
+  writeKeyPin,
+} from '../util/crypto/keyPins';
 
 /**
  * Where the current user stands with the org encryption:
  * - `loading`: status not fetched yet
- * - `notNeeded`: the role never reads personal data (Admin, Controller, OrgController)
+ * - `notNeeded`: the role never holds the org key (Admin, Controller)
  * - `orgNotSetUp`: the org hasn't set up encryption yet; data is still plaintext
  * - `needsEnrolment`: the user has no key pair yet
  * - `locked`: key pair exists, the passphrase hasn't been entered in this tab
  * - `awaitingGrant`: unlocked, but no coordinator has granted the current key yet
  * - `unlocked`: the org data key is available in this tab
  * - `frozen`: the org is frozen or rotating; coordinators stay `unlocked` to run the rotation
- * - `keyMismatch`: the server presents a key that contradicts what this browser saw before
+ * - `keyMismatch`: the server presents a key this browser can't trace back to one it trusted
  */
 export type KeySessionState =
   | 'loading'
@@ -61,6 +63,11 @@ export class KeySessionService {
   readonly rotationNotice = signal<{ from: number; to: number } | null>(null);
   /** Why the state is `keyMismatch`. */
   readonly mismatchReason = signal<string | null>(null);
+  /**
+   * In `keyMismatch`: version and fingerprint of the key the server presents as current, for
+   * comparing with a key manager before {@link acceptPresentedKey}.
+   */
+  readonly presentedKey = signal<{ keyVersion: number; fingerprint: string } | null>(null);
   /** Whether the private key is unlocked in this tab (independent of any grant). */
   readonly keyPairReady = signal(false);
 
@@ -162,6 +169,22 @@ export class KeySessionService {
     this.updateState();
   }
 
+  /**
+   * Leaves `keyMismatch` by trusting the key the server presents now, after the user compared
+   * its fingerprint with a key manager out of band. Without a presented key (the server claims
+   * the org is unencrypted) the pin is just forgotten.
+   */
+  async acceptPresentedKey(): Promise<void> {
+    const orgId = this.requireOrgId();
+    const presented = this.presentedKey();
+    if (presented) writeKeyPin(orgId, presented);
+    else clearKeyPin(orgId);
+    this.mismatchReason.set(null);
+    this.presentedKey.set(null);
+    this.dataKeys.clear();
+    await this.refresh();
+  }
+
   /** Re-wraps the private key under a new passphrase; the key pair and grants stay. */
   async changePassphrase(oldPassphrase: string, newPassphrase: string): Promise<void> {
     await this.ensureLoaded();
@@ -257,11 +280,6 @@ export class KeySessionService {
     return grant.wrappedKey;
   }
 
-  /** Holds an extra data key in the session, e.g. the new key during a rotation. */
-  addDataKey(key: UnlockedDataKey) {
-    this.dataKeys.set(key.version, key);
-  }
-
   /** The id of the user's organisation. */
   requireOrgId(): string {
     const id = this.status()?.org?.id;
@@ -276,41 +294,63 @@ export class KeySessionService {
   }
 
   /**
-   * Opens every grant sealed to the current key pair. The current version is checked against
-   * this browser's pin; a mismatch locks the session and puts it into `keyMismatch`.
+   * Opens every grant sealed to the current key pair, verifies the continuity proofs between
+   * consecutive versions and keeps only the versions {@link checkKeyChain} trusts. If the current
+   * version isn't among them, the session holds no key at all and goes to `keyMismatch`.
    */
   private async openGrants() {
     const status = this.status();
     const org = status?.org;
-    if (!status?.userKey || !org || !this.keyPair) return;
+    if (!status?.userKey || !org || !this.keyPair || this.mismatchReason()) return;
 
+    const opened = new Map<number, UnlockedDataKey>();
     for (const grant of status.grants) {
       if (grant.publicKey !== status.userKey.publicKey) continue;
-      if (this.dataKeys.has(grant.keyVersion)) continue;
       try {
-        const key = await this.crypto.openGrant(grant.wrappedKey, this.keyPair, {
-          orgId: org.id,
-          keyVersion: grant.keyVersion,
-        });
-        if (grant.keyVersion === org.keyVersion) {
-          const { rotated, previous } = checkKeyPin(org.id, {
-            keyVersion: key.version,
-            fingerprint: key.fingerprint,
-          });
-          if (rotated && previous)
-            this.rotationNotice.set({ from: previous.keyVersion, to: key.version });
-          this.orgKeyFingerprint.set(key.fingerprint);
-        }
-        this.dataKeys.set(grant.keyVersion, key);
+        opened.set(
+          grant.keyVersion,
+          await this.crypto.openGrant(grant.wrappedKey, this.keyPair, {
+            orgId: org.id,
+            keyVersion: grant.keyVersion,
+          }),
+        );
       } catch (e) {
-        if (e instanceof KeyPinMismatchError) {
-          this.mismatchReason.set(e.message);
-          this.dataKeys.clear();
-          return;
-        }
         if (!(e instanceof InvalidGrantError)) throw e;
       }
     }
+
+    const links = new Set<number>();
+    for (const { keyVersion, proof } of status.keyProofs) {
+      const previous = opened.get(keyVersion - 1);
+      const next = opened.get(keyVersion);
+      if (previous && next && (await this.crypto.verifyKeyProof(proof, previous, next, org.id)))
+        links.add(keyVersion);
+    }
+
+    const result = checkKeyChain({
+      pin: readKeyPin(org.id),
+      held: [...opened.values()].map((k) => ({ keyVersion: k.version, fingerprint: k.fingerprint })),
+      links,
+      currentVersion: org.keyVersion,
+    });
+    this.dataKeys.clear();
+    if (!result.ok) {
+      const presented = opened.get(org.keyVersion);
+      this.presentedKey.set(
+        presented ? { keyVersion: presented.version, fingerprint: presented.fingerprint } : null,
+      );
+      this.orgKeyFingerprint.set(null);
+      this.mismatchReason.set(result.reason);
+      return;
+    }
+
+    for (const version of result.trusted) this.dataKeys.set(version, opened.get(version)!);
+    if (result.pin) {
+      writeKeyPin(org.id, result.pin);
+      this.orgKeyFingerprint.set(result.pin.fingerprint);
+    }
+    if (result.rotatedFrom)
+      this.rotationNotice.set({ from: result.rotatedFrom, to: org.keyVersion });
   }
 
   /** Derives {@link state} from the status and the keys held. */

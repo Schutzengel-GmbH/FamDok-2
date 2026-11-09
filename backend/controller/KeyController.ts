@@ -30,6 +30,7 @@ import {
   Prisma,
 } from '../../shared/generated/prisma/client';
 import {
+  envelopeKeyVersion,
   fromB64Url,
   isBytesEnvelope,
   parseBytesEnvelope,
@@ -98,8 +99,9 @@ export class KeyController {
   }
 
   /**
-   * Everything the browser needs to unlock: org key state, the user's wrapped key pair, and
-   * their grants for the current and, during a rotation, the pending key version.
+   * Everything the browser needs to unlock: org key state, the user's wrapped key pair, all
+   * their grants in the org and the key continuity proofs. The browser decides which versions to
+   * trust; the server only hands the material over.
    */
   static async getStatus(user: FullUser): Promise<KeyStatus> {
     const [org, userKey] = await Promise.all([
@@ -109,19 +111,20 @@ export class KeyController {
       prisma.userKey.findUnique({ where: { userId: user.id } }),
     ]);
 
-    const versions = org
-      ? [org.keyVersion, org.pendingKeyVersion].filter((v): v is number => !!v)
-      : [];
-    const grants = org
-      ? await prisma.orgKeyGrant.findMany({
-          where: {
-            organisationId: org.id,
-            userId: user.id,
-            keyVersion: { in: versions },
-          },
-          select: { keyVersion: true, wrappedKey: true, publicKey: true },
-        })
-      : [];
+    const [grants, keyProofs] = org
+      ? await Promise.all([
+          prisma.orgKeyGrant.findMany({
+            where: { organisationId: org.id, userId: user.id },
+            select: { keyVersion: true, wrappedKey: true, publicKey: true },
+            orderBy: { keyVersion: 'asc' },
+          }),
+          prisma.orgKeyProof.findMany({
+            where: { organisationId: org.id },
+            select: { keyVersion: true, proof: true },
+            orderBy: { keyVersion: 'asc' },
+          }),
+        ])
+      : [[], []];
 
     return {
       org: org && {
@@ -138,6 +141,7 @@ export class KeyController {
         kdfParams: userKey.kdfParams as KdfParamsWire,
       },
       grants,
+      keyProofs,
       canManageKeys: !!org && canManageOrgKeys(user, org.id),
       needsKeys: userNeedsKeys(user),
     };
@@ -421,8 +425,9 @@ export class KeyController {
   }
 
   /**
-   * Starts a rotation of a frozen org: the coordinator's browser generated the next key version
-   * and uploads its own grant for it first, so an interrupted rotation can be resumed.
+   * Starts a rotation of a frozen org: the key manager's browser generated the next key version
+   * and uploads its own grant for it first, so an interrupted rotation can be resumed. It also
+   * uploads the continuity proof that other browsers check before they trust the new version.
    */
   static async startRotation(user: FullUser, orgId: string, data: RotationStartRequest) {
     const org = await KeyController.managedOrg(user, orgId);
@@ -430,6 +435,10 @@ export class KeyController {
       throw new ConflictError('Freeze the organisation before rotating its key');
     if (data.keyVersion !== org.keyVersion + 1)
       throw new BadRequestError(`The new key version must be ${org.keyVersion + 1}`);
+    if (envelopeKeyVersion(data.proof) !== org.keyVersion)
+      throw new BadRequestError(
+        `The proof must be encrypted with the current key version ${org.keyVersion}`
+      );
     const userKey = await prisma.userKey.findUnique({ where: { userId: user.id } });
     if (!userKey) throw new BadRequestError('You have no key pair');
 
@@ -455,6 +464,13 @@ export class KeyController {
           publicKey: userKey.publicKey,
         },
         update: { wrappedKey: data.grant, publicKey: userKey.publicKey },
+      });
+      await tx.orgKeyProof.upsert({
+        where: {
+          organisationId_keyVersion: { organisationId: orgId, keyVersion: data.keyVersion },
+        },
+        create: { organisationId: orgId, keyVersion: data.keyVersion, proof: data.proof },
+        update: { proof: data.proof },
       });
       await KeyController.log(tx, orgId, OrgKeyEventType.rotationStarted, {
         actorId: user.id,
@@ -607,7 +623,9 @@ export class KeyController {
 
   /**
    * Ends a rotation: checks nothing is left under an old key version, stores the grants for the
-   * new version and the new recovery-wrapped key, drops all old grants and unfreezes the org.
+   * new version and the new recovery-wrapped key, and unfreezes the org. Members who receive the
+   * new version keep their old grants, which their browsers need to check the continuity proof;
+   * everyone else loses theirs.
    */
   static async completeRotation(
     user: FullUser,
@@ -617,6 +635,11 @@ export class KeyController {
     const version = await KeyController.jobVersion(user, orgId, 'rotation');
     if (parseRecoveryWrappedKey(data.recoveryWrappedKey).keyVersion !== version)
       throw new BadRequestError(`The recovery key must be for key version ${version}`);
+
+    const proof = await prisma.orgKeyProof.findUnique({
+      where: { organisationId_keyVersion: { organisationId: orgId, keyVersion: version } },
+    });
+    if (!proof) throw new ConflictError(`Key version ${version} has no continuity proof`);
 
     const status = await KeyController.getJobStatus(user, orgId, 'rotation');
     const left =
@@ -658,7 +681,11 @@ export class KeyController {
         });
       }
       await tx.orgKeyGrant.deleteMany({
-        where: { organisationId: orgId, keyVersion: { not: version } },
+        where: {
+          organisationId: orgId,
+          keyVersion: { not: version },
+          userId: { notIn: [user.id, ...data.grants.map((g) => g.userId)] },
+        },
       });
       await tx.organisation.update({
         where: { id: orgId },

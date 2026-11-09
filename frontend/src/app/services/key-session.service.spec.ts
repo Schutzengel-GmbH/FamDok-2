@@ -32,6 +32,7 @@ class FakeKeyApi {
     },
     userKey: null,
     grants: [],
+    keyProofs: [],
     canManageKeys: false,
     needsKeys: true,
   };
@@ -96,6 +97,31 @@ describe('KeySessionService', () => {
         publicKey: api.status.userKey!.publicKey,
       },
     ];
+  }
+
+  /**
+   * A rotation to `keyVersion`: the user keeps the old grant and gets one for `dek`. With
+   * `proofKey` (the previous version's key) the continuity proof is real; the operator can only
+   * offer none, or one made with a key of its own.
+   */
+  async function rotateTo(dek: CryptoKey, keyVersion: number, proofKey?: CryptoKey) {
+    const pub = await crypto.importPublicKey(api.status.userKey!.publicKey);
+    const ctx = { orgId: ORG, keyVersion };
+    api.status.org = { ...api.status.org!, keyVersion };
+    api.status.grants.push({
+      keyVersion,
+      wrappedKey: await crypto.sealGrant(dek, pub, ctx),
+      publicKey: api.status.userKey!.publicKey,
+    });
+    if (proofKey)
+      api.status.keyProofs.push({
+        keyVersion,
+        proof: await crypto.sealKeyProof(
+          await crypto.fingerprintDataKey(dek),
+          { version: keyVersion - 1, key: proofKey },
+          ctx,
+        ),
+      });
   }
 
   beforeEach(() => {
@@ -208,17 +234,92 @@ describe('KeySessionService', () => {
     expect(() => session.currentKey()).toThrow();
   });
 
-  it('notices a newer key version and accepts it', async () => {
+  it('accepts a newer key version with a valid continuity proof and says so', async () => {
+    await session.enrol('eine sehr gute Passphrase');
+    const v1 = await crypto.generateDataKey();
+    await grantTo(v1);
+    await session.refresh();
+
+    await rotateTo(await crypto.generateDataKey(), 2, v1);
+    create();
+    await session.unlock('eine sehr gute Passphrase');
+    expect(session.state()).toBe('unlocked');
+    expect(session.currentKey().version).toBe(2);
+    expect(session.rotationNotice()).toEqual({ from: 1, to: 2 });
+  });
+
+  it('follows the proofs on a browser without a pin, too', async () => {
+    await session.enrol('eine sehr gute Passphrase');
+    const v1 = await crypto.generateDataKey();
+    await grantTo(v1);
+    await rotateTo(await crypto.generateDataKey(), 2, v1);
+    localStorage.clear();
+
+    create();
+    await session.unlock('eine sehr gute Passphrase');
+    expect(session.state()).toBe('unlocked');
+    expect(session.currentKey().version).toBe(2);
+  });
+
+  it('refuses a rotation forged by the operator, with or without a fake proof', async () => {
+    await session.enrol('eine sehr gute Passphrase');
+    await grantTo(await crypto.generateDataKey());
+    const enrolled = structuredClone(api.status);
+
+    for (const operatorKey of [undefined, await crypto.generateDataKey()]) {
+      for (const pinned of [true, false]) {
+        api.status = structuredClone(enrolled);
+        localStorage.clear();
+        if (pinned) {
+          create();
+          await session.unlock('eine sehr gute Passphrase');
+          expect(session.state()).toBe('unlocked');
+        }
+
+        // a forged version 2 sealed to the user's public key, without the old key
+        await rotateTo(await crypto.generateDataKey(), 2, operatorKey);
+        create();
+        await session.unlock('eine sehr gute Passphrase');
+
+        expect(session.state()).toBe('keyMismatch');
+        expect(session.keyResolver(1)).toBeUndefined();
+        expect(session.keyResolver(2)).toBeUndefined();
+        expect(() => session.currentKey()).toThrow();
+        expect(session.presentedKey()?.keyVersion).toBe(2);
+      }
+    }
+  });
+
+  it('ignores a pending version without a proof but keeps working on the current one', async () => {
+    await session.enrol('eine sehr gute Passphrase');
+    const v1 = await crypto.generateDataKey();
+    await grantTo(v1);
+    await rotateTo(await crypto.generateDataKey(), 2);
+    api.status.org = { ...api.status.org!, keyVersion: 1, pendingKeyVersion: 2 };
+
+    await session.refresh();
+    expect(session.state()).toBe('unlocked');
+    expect(session.keyResolver(1)).toBeDefined();
+    expect(session.keyResolver(2)).toBeUndefined();
+  });
+
+  it('lets a user who lost the pinned version accept the new key after comparing it', async () => {
     await session.enrol('eine sehr gute Passphrase');
     await grantTo(await crypto.generateDataKey());
     await session.refresh();
 
+    // forgot the passphrase: new key pair, the grants are gone; then granted version 2
+    create();
+    await session.enrol('ein neuer Anfang');
     api.status.org = { ...api.status.org!, keyVersion: 2 };
     await grantTo(await crypto.generateDataKey(), 2);
-    create();
-    await session.unlock('eine sehr gute Passphrase');
+    await session.refresh();
+
+    expect(session.state()).toBe('keyMismatch');
+    const presented = session.presentedKey()!;
+    await session.acceptPresentedKey();
     expect(session.state()).toBe('unlocked');
-    expect(session.rotationNotice()).toEqual({ from: 1, to: 2 });
+    expect(session.orgKeyFingerprint()).toBe(presented.fingerprint);
   });
 
   it('refuses a server that claims an encrypted org is not encrypted', async () => {

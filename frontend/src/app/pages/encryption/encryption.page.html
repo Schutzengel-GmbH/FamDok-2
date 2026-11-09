@@ -150,6 +150,12 @@
             erneuert wurde, und der Fingerabdruck des Organisationsschlüssels
             übereinstimmt.
           </p>
+          @if (session.presentedKey(); as presented) {
+            <p>
+              Angebotener Schlüssel, Version {{ presented.keyVersion }}:
+              <code class="text-nowrap">{{ presented.fingerprint }}</code>
+            </p>
+          }
           <button
             class="btn btn-outline-danger"
             [disabled]="busy()"

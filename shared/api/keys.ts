@@ -74,10 +74,14 @@ export const GrantRequest = z.strictObject({
 });
 export type GrantRequest = Wire<typeof GrantRequest>;
 
-/** Body of `POST /keys/orgs/:orgId/rotation/start`: the new version and the coordinator's grant. */
+/**
+ * Body of `POST /keys/orgs/:orgId/rotation/start`: the new version, the key manager's grant for
+ * it, and the continuity proof (the new key's fingerprint encrypted under the current key).
+ */
 export const RotationStartRequest = z.strictObject({
   keyVersion: KeyVersion,
   grant: Grant,
+  proof: Envelope,
 });
 export type RotationStartRequest = Wire<typeof RotationStartRequest>;
 
@@ -143,9 +147,14 @@ export type KeyStatus = {
     wrappedPrivateKey: string;
     kdfParams: KdfParamsWire;
   } | null;
-  /** The user's grants for the current and, during a rotation, the pending key version. */
+  /**
+   * All of the user's grants in the org, old versions included: the browser needs them to check
+   * the continuity proofs of later versions.
+   */
   grants: { keyVersion: number; wrappedKey: string; publicKey: string }[];
-  /** Whether this user may manage the org's keys (OrgCoordinator of the org). */
+  /** Continuity proofs of every key version after the first, ascending. */
+  keyProofs: { keyVersion: number; proof: string }[];
+  /** Whether this user may manage the org's keys (OrgCoordinator or OrgController of the org). */
   canManageKeys: boolean;
   /** Whether this user's role reads personal data and therefore needs keys at all. */
   needsKeys: boolean;

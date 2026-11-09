@@ -37,11 +37,3 @@ export class WrongRecoveryCodeError extends Error {
 export class KeysLockedError extends Error {
   override name = 'KeysLockedError';
 }
-
-/**
- * The server presents an org key that contradicts what this browser saw before: a lower
- * version, or a different key under the same version. See `KeyPinStore`.
- */
-export class KeyPinMismatchError extends Error {
-  override name = 'KeyPinMismatchError';
-}

@@ -87,6 +87,7 @@ model Organisation {
   recoveryWrappedKey String?
   keyGrants          OrgKeyGrant[]
   keyEvents          OrgKeyEvent[]
+  keyProofs          OrgKeyProof[]
 }
 
 model SubOrganisation {
@@ -469,6 +470,22 @@ model OrgKeyGrant {
   createdAt DateTime @default(now())
 
   @@unique([organisationId, userId, keyVersion])
+}
+
+/// Proof that key version `keyVersion` was introduced by someone holding version keyVersion - 1:
+/// the new key's fingerprint, encrypted under the previous key (a v1. envelope of version
+/// keyVersion - 1). Browsers only trust a new version if this checks out, so an operator can't
+/// slip in a key of their own. Version 1 has none.
+model OrgKeyProof {
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisationId String
+
+  keyVersion Int
+  proof      String
+
+  createdAt DateTime @default(now())
+
+  @@id([organisationId, keyVersion])
 }
 
 /// Append-only log of everything that changes who holds an org key, shown to coordinators.

@@ -83,15 +83,23 @@ export const ORG_KEY_STATES = [
 ] as const;
 export type OrgKeyStateName = (typeof ORG_KEY_STATES)[number];
 
-/** Roles that read and write personal data, so they need a keypair and a grant. */
+/**
+ * Roles that hold the org data key: those that read and write personal data, and OrgControllers,
+ * who manage the keys (granting the key requires holding it).
+ */
 export const ROLES_NEEDING_KEYS = [
   "User",
   "OrgCoordinator",
   "SubOrgCoordinator",
+  "OrgController",
 ] as const;
 
-/** Roles that may grant the org data key, freeze the org and run a rotation. */
-export const KEY_MANAGER_ROLES = ["OrgCoordinator"] as const;
+/**
+ * Roles that may grant the org data key, freeze the org and run a rotation. An OrgController
+ * could use the key to read data the application otherwise doesn't show them; that is accepted,
+ * since the encryption protects the data from the operator, not within the organisation.
+ */
+export const KEY_MANAGER_ROLES = ["OrgCoordinator", "OrgController"] as const;
 
 /** The row data an encryption context is built from. */
 export type ContextRow = {
@@ -122,4 +130,12 @@ export function encryptionContext(
 /** Context of an attachment's file content. */
 export function attachmentContentContext(id: string) {
   return { table: "CaseAttachment", rowId: id, field: "content" };
+}
+
+/**
+ * Encryption context of the continuity proof of key version `keyVersion`: the fingerprint of
+ * that version's key, encrypted under the previous version (see `OrgKeyProof`).
+ */
+export function keyProofContext(orgId: string, keyVersion: number) {
+  return { table: "OrgKey", rowId: orgId, field: `v${keyVersion}` };
 }

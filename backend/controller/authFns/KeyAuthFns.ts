@@ -12,12 +12,12 @@ import { isSameOrg } from './scopeUtils';
  * sealed or wrapped for someone else.
  */
 
-/** Whether the role works with personal data and therefore needs a key pair and a grant. */
+/** Whether the role holds the org data key (works with personal data, or manages the keys). */
 export function roleNeedsKeys(role: Role): boolean {
   return (ROLES_NEEDING_KEYS as readonly Role[]).includes(role);
 }
 
-/** Whether the user should enrol: a role that reads personal data, inside an organisation. */
+/** Whether the user should enrol: a key-holding role, inside an organisation. */
 export function userNeedsKeys(user: Pick<FullUser, 'role' | 'organisationId'>) {
   return roleNeedsKeys(user.role) && !!user.organisationId;
 }
@@ -31,7 +31,7 @@ export function canManageOrgKeys(user: FullUser, orgId: string): boolean {
 }
 
 /**
- * Whether the user may freeze or unfreeze `orgId`: its coordinators, and the Admin in an
+ * Whether the user may freeze or unfreeze `orgId`: its key managers, and the Admin in an
  * emergency. Freezing never touches a key, so the operator holding this power gives nothing away.
  */
 export function canFreezeOrg(user: FullUser, orgId: string): boolean {

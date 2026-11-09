@@ -10,7 +10,8 @@ the code for four use cases:
 3. [A user reads and writes encrypted data](#3-a-user-reads-and-writes-encrypted-data)
 4. [A user's passphrase was exposed](#4-a-users-passphrase-was-exposed)
 
-It ends with existing data, recovery, what the operator can see, and operational notes.
+It ends with how a browser decides which key versions to trust, existing data, recovery, what
+the operator can see, and operational notes.
 
 ---
 
@@ -26,7 +27,11 @@ It ends with existing data, recovery, what the operator can see, and operational
 | **Recovery code** | 160 random bits, printed and kept offline. Wraps the DEK as `Organisation.recoveryWrappedKey`. |
 | **Envelope** | One encrypted value: `v1.<keyVersion>.<iv>.<ciphertext>`. |
 | **AAD** (additional authenticated data) | `<table>:<rowId>:<field>`, mixed into AES-GCM so a ciphertext only decrypts in the row and field it was written for. |
-| **Fingerprint** | SHA-256 of a public key as six groups of five digits, compared out of band before a grant. |
+| **Fingerprint** | SHA-256 of a public key (or, with a domain prefix, of a DEK) as six groups of five digits, compared out of band. |
+| **Continuity proof** | For every key version after the first: the new DEK's fingerprint, encrypted under the previous DEK (`OrgKeyProof`). Proves the new version was made by someone holding the old key. |
+| **Key pin** | What a browser remembers per org in localStorage: the highest key version it trusted and that version's fingerprint. |
+| **Key manager** | A role that grants the DEK, freezes the org and rotates the key: OrgCoordinator and OrgController (`KEY_MANAGER_ROLES`). "Coordinator" below means either. |
+| **Key holders** | Roles that get a key pair and a grant (`ROLES_NEEDING_KEYS`): User, SubOrgCoordinator, OrgCoordinator, OrgController. Admin and Controller never hold the DEK. |
 
 ### Key hierarchy
 
@@ -47,7 +52,7 @@ DEK ──AES-256-GCM + AAD──▶ personal fields, attachment contents
 | All cryptography (AES-GCM, ECDH, HPKE, recovery) | `frontend/src/app/services/crypto.service.ts` |
 | Argon2id, KDF parameters | `frontend/src/app/util/crypto/kdf.ts`, `kdf.worker.ts`, `services/kdf.service.ts` |
 | Keys of the current tab, enrol/unlock/setup/recover | `frontend/src/app/services/key-session.service.ts` |
-| Remembered key versions and fingerprints | `frontend/src/app/util/crypto/keyPins.ts` |
+| Key pins and the decision which key versions to trust (`checkKeyChain`) | `frontend/src/app/util/crypto/keyPins.ts` |
 | Encrypting requests, decrypting responses | `frontend/src/app/services/personal-data.service.ts` |
 | Filters on personal fields | `frontend/src/app/util/crypto/clientFilters.ts` |
 | Browser-side PDF and ZIP export | `frontend/src/app/services/export.service.ts` |
@@ -58,7 +63,7 @@ DEK ──AES-256-GCM + AAD──▶ personal fields, attachment contents
 | Ciphertext-only checks on data writes | `backend/util/encryptionPolicy.ts` |
 | Rotation and migration row selection | `backend/util/encryptedRows.ts` |
 | Frozen-org middleware | `backend/middleware/orgFrozen.ts` |
-| Schema | `backend/prisma/schema.prisma` (`UserKey`, `OrgKeyGrant`, `OrgKeyEvent`, `Organisation.keyState` …) |
+| Schema | `backend/prisma/schema.prisma` (`UserKey`, `OrgKeyGrant`, `OrgKeyEvent`, `OrgKeyProof`, `Organisation.keyState` …) |
 
 ### What is encrypted
 
@@ -93,7 +98,7 @@ Org state: `uninitialized` → `active`.
    *legacy mode*: data is stored as before, in plaintext. `encryptionPolicyFor` reports
    `active: false`, and `PersonalDataService.send` passes requests through unchanged.
 
-2. **Admin creates the first OrgCoordinator** in the user admin (`UserController.create`), which
+2. **Admin creates the first OrgCoordinator** (or OrgController) in the user admin (`UserController.create`), which
    creates the Keycloak account and sends the invite.
 
 3. **The coordinator logs in.** `HeaderComponent` calls `KeySessionService.ensureLoaded`, which
@@ -129,8 +134,9 @@ Org state: `uninitialized` → `active`.
    impossible, so an operator can't quietly re-key an active org.
 
 7. **Unlocked.** `refresh` → `openGrants` opens the self-grant (`openGrant` → non-extractable
-   DEK plus its fingerprint), `checkKeyPin` remembers `{keyVersion: 1, fingerprint}` in
-   localStorage, state `unlocked`. From now on every write in this org must be ciphertext.
+   DEK plus its fingerprint), `checkKeyChain` trusts version 1 as the first key this browser
+   sees and `writeKeyPin` remembers `{keyVersion: 1, fingerprint}` in localStorage, state
+   `unlocked`. From now on every write in this org must be ciphertext.
 
 8. **Existing data** from before step 6 is still plaintext; see
    [Existing data](#existing-data-migration).
@@ -168,10 +174,13 @@ User state: invited → awaiting access → active.
      Logs `grant` with the fingerprint.
 
 6. **The user unlocks.** "Erneut prüfen" → `refresh` → `openGrants` → state `unlocked`, and the
-   guard lets them through to `returnUrl`.
+   guard lets them through to `returnUrl`. This first key is trusted on first use and pinned;
+   the page shows the org key fingerprint (`orgKeyFingerprint`), which the user can compare with
+   the coordinator's, as the coordinator compared theirs.
 
 Later logins: `getStatus` → state `locked` → passphrase → `KeySessionService.unlock`
-(derive KEK, `unwrapPrivateKey`, `openGrant`). A wrong passphrase surfaces as
+(derive KEK, `unwrapPrivateKey`, `openGrants`; see [Which key versions a browser
+trusts](#which-key-versions-a-browser-trusts)). A wrong passphrase surfaces as
 `WrongPassphraseError`. Keys live only in the tab's memory; reload, logout
 (`HeaderComponent.logout` → `lock()`) or the lock button discard them.
 
@@ -278,9 +287,12 @@ copy and open the user's grant, so they may hold the DEK.
 
 3. **Rotate** (`/schluesselverwaltung/erneuern`, `KeyRotationPage`):
    - **Start**: `generateDataKey` → DEK v(n+1); `sealGrant` to the coordinator's own public key;
+     the continuity proof `sealKeyProof(fingerprintDataKey(DEK n+1), DEK n, …)`, an envelope under
+     version n with AAD `OrgKey:<orgId>:v<n+1>` (`keyProofContext`).
      `POST /keys/orgs/:orgId/rotation/start` (`KeyController.startRotation`, only on a frozen org,
-     only version n+1) sets `rotating` and `pendingKeyVersion` and stores the grant. Because the
-     own grant is stored first, an interrupted rotation can resume after a reload.
+     only version n+1, proof under version n) sets `rotating` and `pendingKeyVersion` and stores
+     the grant and the `OrgKeyProof`. Because the own grant is stored first, an interrupted
+     rotation can resume after a reload.
    - **Re-encrypt**: `ReencryptJobService.run(orgId, 'rotation', newKey, keyResolver)` fetches
      batches from `GET …/rotation/rows` (`findPending`: rows of this org with an envelope not yet
      under n+1), `rotateRow` decrypts each value with the old key and encrypts it with the new one
@@ -292,11 +304,15 @@ copy and open the user's grant, so they may hold the DEK.
    - **Complete**: `regrant` to every member who held version n **with the same public key**
      (their fingerprint was checked then; the disabled user has no grant any more). Then
      `POST …/rotation/complete` (`KeyController.completeRotation`) checks that nothing is left
-     under version n (`countPending` + attachment contents), stores the new grants and recovery
-     key, deletes all older grants, sets `keyVersion = n+1` and unfreezes the org.
+     under version n (`countPending` + attachment contents) and that version n+1 has a proof,
+     stores the new grants and recovery key, sets `keyVersion = n+1` and unfreezes the org.
+     Members who got the new version keep their older grants, because their browsers need the
+     old key to check the proof; everyone else loses all of theirs.
 
-4. **Everyone else continues.** Members unlock as usual. `checkKeyPin` sees the higher version and
-   `EncryptionPage` tells them the key was renewed, with the new org key fingerprint.
+4. **Everyone else continues.** Members unlock as usual. `openGrants` opens versions n and n+1,
+   `verifyKeyProof` checks the proof with DEK n, and `checkKeyChain` accepts n+1 because it links
+   to the pinned version n. `EncryptionPage` tells them the key was renewed, with the new org key
+   fingerprint.
 
 5. **The affected user re-enrols** with a new key pair and passphrase (their old `UserKey` is
    gone), and a coordinator checks the new fingerprint before granting (use case 2, step 5).
@@ -310,6 +326,42 @@ If a **coordinator** was compromised, another coordinator does the same and also
 log (`GET /keys/orgs/:orgId/events`, shown on `/schluesselverwaltung`) for grants the
 compromised coordinator made. If no trustworthy coordinator is left, the org uses the recovery
 code (below).
+
+---
+
+## Which key versions a browser trusts
+
+The server hands over the grants, so it decides which keys a browser *could* use. The browser
+decides which ones it *will* use. `GET /keys/me` returns all of the user's grants in the org and
+all continuity proofs; `KeySessionService.openGrants` then:
+
+1. opens every grant sealed to the user's current public key;
+2. checks each proof `v` with `CryptoService.verifyKeyProof`: decrypts it with DEK `v-1` in the
+   context `OrgKey:<orgId>:v<v>` and compares the result with DEK `v`'s fingerprint. A proof that
+   doesn't decrypt, or names another key, simply doesn't count;
+3. calls `checkKeyChain` (`keyPins.ts`, pure). The anchor is the pinned version, or in a browser
+   without a pin the oldest version the user holds. From there a version is trusted only through
+   verified proofs. It refuses a current version below the pin (rollback), a pinned version
+   that now has another fingerprint (swap), a pinned version the user no longer holds (nothing to
+   check against), and a current version outside the chain (a key nobody holding the old one
+   made);
+4. keeps only the trusted keys in the session. On refusal it keeps none at all, the state is
+   `keyMismatch`, nothing is decrypted or written, and `presentedKey` holds the fingerprint of the
+   key the server offers. After comparing that fingerprint with a coordinator, the user can accept
+   it ("Schlüssel übernehmen" → `acceptPresentedKey`, which pins it).
+
+A pending version (during a rotation) is used only once its proof verified, so the coordinator
+running the rotation can read and write under it and nobody else is offered a forged one.
+
+**Why this matters.** Without proofs, someone with database access could insert a "version n+1"
+of their own: grants sealed to each member's public key (which are public), `keyVersion = n+1`,
+and `pendingKeyVersion = n` so old data still decrypts. Browsers would accept the higher version
+and every value written afterwards would be readable by the operator. The proof needs DEK n,
+which the operator never has; a forged version fails step 3.
+
+The legitimate case that needs the manual accept: a user who re-enrolled (forgotten passphrase)
+after their browser pinned an older version. Their old grants are gone with the old key pair, so
+the browser can't follow the chain and asks them to compare the fingerprint once.
 
 ---
 
@@ -347,23 +399,27 @@ cannot be recovered; the setup page says so.
 |---|---|
 | Sees | Statistics fields (dates, durations, topics, city, postcode, counts); who is responsible for which case; user accounts; public keys, wrapped keys, grants and their log; attachment sizes and mime types. |
 | Cannot see | Names, addresses, phone numbers, notes, children's data, health data, documentation text, Zielvereinbarung descriptions, handover notes, answers of personal forms, attachment contents and file names. |
-| Cannot do unnoticed | Give themselves access: a grant needs a coordinator's browser, and coordinators compare fingerprints computed locally. Re-key an active org: `setupOrg` refuses. Roll a user back to an older key or swap the key under the same version: `checkKeyPin` refuses and shows `keyMismatch`. Claim the org isn't encrypted: the same pin check refuses (`hasSeenEncryption`). |
+| Cannot do unnoticed | Give themselves access: a grant needs a coordinator's browser, and coordinators compare fingerprints computed locally. Creating a key manager account (Admin role) doesn't help: that account still needs a grant. Re-key an active org: `setupOrg` refuses. Forge a rotation: a new version without a continuity proof made with the old key is refused (`checkKeyChain` → `keyMismatch`). Roll a user back to an older key or swap the key under the same version: the pin check refuses. Claim the org isn't encrypted: refused as well (`hasSeenEncryption`). |
 
 ### Residual risks
 
 - **Modified frontend code.** Whoever serves the JavaScript can change it to read data while a
   user works. This is the main limit of browser-based encryption; signed desktop delivery is the
   design's phase-2 option.
-- **Fake coordinator.** An operator who creates an OrgCoordinator account and then generates
-  their own "key version n+1" could hand that to users through the server. Users would see a
-  rotation notice and a new org key fingerprint; coordinators see it in the key log. Compare the
-  org key fingerprint when a rotation wasn't announced.
+- **Trust on first use.** A browser with nothing to check against trusts the first key it sees:
+  a new user's first grant, or any user on a new browser. An operator could seal a key of their
+  own to such a user; that user's writes would then be readable by the operator (and unreadable
+  for everyone else, which would show soon). Comparing the org key fingerprint on
+  `/verschluesselung` with a coordinator once, at first unlock, closes this.
 - **Weak passphrases.** The wrapped private key is on the server, so it can be attacked offline.
   Argon2id and the strength meter make that expensive, not impossible.
 - **Metadata** stays visible by design (statistics fields).
-- **Pins are per browser.** A new browser trusts the first key it sees, like the very first
-  login.
-- **Coordinators rewrite data in bulk.** Migration and rotation let an OrgCoordinator replace any
+- **Pins are per browser.** See trust on first use. With older grants on the server the chain
+  check still applies in a new browser, as long as the operator doesn't delete them.
+- **OrgControllers hold the key.** As key managers they can decrypt everything in their org,
+  including data the application only shows them aggregated. Accepted: the encryption protects
+  the data from the operator, not between roles inside the organisation.
+- **Coordinators rewrite data in bulk.** Migration and rotation let a key manager replace any
   encrypted value in their org, beyond the per-case edit rights (`canEditCase`): the server can
   store ciphertext but not check what it says. That is inherent to running these jobs in a
   coordinator's browser; the key log shows when a rotation ran.
@@ -375,7 +431,8 @@ cannot be recovered; the setup page says so.
 
 - **Install**: the frontend has new dependencies (`hpke`, `@zxcvbn-ts/*`, `pdfmake`, `jszip`):
   run `npm install` in `frontend/`. The backend no longer needs `pdfmake` or `archiver`.
-- **Database**: `npx prisma migrate deploy` applies `…_org_encryption` (additive only).
+- **Database**: `npx prisma migrate deploy` applies `…_org_encryption` and `…_org_key_proofs`
+  (both additive only).
 - **CSP**: none is configured today. If one is added, `script-src` needs `'wasm-unsafe-eval'`
   (Argon2id runs as WebAssembly) and `worker-src 'self'` (the KDF worker).
 - **KDF parameters**: 64 MiB / 5 iterations by default (`newKdfParams`). Aim for 0.5–1 s on the

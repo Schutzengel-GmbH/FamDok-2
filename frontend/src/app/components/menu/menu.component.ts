@@ -181,7 +181,7 @@ export class MenuComponent {
   bottomLinks = computed(
     () =>
       [
-        ...(this.isAdmin() || this.isController() || this.isOrgController()
+        ...(this.isAdmin() || this.isController()
           ? []
           : [
               {
@@ -190,7 +190,7 @@ export class MenuComponent {
                 link: '/verschluesselung',
               },
             ]),
-        ...(this.isOrgCoordinator()
+        ...(this.isOrgCoordinator() || this.isOrgController()
           ? [
               {
                 icon: 'bi-key',

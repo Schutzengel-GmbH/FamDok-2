@@ -29,9 +29,9 @@ const EVENT_LABELS: Record<string, string> = {
 };
 
 /**
- * The OrgCoordinator's view of their org's keys: who has enrolled, who is waiting for access
- * (with the fingerprint to compare out of band), granting and revoking, freezing, and the key
- * log. Fingerprints are always computed here from the public keys, never taken from the server.
+ * The key managers' (OrgCoordinator, OrgController) view of their org's keys: who has
+ * enrolled, who is waiting for access (with the fingerprint to compare out of band), granting
+ * and revoking, freezing, and the key log. Fingerprints are always computed here from the public keys, never taken from the server.
  */
 @Component({
   selector: 'app-key-management-page',

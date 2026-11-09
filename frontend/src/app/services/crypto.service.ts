@@ -11,6 +11,7 @@ import {
   buildAad,
   buildGrantInfo,
   buildRecoveryAad,
+  envelopeKeyVersion,
   FieldContext,
   formatBytesEnvelope,
   formatEnvelope,
@@ -32,6 +33,7 @@ import {
   parseRecoveryCode,
   RECOVERY_CODE_BYTES,
 } from '../../../../shared/utils/recoveryCode';
+import { keyProofContext } from '../../../../shared/utils/encryptedModels';
 import SuperJSON from 'superjson';
 import {
   DecryptionError,
@@ -408,6 +410,63 @@ export class CryptoService {
     }
   }
 
+  /**
+   * Fingerprint of a freshly generated, still extractable data key, the same value
+   * {@link openGrant} reports once the key is granted.
+   */
+  async fingerprintDataKey(dek: CryptoKey): Promise<string> {
+    const bytes = new Uint8Array(await crypto.subtle.exportKey('raw', dek));
+    try {
+      return await this.fingerprintKeyBytes(bytes);
+    } finally {
+      bytes.fill(0);
+    }
+  }
+
+  /**
+   * The continuity proof of key version `ctx.keyVersion`: the new key's fingerprint, encrypted
+   * under the previous version. Only someone holding the previous key can produce it, which rules
+   * out the operator, who sees grants and envelopes but never a key.
+   */
+  sealKeyProof(
+    nextFingerprint: string,
+    previous: VersionedKey,
+    ctx: OrgKeyContext,
+  ): Promise<string> {
+    if (previous.version !== ctx.keyVersion - 1)
+      throw new Error(`A proof for version ${ctx.keyVersion} needs key version ${ctx.keyVersion - 1}`);
+    return this.encryptField(
+      nextFingerprint,
+      previous,
+      keyProofContext(ctx.orgId, ctx.keyVersion),
+    );
+  }
+
+  /**
+   * Whether `proof` shows that `next` was introduced by someone holding `previous`, the version
+   * right before it. Any malformed, misdirected or forged proof is simply `false`.
+   */
+  async verifyKeyProof(
+    proof: string,
+    previous: VersionedKey,
+    next: UnlockedDataKey,
+    orgId: string,
+  ): Promise<boolean> {
+    if (previous.version !== next.version - 1) return false;
+    if (envelopeKeyVersion(proof) !== previous.version) return false;
+    try {
+      const fingerprint = await this.decryptField(
+        proof,
+        (v) => (v === previous.version ? previous.key : undefined),
+        keyProofContext(orgId, next.version),
+      );
+      return fingerprint === next.fingerprint;
+    } catch (e) {
+      if (e instanceof DecryptionError) return false;
+      throw e;
+    }
+  }
+
   /** A new random recovery code (160 bits) in its printable form. */
   generateRecoveryCode(): string {
     return formatRecoveryCode(this.randomBytes(RECOVERY_CODE_BYTES));
@@ -557,12 +616,17 @@ export class CryptoService {
       false,
       ['encrypt', 'decrypt'],
     );
+    return { version, key, fingerprint: await this.fingerprintKeyBytes(bytes) };
+  }
+
+  /** SHA-256 over a domain prefix and the raw key, in the printable fingerprint form. */
+  private async fingerprintKeyBytes(bytes: Uint8Array): Promise<string> {
     const tagged = new Uint8Array(DEK_FINGERPRINT_PREFIX.length + bytes.length);
     tagged.set(DEK_FINGERPRINT_PREFIX);
     tagged.set(bytes, DEK_FINGERPRINT_PREFIX.length);
     const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', tagged));
     tagged.fill(0);
-    return { version, key, fingerprint: formatFingerprint(digest) };
+    return formatFingerprint(digest);
   }
 
   /** The AES-GCM key a recovery code stands for, via HKDF-SHA256. */

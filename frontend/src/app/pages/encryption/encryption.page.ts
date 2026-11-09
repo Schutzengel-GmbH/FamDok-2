@@ -12,14 +12,13 @@ import {
   WrongPassphraseError,
   WrongRecoveryCodeError,
 } from 'src/app/util/crypto/errors';
-import { clearKeyPin } from 'src/app/util/crypto/keyPins';
 import { InvalidRecoveryCodeError } from '../../../../../shared/utils/recoveryCode';
 
 /**
  * Everything a user does with their own keys, depending on where they stand (see
  * `KeySessionState`): set up a key pair, unlock it, wait for a coordinator's grant, change the
- * passphrase. OrgCoordinators also set up their organisation's encryption here and recover
- * access with the recovery code.
+ * passphrase. Key managers (OrgCoordinators, OrgControllers) also set up their organisation's
+ * encryption here and recover access with the recovery code.
  */
 @Component({
   selector: 'app-encryption-page',
@@ -201,15 +200,10 @@ export class EncryptionPage {
   }
 
   /**
-   * Accepts a key that contradicts this browser's memory, after the user confirmed it with the
-   * coordinator out of band.
+   * Accepts a key this browser can't verify, after the user compared its fingerprint with a key
+   * manager out of band.
    */
   protected acceptNewKey() {
-    return this.run(async () => {
-      clearKeyPin(this.session.requireOrgId());
-      this.session.mismatchReason.set(null);
-      this.session.lock();
-      await this.session.refresh();
-    });
+    return this.run(() => this.session.acceptPresentedKey());
   }
 }

@@ -278,9 +278,11 @@ ausschließlich Chiffrat, öffentliche Schlüssel und verpackte Schlüssel.
 
 - Benutzer*innen richten unter **Verschlüsselung** (`/verschluesselung`) einmalig eine
   Verschlüsselungs-Passphrase ein und entsperren damit pro Tab.
-- OrgCoordinators richten die Verschlüsselung ihrer Organisation ein, geben Zugänge nach
-  Fingerabdruck-Vergleich frei, frieren ein und erneuern den Schlüssel unter
-  **Schlüsselverwaltung** (`/schluesselverwaltung`).
+- OrgCoordinators und OrgControllers richten die Verschlüsselung ihrer Organisation ein, geben
+  Zugänge nach Fingerabdruck-Vergleich frei, frieren ein und erneuern den Schlüssel unter
+  **Schlüsselverwaltung** (`/schluesselverwaltung`). Jede neue Schlüsselversion trägt einen
+  Nachweis, der mit der vorherigen Version erstellt wurde; Browser übernehmen eine neue Version
+  nur mit gültigem Nachweis.
 - Bestandsdaten werden unter `/schluesselverwaltung/migration` verschlüsselt; die Migration zum
   Löschen der Klartextspalten liegt separat in `backend/prisma/pending-migrations/`.
 

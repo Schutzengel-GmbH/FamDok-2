@@ -235,4 +235,66 @@ describe('CryptoService keys', () => {
       );
     });
   });
+
+  describe('key continuity proofs', () => {
+    const orgId = 'org-1';
+    let alice: Awaited<ReturnType<typeof makeUser>>;
+
+    /** Generates a key version and opens it the way a session would. */
+    async function version(keyVersion: number) {
+      const dek = await service.generateDataKey();
+      const ctx = { orgId, keyVersion };
+      const opened = await service.openGrant(
+        await service.sealGrant(dek, alice.pair.publicKey, ctx),
+        alice.pair,
+        ctx,
+      );
+      return { dek, opened };
+    }
+
+    beforeEach(async () => {
+      alice = await makeUser();
+    });
+
+    it('fingerprints a generated key like the opened grant does', async () => {
+      const v1 = await version(1);
+      expect(await service.fingerprintDataKey(v1.dek)).toBe(v1.opened.fingerprint);
+    });
+
+    it('verifies a proof made with the previous key', async () => {
+      const v1 = await version(1);
+      const v2 = await version(2);
+      const proof = await service.sealKeyProof(
+        await service.fingerprintDataKey(v2.dek),
+        v1.opened,
+        { orgId, keyVersion: 2 },
+      );
+      expect(await service.verifyKeyProof(proof, v1.opened, v2.opened, orgId)).toBeTrue();
+    });
+
+    it('rejects proofs for another key, org or version, and proofs made without the old key', async () => {
+      const v1 = await version(1);
+      const v2 = await version(2);
+      const forged = await version(2);
+      const fp2 = await service.fingerprintDataKey(v2.dek);
+      const proof = await service.sealKeyProof(fp2, v1.opened, { orgId, keyVersion: 2 });
+
+      expect(await service.verifyKeyProof(proof, v1.opened, forged.opened, orgId)).toBeFalse();
+      expect(await service.verifyKeyProof(proof, v1.opened, v2.opened, 'org-2')).toBeFalse();
+
+      // the operator can make a v1 envelope only with a key of its own
+      const operatorKey = await version(1);
+      const fake = await service.sealKeyProof(
+        forged.opened.fingerprint,
+        operatorKey.opened,
+        { orgId, keyVersion: 2 },
+      );
+      expect(await service.verifyKeyProof(fake, v1.opened, forged.opened, orgId)).toBeFalse();
+      expect(await service.verifyKeyProof('garbage', v1.opened, v2.opened, orgId)).toBeFalse();
+
+      const v3 = await version(3);
+      expect(await service.verifyKeyProof(proof, v1.opened, v3.opened, orgId)).toBeFalse();
+      expect(() => service.sealKeyProof(fp2, v1.opened, { orgId, keyVersion: 3 })).toThrow();
+    });
+  });
 });

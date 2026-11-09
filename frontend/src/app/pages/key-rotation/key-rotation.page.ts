@@ -64,7 +64,11 @@ export class KeyRotationPage {
     }
   }
 
-  /** Step 2: the new key and the coordinator's own grant for it. */
+  /**
+   * Step 2: the new key, the key manager's own grant for it, and the continuity proof (the new
+   * key's fingerprint encrypted under the current key) that other browsers check before they
+   * accept the new version.
+   */
   protected startRotation() {
     this.dialog.open({
       title: 'Schlüssel erneuern',
@@ -76,8 +80,14 @@ export class KeyRotationPage {
           const keyVersion = org.keyVersion + 1;
           const me = this.session.requireKeyPair();
           const dek = await this.crypto.generateDataKey();
-          const grant = await this.crypto.sealGrant(dek, me.publicKey, { orgId: org.id, keyVersion });
-          await this.api.startRotation(org.id, { keyVersion, grant });
+          const ctx = { orgId: org.id, keyVersion };
+          const grant = await this.crypto.sealGrant(dek, me.publicKey, ctx);
+          const proof = await this.crypto.sealKeyProof(
+            await this.crypto.fingerprintDataKey(dek),
+            this.session.currentKey(),
+            ctx,
+          );
+          await this.api.startRotation(org.id, { keyVersion, grant, proof });
           await this.session.refresh();
         }),
     });
