@@ -29,12 +29,19 @@ const RecoveryWrappedKey = z
 const Envelope = z.string().refine(isEnvelope, "must be a v1. envelope");
 const KeyVersion = z.number().int().min(1).max(999_999_999);
 
-/** Bounds match `validateKdfParams` in the frontend, so the server never stores what it rejects. */
+/**
+ * Argon2id parameters of a wrapped private key. The lower bounds are the OWASP minimum for
+ * Argon2id (19 MiB, 2 iterations): the wrapped key is stored here and can be attacked offline,
+ * so the server refuses to store one wrapped under cheaper parameters. The browser's defaults
+ * (`newKdfParams`: 64 MiB, 5 iterations) are well above. `validateKdfParams` in the frontend is
+ * more lenient, since it only checks parameters the browser reads (tests use cheap ones); the
+ * upper bounds are the same, so the server never stores what the browser would refuse.
+ */
 export const KdfParamsSchema = z.strictObject({
   alg: z.literal("argon2id"),
   salt: z.string().regex(/^[A-Za-z0-9_-]{22}$/),
-  memoryKiB: z.number().int().min(8).max(1_000_000),
-  iterations: z.number().int().min(1).max(10),
+  memoryKiB: z.number().int().min(19_456).max(1_000_000),
+  iterations: z.number().int().min(2).max(10),
   parallelism: z.literal(1),
 });
 export type KdfParamsWire = z.infer<typeof KdfParamsSchema>;
@@ -76,16 +83,22 @@ export type GrantRequest = Wire<typeof GrantRequest>;
 
 /**
  * Body of `POST /keys/orgs/:orgId/rotation/start`: the new version, the key manager's grant for
- * it, and the continuity proof (the new key's fingerprint encrypted under the current key).
+ * it, the continuity proof (the new key's fingerprint encrypted under the current key) and the
+ * new key wrapped under the new recovery code. With the recovery code, the new key can be
+ * recovered even if the key manager loses their grant before the rotation is complete.
  */
 export const RotationStartRequest = z.strictObject({
   keyVersion: KeyVersion,
   grant: Grant,
   proof: Envelope,
+  recoveryWrappedKey: RecoveryWrappedKey,
 });
 export type RotationStartRequest = Wire<typeof RotationStartRequest>;
 
-/** Body of `POST /keys/orgs/:orgId/rotation/complete`: grants for everyone, new recovery key. */
+/**
+ * Body of `POST /keys/orgs/:orgId/rotation/complete`: the new key's grants for everyone. The new
+ * recovery key was already stored when the rotation started.
+ */
 export const RotationCompleteRequest = z.strictObject({
   grants: z.array(
     z.strictObject({
@@ -94,7 +107,6 @@ export const RotationCompleteRequest = z.strictObject({
       publicKey: PublicKey,
     }),
   ),
-  recoveryWrappedKey: RecoveryWrappedKey,
 });
 export type RotationCompleteRequest = Wire<typeof RotationCompleteRequest>;
 
@@ -131,6 +143,12 @@ export const AttachmentContentQuery = z.strictObject({
   keyVersion: KeyVersion,
 });
 export type AttachmentContentQuery = Wire<typeof AttachmentContentQuery>;
+
+/**
+ * Response of `GET /keys/orgs/:orgId/recovery`: the recovery-wrapped keys of the current version
+ * and, while a rotation runs, of the pending one. Each opens only with its own recovery code.
+ */
+export type RecoveryKeys = { keyVersion: number; recoveryWrappedKey: string }[];
 
 /** Response of `GET /keys/me`: everything a browser needs to unlock. */
 export type KeyStatus = {

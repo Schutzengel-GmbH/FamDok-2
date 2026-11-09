@@ -24,7 +24,7 @@ the operator can see, and operational notes.
 | **Passphrase** | The user's encryption passphrase. Not the Keycloak password; never leaves the browser. |
 | **KEK** (key encryption key) | Derived from the passphrase with Argon2id. Wraps the private key. |
 | **Grant** | The DEK of one version, sealed with HPKE (RFC 9180) to one user's public key (`OrgKeyGrant.wrappedKey`). |
-| **Recovery code** | 160 random bits, printed and kept offline. Wraps the DEK as `Organisation.recoveryWrappedKey`. |
+| **Recovery code** | 160 random bits, printed and kept offline. Wraps the DEK as `Organisation.recoveryWrappedKey` (during a rotation, the new DEK under the new code as `Organisation.pendingRecoveryWrappedKey`). |
 | **Envelope** | One encrypted value: `v1.<keyVersion>.<iv>.<ciphertext>`. |
 | **AAD** (additional authenticated data) | `<table>:<rowId>:<field>`, mixed into AES-GCM so a ciphertext only decrypts in the row and field it was written for. |
 | **Fingerprint** | SHA-256 of a public key (or, with a domain prefix, of a DEK) as six groups of five digits, compared out of band. |
@@ -307,26 +307,34 @@ copy and open the user's grant, so they may hold the DEK.
    members see the `frozen` state.
 
 3. **Rotate** (`/schluesselverwaltung/erneuern`, `KeyRotationPage`):
-   - **Start**: `generateDataKey` → DEK v(n+1); `sealGrant` to the coordinator's own public key;
+   - **Prepare**: `generateDataKey` → DEK v(n+1); `sealGrant` to the coordinator's own public key;
      the continuity proof `sealKeyProof(fingerprintDataKey(DEK n+1), DEK n, …)`, an envelope under
-     version n with AAD `OrgKey:<orgId>:v<n+1>` (`keyProofContext`).
-     `POST /keys/orgs/:orgId/rotation/start` (`KeyController.startRotation`, only on a frozen org,
-     only version n+1, proof under version n) sets `rotating` and `pendingKeyVersion` and stores
-     the grant and the `OrgKeyProof`. Because the own grant is stored first, an interrupted
-     rotation can resume after a reload.
+     version n with AAD `OrgKey:<orgId>:v<n+1>` (`keyProofContext`); a new recovery code and
+     `sealRecovery(DEK n+1, code, …)`. Nothing is uploaded until the coordinator has typed the new
+     code back.
+   - **Start**: `POST /keys/orgs/:orgId/rotation/start` (`KeyController.startRotation`, only on a
+     frozen org, only version n+1, proof under version n, recovery key for n+1) sets `rotating`
+     and `pendingKeyVersion`, stores the new recovery key as `pendingRecoveryWrappedKey`, the grant
+     and the `OrgKeyProof`. The state change is a conditional update (`keyState = frozen`, still on
+     version n), so of two concurrent starts only one goes through. Because the own grant is
+     stored first, an interrupted rotation can resume after a reload.
    - **Re-encrypt**: `ReencryptJobService.run(orgId, 'rotation', newKey, keyResolver)` fetches
      batches from `GET …/rotation/rows` (`findPending`: rows of this org with an envelope not yet
      under n+1), `rotateRow` decrypts each value with the old key and encrypts it with the new one
      in the same AAD context, and `PUT …/rotation/rows` (`storeReencrypted`) accepts only
      envelopes under n+1, only in encrypted columns, only for rows of this org. Attachment
      contents go through `…/rotation/attachments/:id/content`.
-   - **New recovery code**: `sealRecoveryViaGrant` wraps it from the coordinator's own grant for
-     n+1; the coordinator types it back.
+   - **Resume without the own grant**: if the coordinator loses access mid-rotation (forgotten
+     passphrase, re-enrolment, revoked or disabled account), the new key is not lost with their
+     grant. Any key manager recovers it on the rotation page with the new code, and the old key
+     with the old code if they don't hold it (`KeySessionService.recover`; while rotating,
+     `KeyController.grant` accepts the current and the pending version), and continues.
    - **Complete**: `regrant` to every member who held version n **with the same public key**
      (their fingerprint was checked then; the disabled user has no grant any more). Then
      `POST …/rotation/complete` (`KeyController.completeRotation`) checks that nothing is left
      under version n (`countPending` + attachment contents) and that version n+1 has a proof,
-     stores the new grants and recovery key, sets `keyVersion = n+1` and unfreezes the org.
+     stores the new grants, makes `pendingRecoveryWrappedKey` the `recoveryWrappedKey` (the old
+     code stops working), sets `keyVersion = n+1` and unfreezes the org.
      Members who got the new version keep their older grants, because their browsers need the
      old key to check the proof; everyone else loses all of theirs.
 
@@ -411,7 +419,8 @@ If every coordinator has lost their passphrase, a coordinator enrols a new key p
 "Mit Wiederherstellungscode freischalten" on `/verschluesselung`: `KeySessionService.recover`
 fetches `GET /keys/orgs/:orgId/recovery`, `CryptoService.openRecovery` unwraps the DEK with the
 code and seals it to the coordinator's new key pair, and the result is stored as their grant
-(logged as `recovery`). Without the code and without any coordinator's passphrase, the data
+(logged as `recovery`). During a rotation the endpoint returns the recovery keys of both the
+current and the pending version; `recover` grants whichever one the typed code opens. Without the code and without any coordinator's passphrase, the data
 cannot be recovered; the setup page says so.
 
 ---
@@ -454,10 +463,12 @@ cannot be recovered; the setup page says so.
 
 - **Install**: the frontend has new dependencies (`hpke`, `@zxcvbn-ts/*`, `pdfmake`, `jszip`):
   run `npm install` in `frontend/`. The backend no longer needs `pdfmake` or `archiver`.
-- **Database**: `npx prisma migrate deploy` applies `…_org_encryption` and `…_org_key_proofs`
-  (both additive only).
+- **Database**: `npx prisma migrate deploy` applies `…_org_encryption`, `…_org_key_proofs` and
+  `…_pending_recovery_key` (all additive only).
 - **CSP**: none is configured today. If one is added, `script-src` needs `'wasm-unsafe-eval'`
   (Argon2id runs as WebAssembly) and `worker-src 'self'` (the KDF worker).
-- **KDF parameters**: 64 MiB / 5 iterations by default (`newKdfParams`). Aim for 0.5–1 s on the
-  slowest client machine. Changed defaults apply to new key pairs and passphrase changes.
+- **KDF parameters**: 64 MiB / 5 iterations by default (`newKdfParams`). The server refuses to
+  store a key pair wrapped under less than the OWASP minimum of 19 MiB / 2 iterations
+  (`KdfParamsSchema`). Aim for 0.5–1 s on the slowest client machine. Changed defaults apply to
+  new key pairs and passphrase changes.
 - **Request size**: `express.json` accepts 10 MB so rotation batches fit.

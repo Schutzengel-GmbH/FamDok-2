@@ -264,29 +264,31 @@ describe('KeyController', () => {
   });
 
   describe('rotation', () => {
-    const rotating = { id: ORG, keyState: 'rotating', keyVersion: 1, pendingKeyVersion: 2 };
+    const rotating = {
+      id: ORG, keyState: 'rotating', keyVersion: 1, pendingKeyVersion: 2,
+      recoveryWrappedKey: recovery(1), pendingRecoveryWrappedKey: recovery(2),
+    };
+    const start = (keyVersion: number, proof = envelope(1), recoveryWrappedKey = recovery(keyVersion)) =>
+      RotationStartRequest.parse({ keyVersion, grant, proof, recoveryWrappedKey });
 
     function noRowsLeft() {
       for (const m of ['family', 'child', 'caregiver', 'case', 'contactDocumentation', 'zielvereinbarung', 'handover', 'caseAttachment', 'answer'])
         (prismaMock as any)[m].count.mockResolvedValue(0);
     }
 
-    it('starts only on a frozen org with the next version', async () => {
+    it('starts only on a frozen org with the next version, storing the new recovery key', async () => {
       prismaMock.organisation.findUnique.mockResolvedValue({ id: ORG, keyState: 'active', keyVersion: 1 });
-      await expect(
-        KeyController.startRotation(coordinator(), ORG, { keyVersion: 2, grant, proof: envelope(1) })
-      ).rejects.toThrow(ConflictError);
+      await expect(KeyController.startRotation(coordinator(), ORG, start(2))).rejects.toThrow(ConflictError);
 
       prismaMock.organisation.findUnique.mockResolvedValue({ id: ORG, keyState: 'frozen', keyVersion: 1 });
-      await expect(
-        KeyController.startRotation(coordinator(), ORG, { keyVersion: 3, grant, proof: envelope(1) })
-      ).rejects.toThrow(BadRequestError);
+      await expect(KeyController.startRotation(coordinator(), ORG, start(3))).rejects.toThrow(BadRequestError);
 
       prismaMock.userKey.findUnique.mockResolvedValue({ publicKey: await publicKey() });
-      await KeyController.startRotation(coordinator(), ORG, { keyVersion: 2, grant, proof: envelope(1) });
-      expect(prismaMock.organisation.update).toHaveBeenCalledWith({
-        where: { id: ORG },
-        data: { keyState: 'rotating', pendingKeyVersion: 2 },
+      prismaMock.organisation.updateMany.mockResolvedValue({ count: 1 });
+      await KeyController.startRotation(coordinator(), ORG, start(2));
+      expect(prismaMock.organisation.updateMany).toHaveBeenCalledWith({
+        where: { id: ORG, keyState: 'frozen', keyVersion: 1 },
+        data: { keyState: 'rotating', pendingKeyVersion: 2, pendingRecoveryWrappedKey: recovery(2) },
       });
       expect(prismaMock.orgKeyProof.upsert).toHaveBeenCalledWith({
         where: { organisationId_keyVersion: { organisationId: ORG, keyVersion: 2 } },
@@ -295,14 +297,63 @@ describe('KeyController', () => {
       });
     });
 
+    it('changes nothing when a concurrent start won the race', async () => {
+      prismaMock.organisation.findUnique.mockResolvedValue({ id: ORG, keyState: 'frozen', keyVersion: 1 });
+      prismaMock.userKey.findUnique.mockResolvedValue({ publicKey: await publicKey() });
+      prismaMock.organisation.updateMany.mockResolvedValue({ count: 0 });
+      await expect(KeyController.startRotation(coordinator(), ORG, start(2))).rejects.toThrow(ConflictError);
+      expect(prismaMock.orgKeyGrant.upsert).not.toHaveBeenCalled();
+      expect(prismaMock.orgKeyProof.upsert).not.toHaveBeenCalled();
+    });
+
     it('needs a continuity proof encrypted under the current version', async () => {
       prismaMock.organisation.findUnique.mockResolvedValue({ id: ORG, keyState: 'frozen', keyVersion: 1 });
       prismaMock.userKey.findUnique.mockResolvedValue({ publicKey: await publicKey() });
       await expect(
-        KeyController.startRotation(coordinator(), ORG, { keyVersion: 2, grant, proof: envelope(2) })
+        KeyController.startRotation(coordinator(), ORG, start(2, envelope(2)))
       ).rejects.toThrow(BadRequestError);
-      expect(() => RotationStartRequest.parse({ keyVersion: 2, grant })).toThrow();
+      expect(() => RotationStartRequest.parse({ keyVersion: 2, grant, recoveryWrappedKey: recovery(2) })).toThrow();
       expect(prismaMock.orgKeyProof.upsert).not.toHaveBeenCalled();
+    });
+
+    it('needs the new recovery key, for the new version', async () => {
+      prismaMock.organisation.findUnique.mockResolvedValue({ id: ORG, keyState: 'frozen', keyVersion: 1 });
+      prismaMock.userKey.findUnique.mockResolvedValue({ publicKey: await publicKey() });
+      expect(() => RotationStartRequest.parse({ keyVersion: 2, grant, proof: envelope(1) })).toThrow();
+      await expect(
+        KeyController.startRotation(coordinator(), ORG, start(2, envelope(1), recovery(1)))
+      ).rejects.toThrow(BadRequestError);
+      expect(prismaMock.organisation.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('accepts grants for the current and the pending version while rotating', async () => {
+      const pk = await publicKey();
+      prismaMock.organisation.findUnique.mockResolvedValue(rotating);
+      prismaMock.user.findUnique.mockResolvedValue({
+        id: 'coord', organisationId: ORG, role: Role.OrgCoordinator, userKey: { publicKey: pk },
+      });
+      prismaMock.orgKeyGrant.upsert.mockResolvedValue({ id: 'g' });
+      for (const keyVersion of [1, 2])
+        await KeyController.grant(coordinator(), ORG, GrantRequest.parse({ userId: 'coord', keyVersion, wrappedKey: grant, publicKey: pk }));
+      expect(prismaMock.orgKeyGrant.upsert).toHaveBeenCalledTimes(2);
+      await expect(
+        KeyController.grant(coordinator(), ORG, GrantRequest.parse({ userId: 'coord', keyVersion: 3, wrappedKey: grant, publicKey: pk }))
+      ).rejects.toThrow(BadRequestError);
+    });
+
+    it('hands out the recovery keys of the current and the pending version while rotating', async () => {
+      prismaMock.organisation.findUnique.mockResolvedValue(rotating);
+      expect(await KeyController.getRecovery(coordinator(), ORG)).toEqual([
+        { keyVersion: 1, recoveryWrappedKey: recovery(1) },
+        { keyVersion: 2, recoveryWrappedKey: recovery(2) },
+      ]);
+      prismaMock.organisation.findUnique.mockResolvedValue({
+        id: ORG, keyState: 'active', keyVersion: 2, pendingKeyVersion: null,
+        recoveryWrappedKey: recovery(2), pendingRecoveryWrappedKey: null,
+      });
+      expect(await KeyController.getRecovery(coordinator(), ORG)).toEqual([
+        { keyVersion: 2, recoveryWrappedKey: recovery(2) },
+      ]);
     });
 
     it('does not complete a version without a continuity proof', async () => {
@@ -310,7 +361,7 @@ describe('KeyController', () => {
       noRowsLeft();
       prismaMock.orgKeyProof.findUnique.mockResolvedValue(null);
       await expect(
-        KeyController.completeRotation(coordinator(), ORG, RotationCompleteRequest.parse({ grants: [], recoveryWrappedKey: recovery(2) }))
+        KeyController.completeRotation(coordinator(), ORG, RotationCompleteRequest.parse({ grants: [] }))
       ).rejects.toThrow(ConflictError);
       expect(prismaMock.organisation.update).not.toHaveBeenCalled();
     });
@@ -351,7 +402,7 @@ describe('KeyController', () => {
       noRowsLeft();
       prismaMock.answer.count.mockResolvedValue(3);
       await expect(
-        KeyController.completeRotation(coordinator(), ORG, RotationCompleteRequest.parse({ grants: [], recoveryWrappedKey: recovery(2) }))
+        KeyController.completeRotation(coordinator(), ORG, RotationCompleteRequest.parse({ grants: [] }))
       ).rejects.toThrow(ConflictError);
     });
 
@@ -366,7 +417,6 @@ describe('KeyController', () => {
 
       await KeyController.completeRotation(coordinator(), ORG, RotationCompleteRequest.parse({
         grants: [{ userId: 'u', wrappedKey: grant, publicKey: pk }],
-        recoveryWrappedKey: recovery(2),
       }));
 
       expect(prismaMock.orgKeyGrant.upsert).toHaveBeenCalledTimes(1);
@@ -377,7 +427,7 @@ describe('KeyController', () => {
         where: { id: ORG },
         data: {
           keyState: 'active', keyVersion: 2, pendingKeyVersion: null, frozenAt: null,
-          recoveryWrappedKey: recovery(2),
+          recoveryWrappedKey: recovery(2), pendingRecoveryWrappedKey: null,
         },
       });
     });
@@ -395,11 +445,26 @@ describe('KeyController', () => {
       expect(status.keyProofs).toEqual([{ keyVersion: 2, proof: envelope(1) }]);
     });
 
-    it('refuses a recovery key for the wrong version', async () => {
-      prismaMock.organisation.findUnique.mockResolvedValue(rotating);
+    it('does not complete without the recovery key stored at the start', async () => {
+      prismaMock.organisation.findUnique.mockResolvedValue({ ...rotating, pendingRecoveryWrappedKey: null });
+      prismaMock.orgKeyProof.findUnique.mockResolvedValue({ keyVersion: 2, proof: envelope(1) });
+      noRowsLeft();
       await expect(
-        KeyController.completeRotation(coordinator(), ORG, RotationCompleteRequest.parse({ grants: [], recoveryWrappedKey: recovery(1) }))
-      ).rejects.toThrow(BadRequestError);
+        KeyController.completeRotation(coordinator(), ORG, RotationCompleteRequest.parse({ grants: [] }))
+      ).rejects.toThrow(ConflictError);
+      expect(prismaMock.organisation.update).not.toHaveBeenCalled();
+      expect(() => RotationCompleteRequest.parse({ grants: [], recoveryWrappedKey: recovery(2) })).toThrow();
+    });
+
+    it('refuses to store a key pair wrapped under parameters below the minimum', async () => {
+      const pk = await publicKey();
+      expect(() => UserKeyRequest.parse({ publicKey: pk, wrappedPrivateKey, kdfParams })).not.toThrow();
+      expect(() => UserKeyRequest.parse({
+        publicKey: pk, wrappedPrivateKey, kdfParams: { ...kdfParams, memoryKiB: 19_455 },
+      })).toThrow();
+      expect(() => UserKeyRequest.parse({
+        publicKey: pk, wrappedPrivateKey, kdfParams: { ...kdfParams, iterations: 1 },
+      })).toThrow();
     });
   });
 

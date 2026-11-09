@@ -18,6 +18,7 @@ import {
   OrgKeyMember,
   OrgSetupRequest,
   PassphraseChangeRequest,
+  RecoveryKeys,
   ReencryptRowsQuery,
   ReencryptRowsRequest,
   RotationCompleteRequest,
@@ -284,13 +285,14 @@ export class KeyController {
   /**
    * Stores a grant a coordinator's browser sealed for a member. The member must belong to the
    * org, work with personal data, and still have the key pair the grant was sealed to. Grants
-   * are for the current version, or the pending one while a rotation runs.
+   * are for the current version; while a rotation runs also for the pending one, so a key
+   * manager can recover both keys and resume a rotation another one started.
    */
   static async grant(user: FullUser, orgId: string, data: GrantRequest) {
     const org = await KeyController.managedOrg(user, orgId);
     const allowedVersions =
       org.keyState === 'rotating'
-        ? [org.pendingKeyVersion]
+        ? [org.keyVersion, org.pendingKeyVersion]
         : org.keyState === 'active'
           ? [org.keyVersion]
           : [];
@@ -386,14 +388,23 @@ export class KeyController {
   }
 
   /**
-   * The recovery-wrapped key, for a coordinator who lost access. Useless without the recovery
-   * code, which never leaves the org's safe.
+   * The recovery-wrapped keys, for a key manager who lost access: the current version's and,
+   * during a rotation, the pending version's. Useless without their recovery codes, which never
+   * leave the org's safe.
    */
-  static async getRecovery(user: FullUser, orgId: string) {
+  static async getRecovery(user: FullUser, orgId: string): Promise<RecoveryKeys> {
     const org = await KeyController.managedOrg(user, orgId);
-    if (!org.recoveryWrappedKey)
+    const keys: RecoveryKeys = [];
+    if (org.recoveryWrappedKey)
+      keys.push({ keyVersion: org.keyVersion, recoveryWrappedKey: org.recoveryWrappedKey });
+    if (org.keyState === 'rotating' && org.pendingKeyVersion && org.pendingRecoveryWrappedKey)
+      keys.push({
+        keyVersion: org.pendingKeyVersion,
+        recoveryWrappedKey: org.pendingRecoveryWrappedKey,
+      });
+    if (keys.length === 0)
       throw new NotFoundError('This organisation has no recovery key');
-    return { keyVersion: org.keyVersion, recoveryWrappedKey: org.recoveryWrappedKey };
+    return keys;
   }
 
   /** Freezes an org: its members can't read or write org data until it is unfrozen. */
@@ -427,7 +438,12 @@ export class KeyController {
   /**
    * Starts a rotation of a frozen org: the key manager's browser generated the next key version
    * and uploads its own grant for it first, so an interrupted rotation can be resumed. It also
-   * uploads the continuity proof that other browsers check before they trust the new version.
+   * uploads the continuity proof that other browsers check before they trust the new version,
+   * and the new key wrapped under the new recovery code, so the new key survives even if the key
+   * manager loses their grant before the rotation is complete.
+   *
+   * The state change only applies to a frozen org still on the version the proof was made for,
+   * so of two concurrent starts exactly one wins and the other changes nothing.
    */
   static async startRotation(user: FullUser, orgId: string, data: RotationStartRequest) {
     const org = await KeyController.managedOrg(user, orgId);
@@ -439,14 +455,24 @@ export class KeyController {
       throw new BadRequestError(
         `The proof must be encrypted with the current key version ${org.keyVersion}`
       );
+    if (parseRecoveryWrappedKey(data.recoveryWrappedKey).keyVersion !== data.keyVersion)
+      throw new BadRequestError(`The recovery key must be for key version ${data.keyVersion}`);
     const userKey = await prisma.userKey.findUnique({ where: { userId: user.id } });
     if (!userKey) throw new BadRequestError('You have no key pair');
 
     await prisma.$transaction(async (tx) => {
-      await tx.organisation.update({
-        where: { id: orgId },
-        data: { keyState: 'rotating', pendingKeyVersion: data.keyVersion },
+      const started = await tx.organisation.updateMany({
+        where: { id: orgId, keyState: 'frozen', keyVersion: org.keyVersion },
+        data: {
+          keyState: 'rotating',
+          pendingKeyVersion: data.keyVersion,
+          pendingRecoveryWrappedKey: data.recoveryWrappedKey,
+        },
       });
+      if (started.count !== 1)
+        throw new ConflictError(
+          'The organisation is no longer frozen, or a rotation has already been started'
+        );
       await tx.orgKeyGrant.upsert({
         where: {
           organisationId_userId_keyVersion: {
@@ -479,21 +505,33 @@ export class KeyController {
     });
   }
 
+  /**
+   * The org of a bulk job and the key version the job encrypts to, after checking the org is in
+   * the right state.
+   */
+  private static async jobOrg(
+    user: FullUser,
+    orgId: string,
+    mode: ReencryptMode
+  ): Promise<{ org: Organisation; version: number }> {
+    const org = await KeyController.managedOrg(user, orgId);
+    if (mode === 'rotation') {
+      if (org.keyState !== 'rotating' || !org.pendingKeyVersion)
+        throw new ConflictError('No rotation is running');
+      return { org, version: org.pendingKeyVersion };
+    }
+    if (org.keyState !== 'active')
+      throw new ConflictError('Migration needs an active organisation');
+    return { org, version: org.keyVersion };
+  }
+
   /** The key version a bulk job encrypts to, after checking the org is in the right state. */
   private static async jobVersion(
     user: FullUser,
     orgId: string,
     mode: ReencryptMode
   ): Promise<number> {
-    const org = await KeyController.managedOrg(user, orgId);
-    if (mode === 'rotation') {
-      if (org.keyState !== 'rotating' || !org.pendingKeyVersion)
-        throw new ConflictError('No rotation is running');
-      return org.pendingKeyVersion;
-    }
-    if (org.keyState !== 'active')
-      throw new ConflictError('Migration needs an active organisation');
-    return org.keyVersion;
+    return (await KeyController.jobOrg(user, orgId, mode)).version;
   }
 
   /** How much a rotation or migration still has to do. */
@@ -623,18 +661,18 @@ export class KeyController {
 
   /**
    * Ends a rotation: checks nothing is left under an old key version, stores the grants for the
-   * new version and the new recovery-wrapped key, and unfreezes the org. Members who receive the
-   * new version keep their old grants, which their browsers need to check the continuity proof;
-   * everyone else loses theirs.
+   * new version, makes the recovery key stored at the start the current one, and unfreezes the
+   * org. Members who receive the new version keep their old grants, which their browsers need to
+   * check the continuity proof; everyone else loses theirs.
    */
   static async completeRotation(
     user: FullUser,
     orgId: string,
     data: RotationCompleteRequest
   ) {
-    const version = await KeyController.jobVersion(user, orgId, 'rotation');
-    if (parseRecoveryWrappedKey(data.recoveryWrappedKey).keyVersion !== version)
-      throw new BadRequestError(`The recovery key must be for key version ${version}`);
+    const { org, version } = await KeyController.jobOrg(user, orgId, 'rotation');
+    if (!org.pendingRecoveryWrappedKey)
+      throw new ConflictError(`Key version ${version} has no recovery key`);
 
     const proof = await prisma.orgKeyProof.findUnique({
       where: { organisationId_keyVersion: { organisationId: orgId, keyVersion: version } },
@@ -694,7 +732,8 @@ export class KeyController {
           keyVersion: version,
           pendingKeyVersion: null,
           frozenAt: null,
-          recoveryWrappedKey: data.recoveryWrappedKey,
+          recoveryWrappedKey: org.pendingRecoveryWrappedKey,
+          pendingRecoveryWrappedKey: null,
         },
       });
       await KeyController.log(tx, orgId, OrgKeyEventType.rotationCompleted, {

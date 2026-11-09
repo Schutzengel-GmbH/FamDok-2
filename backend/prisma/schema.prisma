@@ -77,17 +77,20 @@ model Organisation {
   generalForms     GeneralForm[]
 
   /// Encryption lifecycle, see shared/utils/encryptedModels.ts
-  keyState           OrgKeyState   @default(uninitialized)
+  keyState                  OrgKeyState   @default(uninitialized)
   /// Version of the current org data key; 0 until the encryption is set up
-  keyVersion         Int           @default(0)
+  keyVersion                Int           @default(0)
   /// Version a running rotation re-encrypts to
-  pendingKeyVersion  Int?
-  frozenAt           DateTime?
+  pendingKeyVersion         Int?
+  frozenAt                  DateTime?
   /// The data key wrapped under the offline recovery code (r1. format)
-  recoveryWrappedKey String?
-  keyGrants          OrgKeyGrant[]
-  keyEvents          OrgKeyEvent[]
-  keyProofs          OrgKeyProof[]
+  recoveryWrappedKey        String?
+  /// During a rotation: the pending version's key wrapped under the new recovery code. Stored
+  /// when the rotation starts, so the new key can't be lost with the key manager's grant.
+  pendingRecoveryWrappedKey String?
+  keyGrants                 OrgKeyGrant[]
+  keyEvents                 OrgKeyEvent[]
+  keyProofs                 OrgKeyProof[]
 }
 
 model SubOrganisation {

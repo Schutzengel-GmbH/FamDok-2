@@ -31,51 +31,90 @@
             Entziehen Sie vorher allen den Zugang, die den neuen Schlüssel nicht bekommen sollen.
             Alle anderen erhalten ihn automatisch.
           </p>
-          <button class="btn btn-primary" [disabled]="busy()" (click)="startRotation()">
-            Neuen Schlüssel erzeugen
-          </button>
-        }
-        @case ("rotating") {
-          <h5>1. Daten neu verschlüsseln</h5>
-          @if (progress(); as p) {
-            <div class="progress mb-2" role="progressbar">
-              <div
-                class="progress-bar"
-                [style.width.%]="p.total ? (p.done / p.total) * 100 : 100"></div>
-            </div>
-          }
-          @if (!reencrypted()) {
-            <button class="btn btn-primary mb-3" [disabled]="busy()" (click)="reencrypt()">
-              @if (busy()) {
-                <span class="spinner-border spinner-border-sm"></span>
-              }
-              Neu verschlüsseln
+          @if (!recoveryCode()) {
+            <button class="btn btn-primary" [disabled]="busy()" (click)="prepareRotation()">
+              Neuen Schlüssel erzeugen
             </button>
           } @else {
-            <div class="alert alert-success">Alle Daten sind neu verschlüsselt.</div>
-
-            <h5>2. Neuer Wiederherstellungscode</h5>
-            @if (!recoveryCode()) {
-              <button class="btn btn-primary" [disabled]="busy()" (click)="prepareRecovery()">
-                Code erzeugen
+            <h5>Neuer Wiederherstellungscode</h5>
+            <div class="alert alert-warning">
+              Bewahren Sie diesen Code offline auf. Bis die Erneuerung abgeschlossen ist, gilt
+              zusätzlich der bisherige Code für den alten Schlüssel; danach wird er ungültig. Geht
+              Ihr Zugang während der Erneuerung verloren, kann eine Schlüsselverwaltung mit den
+              beiden Codes die Erneuerung fortsetzen.
+            </div>
+            <p class="font-monospace fs-4 text-center user-select-all">{{ recoveryCode() }}</p>
+            <label class="form-label" for="rotation-recovery">Code zur Bestätigung abtippen</label>
+            <input
+              id="rotation-recovery"
+              class="form-control font-monospace mb-2"
+              autocomplete="off"
+              [value]="recoveryTyped()"
+              (input)="recoveryTyped.set($any($event.target).value)" />
+            <button
+              class="btn btn-primary"
+              [disabled]="busy() || !recoveryConfirmed()"
+              (click)="startRotation()">
+              Erneuerung starten
+            </button>
+          }
+        }
+        @case ("rotating") {
+          @if (!keysAvailable()) {
+            <div class="alert alert-warning">
+              In diesem Tab fehlt ein Schlüssel, um die Erneuerung fortzusetzen. Stellen Sie ihn
+              mit dem passenden Wiederherstellungscode wieder her:
+              <ul class="mb-0 mt-2">
+                @if (!currentKeyAvailable()) {
+                  <li>bisheriger Schlüssel (Version {{ o.keyVersion }}): bisheriger Code</li>
+                }
+                @if (!pendingKeyAvailable()) {
+                  <li>
+                    neuer Schlüssel (Version {{ o.pendingKeyVersion }}): beim Start der
+                    Erneuerung erzeugter Code
+                  </li>
+                }
+              </ul>
+            </div>
+            <label class="form-label" for="rotation-recover">Wiederherstellungscode</label>
+            <input
+              id="rotation-recover"
+              class="form-control font-monospace mb-2"
+              autocomplete="off"
+              placeholder="XXXX-XXXX-…"
+              [value]="recoverInput()"
+              (input)="recoverInput.set($any($event.target).value)" />
+            <button
+              class="btn btn-primary"
+              [disabled]="busy() || !recoverInput()"
+              (click)="recover()">
+              Schlüssel wiederherstellen
+            </button>
+          } @else {
+            <h5>1. Daten neu verschlüsseln</h5>
+            @if (progress(); as p) {
+              <div class="progress mb-2" role="progressbar">
+                <div
+                  class="progress-bar"
+                  [style.width.%]="p.total ? (p.done / p.total) * 100 : 100"></div>
+              </div>
+            }
+            @if (!reencrypted()) {
+              <button class="btn btn-primary mb-3" [disabled]="busy()" (click)="reencrypt()">
+                @if (busy()) {
+                  <span class="spinner-border spinner-border-sm"></span>
+                }
+                Neu verschlüsseln
               </button>
             } @else {
-              <div class="alert alert-warning">
-                Der bisherige Wiederherstellungscode wird ungültig. Bewahren Sie diesen neuen
-                Code offline auf.
-              </div>
-              <p class="font-monospace fs-4 text-center user-select-all">{{ recoveryCode() }}</p>
-              <label class="form-label" for="rotation-recovery">Code zur Bestätigung abtippen</label>
-              <input
-                id="rotation-recovery"
-                class="form-control font-monospace mb-2"
-                autocomplete="off"
-                [value]="recoveryTyped()"
-                (input)="recoveryTyped.set($any($event.target).value)" />
-              <button
-                class="btn btn-primary"
-                [disabled]="busy() || !recoveryConfirmed()"
-                (click)="complete()">
+              <div class="alert alert-success">Alle Daten sind neu verschlüsselt.</div>
+
+              <h5>2. Abschließen</h5>
+              <p>
+                Alle, die den bisherigen Schlüssel hatten, erhalten den neuen. Der bisherige
+                Wiederherstellungscode wird ungültig, es gilt der beim Start erzeugte.
+              </p>
+              <button class="btn btn-primary" [disabled]="busy()" (click)="complete()">
                 Erneuerung abschließen
               </button>
             }

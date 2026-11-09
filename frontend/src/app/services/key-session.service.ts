@@ -6,7 +6,11 @@ import { KeyApiService } from './key-api.service';
 import { KdfService } from './kdf.service';
 import { MeService } from './me.service';
 import { newKdfParams } from '../util/crypto/kdf';
-import { InvalidGrantError, KeysLockedError } from '../util/crypto/errors';
+import {
+  InvalidGrantError,
+  KeysLockedError,
+  WrongRecoveryCodeError,
+} from '../util/crypto/errors';
 import {
   checkKeyChain,
   clearKeyPin,
@@ -228,27 +232,39 @@ export class KeySessionService {
   }
 
   /**
-   * A coordinator without access (lost passphrase, new coordinator) regains the current key with
-   * the org's recovery code and grants it to their own key pair.
+   * A key manager without access (lost passphrase, new key manager) regains a key with one of
+   * the org's recovery codes and grants it to their own key pair. During a rotation there are
+   * two codes: the old one for the current key and the new one for the pending key, so a
+   * rotation whose key manager lost access can be resumed; each call recovers the key the code
+   * opens. Throws `WrongRecoveryCodeError` if it opens none. Returns the recovered version.
    */
-  async recover(recoveryCode: string): Promise<void> {
+  async recover(recoveryCode: string): Promise<number> {
     const orgId = this.requireOrgId();
     const me = this.requireKeyPair();
     const userKey = this.status()!.userKey!;
-    const { keyVersion, recoveryWrappedKey } = await this.api.getRecovery(orgId);
-    const { grant } = await this.crypto.openRecovery(
-      recoveryWrappedKey,
-      recoveryCode,
-      { orgId, keyVersion },
-      me.publicKey,
-    );
-    await this.api.grant(orgId, {
-      userId: this.requireUserId(),
-      keyVersion,
-      wrappedKey: grant,
-      publicKey: userKey.publicKey,
-    });
-    await this.refresh();
+    for (const { keyVersion, recoveryWrappedKey } of await this.api.getRecovery(orgId)) {
+      let grant: string;
+      try {
+        ({ grant } = await this.crypto.openRecovery(
+          recoveryWrappedKey,
+          recoveryCode,
+          { orgId, keyVersion },
+          me.publicKey,
+        ));
+      } catch (e) {
+        if (e instanceof WrongRecoveryCodeError) continue;
+        throw e;
+      }
+      await this.api.grant(orgId, {
+        userId: this.requireUserId(),
+        keyVersion,
+        wrappedKey: grant,
+        publicKey: userKey.publicKey,
+      });
+      await this.refresh();
+      return keyVersion;
+    }
+    throw new WrongRecoveryCodeError();
   }
 
   /** Looks up an unlocked data key by version, for decryption. */

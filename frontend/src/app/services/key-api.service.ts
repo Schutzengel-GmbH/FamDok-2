@@ -10,6 +10,7 @@ import type {
   OrgKeyMember,
   OrgSetupRequest,
   PassphraseChangeRequest,
+  RecoveryKeys,
   ReencryptRowsRequest,
   RotationCompleteRequest,
   RotationStartRequest,
@@ -80,13 +81,9 @@ export class KeyApiService {
     return firstValueFrom(this.http.get<OrgKeyEventView[]>(`${this.url}/orgs/${orgId}/events`));
   }
 
-  /** The recovery-wrapped key of the current version. */
-  getRecovery(orgId: string): Promise<{ keyVersion: number; recoveryWrappedKey: string }> {
-    return firstValueFrom(
-      this.http.get<{ keyVersion: number; recoveryWrappedKey: string }>(
-        `${this.url}/orgs/${orgId}/recovery`,
-      ),
-    );
+  /** The recovery-wrapped keys of the current version and, during a rotation, the pending one. */
+  getRecovery(orgId: string): Promise<RecoveryKeys> {
+    return firstValueFrom(this.http.get<RecoveryKeys>(`${this.url}/orgs/${orgId}/recovery`));
   }
 
   /** Freezes the org. */
@@ -99,12 +96,12 @@ export class KeyApiService {
     return firstValueFrom(this.http.post<void>(`${this.url}/orgs/${orgId}/unfreeze`, {}));
   }
 
-  /** Starts a rotation with the coordinator's grant for the new version. */
+  /** Starts a rotation with the key manager's grant, the proof and the new recovery key. */
   startRotation(orgId: string, body: RotationStartRequest): Promise<void> {
     return firstValueFrom(this.http.post<void>(`${this.url}/orgs/${orgId}/rotation/start`, body));
   }
 
-  /** Completes a rotation with everyone's new grants and the new recovery key. */
+  /** Completes a rotation with everyone's grants for the new key. */
   completeRotation(orgId: string, body: RotationCompleteRequest): Promise<void> {
     return firstValueFrom(
       this.http.post<void>(`${this.url}/orgs/${orgId}/rotation/complete`, body),

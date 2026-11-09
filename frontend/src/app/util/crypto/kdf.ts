@@ -44,8 +44,11 @@ export function newKdfParams(
 
 /**
  * Throws `InvalidKdfParamsError` unless the parameters are well-formed and within bounds. They
- * come from the server, so a tampered record must not be able to make derivation trivially
- * cheap or exhaust the browser's memory.
+ * come from the server, so a tampered record must not be able to exhaust the browser's memory or
+ * time. The lower bounds are deliberately low, so tests can derive cheaply: parameters only read
+ * here can't weaken anything (wrong ones just fail to unwrap the key), and new wraps always use
+ * {@link newKdfParams}. The server refuses to store parameters below the OWASP minimum (see
+ * `KdfParamsSchema` in shared/api/keys.ts).
  */
 export function validateKdfParams(params: KdfParams) {
   if (typeof params !== 'object' || params === null)

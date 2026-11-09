@@ -7,7 +7,7 @@ import { KdfService } from './kdf.service';
 import { MeService } from './me.service';
 import { CryptoService } from './crypto.service';
 import { deriveKek, KdfParams } from '../util/crypto/kdf';
-import { WrongPassphraseError } from '../util/crypto/errors';
+import { WrongPassphraseError, WrongRecoveryCodeError } from '../util/crypto/errors';
 import { isP256PublicKey, isWrappedPrivKey } from '../../../../shared/utils/ciphertext';
 
 const ORG = 'org-1';
@@ -37,6 +37,7 @@ class FakeKeyApi {
     needsKeys: true,
   };
   recoveryWrappedKey = '';
+  pendingRecoveryWrappedKey = '';
 
   getStatus = jasmine.createSpy('getStatus').and.callFake(async () => structuredClone(this.status));
   enrol = jasmine.createSpy('enrol').and.callFake(async (body: any) => {
@@ -60,13 +61,19 @@ class FakeKeyApi {
   });
   grant = jasmine.createSpy('grant').and.callFake(async (_orgId: string, body: any) => {
     this.status.grants = [
+      ...this.status.grants.filter((g) => g.keyVersion !== body.keyVersion),
       { keyVersion: body.keyVersion, wrappedKey: body.wrappedKey, publicKey: body.publicKey },
     ];
   });
-  getRecovery = jasmine.createSpy('getRecovery').and.callFake(async () => ({
-    keyVersion: this.status.org!.keyVersion,
-    recoveryWrappedKey: this.recoveryWrappedKey,
-  }));
+  getRecovery = jasmine.createSpy('getRecovery').and.callFake(async () => {
+    const org = this.status.org!;
+    return [
+      { keyVersion: org.keyVersion, recoveryWrappedKey: this.recoveryWrappedKey },
+      ...(org.keyState === 'rotating' && org.pendingKeyVersion
+        ? [{ keyVersion: org.pendingKeyVersion, recoveryWrappedKey: this.pendingRecoveryWrappedKey }]
+        : []),
+    ];
+  });
 }
 
 describe('KeySessionService', () => {
@@ -219,6 +226,39 @@ describe('KeySessionService', () => {
     await session.recover(recoveryCode);
     expect(session.state()).toBe('unlocked');
     expect(session.orgKeyFingerprint()).toBe(fingerprint);
+  });
+
+  it('resumes a rotation whose key manager lost access, with the old and the new recovery code', async () => {
+    api.status.org = { ...api.status.org!, keyState: 'uninitialized', keyVersion: 0 };
+    api.status.canManageKeys = true;
+    await session.ensureLoaded();
+    await session.enrol('Koordination ist wichtig');
+    const { recoveryCode: oldCode, commit } = await session.prepareOrgSetup();
+    await commit();
+    const v1 = session.currentKey();
+
+    // the rotation started: new key v2, its proof under v1, and its recovery-wrapped key
+    const v2 = await crypto.generateDataKey();
+    const ctx = { orgId: ORG, keyVersion: 2 };
+    const newCode = crypto.generateRecoveryCode();
+    api.status.org = { ...api.status.org!, keyState: 'rotating', pendingKeyVersion: 2 };
+    api.status.keyProofs = [
+      { keyVersion: 2, proof: await crypto.sealKeyProof(await crypto.fingerprintDataKey(v2), v1, ctx) },
+    ];
+    api.pendingRecoveryWrappedKey = await crypto.sealRecovery(v2, newCode, ctx);
+
+    // the key manager re-enrols, which drops all their grants, and recovers both keys
+    create();
+    await session.enrol('ein ganz neuer Anfang');
+    expect(session.keyResolver(1)).toBeUndefined();
+    await expectAsync(session.recover(crypto.generateRecoveryCode())).toBeRejectedWithError(
+      WrongRecoveryCodeError,
+    );
+    expect(await session.recover(newCode)).toBe(2);
+    expect(await session.recover(oldCode)).toBe(1);
+    expect(session.state()).toBe('unlocked');
+    expect(session.keyResolver(1)).toBeDefined();
+    expect(session.keyResolver(2)).toBeDefined();
   });
 
   it('detects a swapped key under the same version', async () => {
