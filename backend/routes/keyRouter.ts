@@ -17,9 +17,20 @@ import { ReencryptMode } from '../util/encryptedRows';
 
 /**
  * `/keys`: the org encryption's key management. Not behind the frozen-org check, since a
- * rotation runs while the org is frozen.
+ * rotation runs while the org is frozen. Only mounted with `ORG_ENCRYPTION_ENABLED`.
  */
 export const KeyRouter = Router();
+
+/**
+ * `/keys` without `ORG_ENCRYPTION_ENABLED`: only the status, which tells the frontend the
+ * encryption is off (`enabled: false`) so it hides every encryption feature. Everything else 404s.
+ */
+export const DisabledKeyRouter = Router();
+
+DisabledKeyRouter.get(
+  '/me',
+  route(({ user }) => KeyController.getStatus(user))
+);
 
 KeyRouter.get(
   '/me',

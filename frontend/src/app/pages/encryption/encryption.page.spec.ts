@@ -11,6 +11,7 @@ import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
 /** Just the parts of the key session the page reads, for a key manager of an unencrypted org. */
 function fakeSession(canManageKeys: boolean) {
   const status: KeyStatus = {
+    enabled: true,
     org: { id: 'o', name: 'Muster e.V.', keyState: 'uninitialized', keyVersion: 0, pendingKeyVersion: null, frozenAt: null },
     userKey: { publicKey: 'pk', wrappedPrivateKey: 'k1', kdfParams: {} as any },
     grants: [],

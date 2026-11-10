@@ -152,6 +152,11 @@ export type RecoveryKeys = { keyVersion: number; recoveryWrappedKey: string }[];
 
 /** Response of `GET /keys/me`: everything a browser needs to unlock. */
 export type KeyStatus = {
+  /**
+   * Whether the server runs with `ORG_ENCRYPTION_ENABLED`. If not, the frontend hides every
+   * encryption feature and the other `/keys` routes don't exist.
+   */
+  enabled: boolean;
   org: {
     id: string;
     name: string;

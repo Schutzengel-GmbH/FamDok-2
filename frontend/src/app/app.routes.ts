@@ -22,7 +22,7 @@ import Keycloak from 'keycloak-js';
 import { DataViewPage } from './pages/data-view/data-view.page';
 import { AllCaseFormData } from './pages/all-caseform-data/all-caseform-data.page';
 import { authenticatedGuard } from './auth/guards/authenticatedGuard';
-import { encryptionGuard } from './auth/guards/encryptionGuard';
+import { encryptionFeatureGuard, encryptionGuard } from './auth/guards/encryptionGuard';
 import { EncryptionPage } from './pages/encryption/encryption.page';
 import { KeyManagementPage } from './pages/key-management/key-management.page';
 import { KeyMigrationPage } from './pages/key-migration/key-migration.page';
@@ -315,24 +315,24 @@ export const routes: Routes = [
     // Set up, unlock and manage the own encryption key; the encryption guard sends users here.
     path: 'verschluesselung',
     component: EncryptionPage,
-    canActivate: [authenticatedGuard()],
+    canActivate: [authenticatedGuard(), encryptionFeatureGuard()],
   },
   {
     path: 'schluesselverwaltung',
     component: KeyManagementPage,
-    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController])],
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController]), encryptionFeatureGuard()],
   },
   {
     // Encrypts data stored before the org set up its encryption (P5)
     path: 'schluesselverwaltung/migration',
     component: KeyMigrationPage,
-    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController])],
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController]), encryptionFeatureGuard()],
   },
   {
     // Rotation of the org data key while the org is frozen (P6)
     path: 'schluesselverwaltung/erneuern',
     component: KeyRotationPage,
-    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController])],
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController]), encryptionFeatureGuard()],
   },
   {
     path: 'contact-documentation',

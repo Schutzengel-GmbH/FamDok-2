@@ -52,6 +52,7 @@ import {
   storeReencrypted,
 } from '../util/encryptedRows';
 import { resolveStoragePath, deleteStoredFile } from '../util/fileStorage';
+import { ORG_ENCRYPTION_ENABLED } from '../config';
 
 const USER_SUMMARY = {
   select: { id: true, firstName: true, lastName: true, email: true },
@@ -128,6 +129,7 @@ export class KeyController {
       : [[], []];
 
     return {
+      enabled: ORG_ENCRYPTION_ENABLED,
       org: org && {
         id: org.id,
         name: org.name,

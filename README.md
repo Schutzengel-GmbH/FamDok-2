@@ -189,6 +189,7 @@ Alle Variablen werden in **einer einzigen `.env` im Projekt-Root** gesetzt (Vorl
 | `PRODUCTION`            | Produktions-Flag                                    | `false`                                             |
 | `UPLOAD_DIR`            | Upload-Verzeichnis (Container überschreibt dies)    | `./uploads`                                         |
 | `MAX_UPLOAD_SIZE_MB`    | Maximale Upload-Größe pro Datei in MB               | `25`                                                |
+| `ORG_ENCRYPTION_ENABLED`| Bietet die Verschlüsselung personenbezogener Daten an (siehe [Verschlüsselung](#verschlüsselung-personenbezogener-daten)). **Einbahnstraße:** Sobald eine Organisation sie aktiviert hat, lässt sie sich nicht mehr abschalten; das Backend startet dann nicht mehr ohne sie | `false` |
 
 `backend/prisma/seed-prod.config.json` (Vorlage: `seed-prod.config.example.json`) bleibt bewusst eine separate, gitignorede Konfigurationsdatei – sie enthält einmalige Instanz-Seed-Daten (Organisationsname, Admin-Identität), keine Deployment-Konfiguration.
 
@@ -276,8 +277,20 @@ beschreibungen, Übergabenotizen, Antworten personenbezogener Fragebögen, Anhä
 Browser mit dem Schlüssel der Organisation ver- und entschlüsselt. Server und Datenbank speichern
 ausschließlich Chiffrat, öffentliche Schlüssel und verpackte Schlüssel.
 
-Die Verschlüsselung ist **optional** und wird pro Organisation aktiviert. Ohne Aktivierung werden
-Daten wie bisher gespeichert. Die Aktivierung lässt sich **nicht rückgängig machen**.
+Die Verschlüsselung ist **optional**, auf zwei Ebenen:
+
+- **Server:** Nur wenn das Backend mit `ORG_ENCRYPTION_ENABLED=true` läuft, gibt es die
+  Verschlüsselung überhaupt. Ohne die Variable (Standard) sind alle Verschlüsselungsfunktionen
+  ausgeblendet, die Schlüssel-Endpunkte abgeschaltet, und alle Daten werden wie bisher im Klartext
+  gespeichert.
+- **Organisation:** Bei eingeschalteter Variable aktivieren die OrgCoordinators/OrgControllers einer
+  Organisation die Verschlüsselung für ihre Organisation. Bis dahin arbeitet sie wie bisher.
+
+Beides ist eine **Einbahnstraße**. Die Aktivierung einer Organisation lässt sich nicht
+rückgängig machen, und sobald eine Organisation die Verschlüsselung aktiviert hat, lässt sich
+`ORG_ENCRYPTION_ENABLED` nicht mehr abschalten: Ihre Daten liegen dann verschlüsselt vor und sind
+nur mit den Verschlüsselungsfunktionen les- und schreibbar. Das Backend verweigert in diesem Fall
+den Start ohne die Variable und nennt die betroffenen Organisationen.
 
 - Ist sie aktiviert, richten Benutzer*innen unter **Verschlüsselung** (`/verschluesselung`)
   einmalig eine Verschlüsselungs-Passphrase ein und entsperren damit pro Tab.

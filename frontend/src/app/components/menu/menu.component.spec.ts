@@ -69,8 +69,22 @@ describe('MenuComponent', () => {
     expect(labels).toEqual(['Statistik-Dashboard', 'Alle Formulardaten', 'Dokumente']);
   });
 
+  /** Pretends the header loaded a key status from a server with the encryption on or off. */
+  function encryptionOffered(enabled: boolean) {
+    TestBed.inject(KeySessionService).status.set({
+      enabled,
+      org: { id: 'o', name: 'O', keyState: 'uninitialized', keyVersion: 0, pendingKeyVersion: null, frozenAt: null },
+      userKey: null,
+      grants: [],
+      keyProofs: [],
+      canManageKeys: true,
+      needsKeys: true,
+    });
+  }
+
   it('shows the controller nav for an OrgController user too', async () => {
     await setup(Role.OrgController);
+    encryptionOffered(true);
 
     expect(component.isOrgController()).toBeTrue();
     const labels = component.topLinks().map((l) => l.label);
@@ -108,8 +122,18 @@ describe('MenuComponent', () => {
     );
   });
 
+  for (const role of [Role.OrgCoordinator, Role.OrgController]) {
+    it(`hides the key management from ${role} while the server runs without encryption`, async () => {
+      await setup(role);
+      encryptionOffered(false);
+      expect(component.topLinks().map((l) => l.link)).not.toContain('/schluesselverwaltung');
+      expect(component.topLinks().map((l) => l.link)).toContain('/user-admin');
+    });
+  }
+
   it('adds the user-admin and key management links to the base nav for an OrgCoordinator', async () => {
     await setup(Role.OrgCoordinator);
+    encryptionOffered(true);
 
     expect(component.isOrgCoordinator()).toBeTrue();
     const labels = component.topLinks().map((l) => l.label);
@@ -139,6 +163,7 @@ describe('MenuComponent', () => {
   /** Pretends the header loaded a key status with the org in `keyState`. */
   function orgKeyState(keyState: 'uninitialized' | 'active') {
     TestBed.inject(KeySessionService).status.set({
+      enabled: true,
       org: { id: 'o', name: 'O', keyState, keyVersion: keyState === 'active' ? 1 : 0, pendingKeyVersion: null, frozenAt: null },
       userKey: null,
       grants: [],

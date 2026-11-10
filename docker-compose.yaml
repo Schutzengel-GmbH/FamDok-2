@@ -35,6 +35,7 @@ services:
       KC_ADMIN_CLIENT_SECRET: ${KC_ADMIN_CLIENT_SECRET}
       PRODUCTION: ${PRODUCTION}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB}
+      ORG_ENCRYPTION_ENABLED: ${ORG_ENCRYPTION_ENABLED:-false}
     volumes:
       - uploads-data:/app/dist/uploads
     ports:

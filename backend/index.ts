@@ -17,7 +17,9 @@ import { StatsRouter } from './routes/statsRouter';
 import { SettingsRouter } from './routes/settingsRouter';
 import { WarningsRouter } from './routes/warningsRouter';
 import DocumentRouter from './routes/documentRouter';
-import { KeyRouter } from './routes/keyRouter';
+import { DisabledKeyRouter, KeyRouter } from './routes/keyRouter';
+import { ORG_ENCRYPTION_ENABLED } from './config';
+import { assertEncryptionConfig } from './util/encryptionConfig';
 import { requireOrgNotFrozen } from './middleware/orgFrozen';
 import { startPersonalDataRetentionJob } from './util/personalDataRetentionJob';
 
@@ -93,10 +95,21 @@ app.use(
   DocumentRouter
 );
 
-app.use('/keys', passport.authenticate('bearer', { session: false }), KeyRouter);
+// Without ORG_ENCRYPTION_ENABLED only GET /keys/me answers, telling the frontend the feature is off
+app.use(
+  '/keys',
+  passport.authenticate('bearer', { session: false }),
+  ORG_ENCRYPTION_ENABLED ? KeyRouter : DisabledKeyRouter
+);
 
-startPersonalDataRetentionJob();
-
-app.listen(PORT, () => {
-  console.log(`✅ Server läuft auf http://localhost:${PORT}`);
-});
+assertEncryptionConfig()
+  .then(() => {
+    startPersonalDataRetentionJob();
+    app.listen(PORT, () => {
+      console.log(`✅ Server läuft auf http://localhost:${PORT}`);
+    });
+  })
+  .catch((e) => {
+    console.error(`❌ ${e instanceof Error ? e.message : e}`);
+    process.exit(1);
+  });

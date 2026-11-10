@@ -22,6 +22,7 @@ class FastKdf {
 /** An in-memory `/keys` backend for one user, enough for the session flows. */
 class FakeKeyApi {
   status: KeyStatus = {
+    enabled: true,
     org: {
       id: ORG,
       name: 'Org',
@@ -203,6 +204,28 @@ describe('KeySessionService', () => {
       WrongPassphraseError,
     );
     await expectAsync(session.unlock('eine andere gute Passphrase')).toBeResolved();
+  });
+
+  it('is disabled, with nothing to encrypt, while the server runs without encryption', async () => {
+    api.status.enabled = false;
+    api.status.org = { ...api.status.org!, keyState: 'uninitialized', keyVersion: 0 };
+    await session.ensureLoaded();
+    expect(session.state()).toBe('disabled');
+    expect(session.encryptionEnabled()).toBeFalse();
+    expect(session.encryptionActive()).toBeFalse();
+  });
+
+  it('does not believe a server that switches the encryption off after this browser saw it on', async () => {
+    await session.enrol('eine sehr gute Passphrase');
+    await grantTo(await crypto.generateDataKey());
+    await session.refresh();
+    expect(session.state()).toBe('unlocked');
+
+    api.status.enabled = false;
+    create();
+    await session.ensureLoaded();
+    expect(session.state()).toBe('keyMismatch');
+    expect(session.encryptionActive()).toBeFalse();
   });
 
   it('sets up an org: the self-grant opens, the recovery code restores access', async () => {

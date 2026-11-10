@@ -22,6 +22,7 @@ import {
 /**
  * Where the current user stands with the org encryption:
  * - `loading`: status not fetched yet
+ * - `disabled`: the server runs without `ORG_ENCRYPTION_ENABLED`; no encryption feature is shown
  * - `notNeeded`: the role never holds the org key (Admin, Controller)
  * - `orgNotSetUp`: the org hasn't set up encryption yet; data is still plaintext
  * - `needsEnrolment`: the user has no key pair yet
@@ -33,6 +34,7 @@ import {
  */
 export type KeySessionState =
   | 'loading'
+  | 'disabled'
   | 'notNeeded'
   | 'orgNotSetUp'
   | 'needsEnrolment'
@@ -75,10 +77,16 @@ export class KeySessionService {
   /** Whether the private key is unlocked in this tab (independent of any grant). */
   readonly keyPairReady = signal(false);
 
+  /**
+   * Whether the server offers the org encryption at all (`ORG_ENCRYPTION_ENABLED`). If not, every
+   * encryption feature stays hidden.
+   */
+  readonly encryptionEnabled = computed(() => !!this.status()?.enabled);
+
   /** True once the org encrypts its data, i.e. reads must decrypt and writes must encrypt. */
   readonly encryptionActive = computed(() => {
     const org = this.status()?.org;
-    return !!org && org.keyState !== 'uninitialized';
+    return this.encryptionEnabled() && !!org && org.keyState !== 'uninitialized';
   });
 
   private keyPair: CryptoKeyPair | null = null;
@@ -376,6 +384,16 @@ export class KeySessionService {
     const org = status?.org;
     if (!status) return this.state.set('loading');
     if (this.mismatchReason()) return this.state.set('keyMismatch');
+    if (!status.enabled) {
+      // a server that has seen this browser's org encrypted can't switch the encryption off
+      if (org && hasSeenEncryption(org.id)) {
+        this.mismatchReason.set(
+          'Der Server meldet, dass die Verschlüsselung abgeschaltet ist, obwohl dieser Browser den Schlüssel der Organisation kennt.',
+        );
+        return this.state.set('keyMismatch');
+      }
+      return this.state.set('disabled');
+    }
     if (!status.needsKeys || !org) return this.state.set('notNeeded');
     if (org.keyState === 'uninitialized') {
       if (hasSeenEncryption(org.id)) {

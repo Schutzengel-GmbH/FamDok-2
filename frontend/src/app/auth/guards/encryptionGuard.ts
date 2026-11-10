@@ -3,7 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 import { KeySessionService } from 'src/app/services/key-session.service';
 
 /** States in which pages with personal data can be shown. */
-const READY = ['unlocked', 'orgNotSetUp', 'notNeeded'];
+const READY = ['unlocked', 'orgNotSetUp', 'notNeeded', 'disabled'];
 
 /**
  * Keeps pages with personal data closed until the org data key is unlocked in this tab, and
@@ -25,5 +25,23 @@ export const encryptionGuard = (): CanActivateFn => {
     return router.createUrlTree(['/verschluesselung'], {
       queryParams: { returnUrl: state.url },
     });
+  };
+};
+
+/**
+ * Keeps the encryption pages (`/verschluesselung`, `/schluesselverwaltung/…`) closed while the
+ * server runs without `ORG_ENCRYPTION_ENABLED`. If the status can't be loaded, the page opens and
+ * shows the error itself; redirecting would loop with {@link encryptionGuard}.
+ */
+export const encryptionFeatureGuard = (): CanActivateFn => {
+  return async () => {
+    const session = inject(KeySessionService);
+    const router = inject(Router);
+    try {
+      await session.ensureLoaded();
+    } catch {
+      return true;
+    }
+    return session.encryptionEnabled() ? true : router.createUrlTree(['/']);
   };
 };

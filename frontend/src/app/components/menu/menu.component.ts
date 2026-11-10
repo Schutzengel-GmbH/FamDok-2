@@ -176,13 +176,15 @@ export class MenuComponent {
       label: 'Schlüsselverwaltung',
       link: '/schluesselverwaltung',
     };
+    // only when the server offers the encryption at all (ORG_ENCRYPTION_ENABLED)
+    const keyLinks = this.keys.encryptionEnabled() ? [keyManagementLink] : [];
     if (this.isAdmin()) return adminLinks.sort(sortByNumProperty('priority'));
     if (this.isOrgController())
-      return [userAdminLink, keyManagementLink, ...controllerLinks].sort(
+      return [userAdminLink, ...keyLinks, ...controllerLinks].sort(
         sortByNumProperty('priority'),
       );
     if (this.isOrgCoordinator())
-      return [userAdminLink, keyManagementLink, ...baseLinks].sort(
+      return [userAdminLink, ...keyLinks, ...baseLinks].sort(
         sortByNumProperty('priority'),
       );
     if (this.isController())

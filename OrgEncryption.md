@@ -93,6 +93,24 @@ browser-chosen ids.
 
 Org state: `uninitialized` → `active`.
 
+**Encryption is off unless the server enables it.** The backend offers it only with
+`ORG_ENCRYPTION_ENABLED=true` (`backend/config.ts`, default off). Without it:
+
+- only `GET /keys/me` exists (`DisabledKeyRouter`); it reports `enabled: false`, and every other
+  `/keys` route answers 404;
+- `KeySessionService` goes to the state `disabled`: no key state in the header, no
+  "Verschlüsselung" or "Schlüsselverwaltung" menu entries (`MenuComponent` reads
+  `encryptionEnabled`), the encryption pages redirect home (`encryptionFeatureGuard`), and
+  `PersonalDataService` passes everything through in plaintext;
+- a browser that has seen its org encrypted doesn't believe a server that reports the encryption
+  as off and goes to `keyMismatch`, as for an org reported as `uninitialized`.
+
+**Turning the server option off is a one-way street as well.** Once any organisation has
+activated its encryption, its data can only be read and written with the encryption features, so
+`ORG_ENCRYPTION_ENABLED` must stay on. `assertEncryptionConfig` (`backend/util/encryptionConfig.ts`)
+checks this at startup: with the option off and any organisation not `uninitialized`, the backend
+refuses to start and names those organisations.
+
 **Encryption is optional per organisation.** An org that never activates it keeps working in
 legacy mode indefinitely; nothing in the app requires it. Activation is a deliberate step by a
 key manager and is one-way:
@@ -461,6 +479,9 @@ cannot be recovered; the setup page says so.
 
 ## Operational notes
 
+- **Enable**: set `ORG_ENCRYPTION_ENABLED=true` in `.env` (passed to the backend container by
+  `docker-compose.yaml`) and restart the backend. Once an organisation has activated its
+  encryption, the option can't be turned off again; the backend won't start without it.
 - **Install**: the frontend has new dependencies (`hpke`, `@zxcvbn-ts/*`, `pdfmake`, `jszip`):
   run `npm install` in `frontend/`. The backend no longer needs `pdfmake` or `archiver`.
 - **Database**: `npx prisma migrate deploy` applies `…_org_encryption`, `…_org_key_proofs` and
