@@ -58,9 +58,7 @@ CaseRouter.get(
 
 CaseRouter.get(
   '/i/:id',
-  route(({ user, params }) =>
-    CaseController.get(user, params.id)
-  )
+  route(({ user, params }) => CaseController.get(user, params.id))
 );
 
 CaseRouter.post(
@@ -70,12 +68,9 @@ CaseRouter.post(
   )
 );
 
-
 CaseRouter.delete(
   '/i/:id',
-  route(({ user, params }) =>
-    CaseController.delete(user, params.id)
-  )
+  route(({ user, params }) => CaseController.delete(user, params.id))
 );
 
 CaseRouter.post(
@@ -94,9 +89,7 @@ CaseRouter.put(
 
 CaseRouter.delete(
   '/i/:id/ziel/:ziel',
-  route(({ user, params }) =>
-    CaseController.deleteZiel(user, params.ziel)
-  )
+  route(({ user, params }) => CaseController.deleteZiel(user, params.ziel))
 );
 
 CaseRouter.get(
@@ -228,7 +221,8 @@ CaseRouter.post(
   handleUpload(caseAttachmentUpload.single('file')),
   route({ body: CaseAttachmentRequest }, ({ user, params, file, body }) =>
     CaseController.createCaseAttachment(user, params.id, file, body.note)
-  ));
+  )
+);
 
 CaseRouter.delete(
   '/i/:id/attachment/i/:attId',
@@ -260,16 +254,12 @@ CaseRouter.post(
 
 CaseRouter.post(
   '/reopen/:caseId',
-  route(({ user, params }) =>
-    CaseController.reopenCase(user, params.id)
-  )
+  route(({ user, params }) => CaseController.reopenCase(user, params.caseId))
 );
 
 CaseRouter.post(
   '/i/:id/purge',
-  route(({ user, params }) =>
-    CaseController.purgeFamily(user, params.id)
-  )
+  route(({ user, params }) => CaseController.purgeFamily(user, params.id))
 );
 
 export default CaseRouter;
