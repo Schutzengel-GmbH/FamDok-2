@@ -74,6 +74,7 @@ export type CaseCreateRequest = Wire<typeof CaseCreateRequest>;
  */
 export const CaseWhere = CaseScalarWhereInputObjectZodSchema.pick({
   closedAt: true,
+  personalDataDeletedAt: true,
   startedAt: true,
   city: true,
   plz: true,

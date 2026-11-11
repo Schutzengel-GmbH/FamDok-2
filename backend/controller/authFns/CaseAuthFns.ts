@@ -77,11 +77,15 @@ export function visibleCaseWhere(user: FullUser): Prisma.CaseWhereInput {
 }
 
 export function orgCaseWhere(user: FullUser): Prisma.CaseWhereInput {
-  return { organisationId: { in: user.organisationId ? [user.organisationId] : [] } };
+  return {
+    organisationId: { in: user.organisationId ? [user.organisationId] : [] },
+  };
 }
 
 export function subOrgCaseWhere(user: FullUser): Prisma.CaseWhereInput {
-  return { subOrganisationId: { in: user.subOrganisations.map((so) => so.id) } };
+  return {
+    subOrganisationId: { in: user.subOrganisations.map((so) => so.id) },
+  };
 }
 
 export function canEditCase(
@@ -228,6 +232,9 @@ export function caseWhereFor(
   user: FullUser,
   where?: CaseWhere
 ): CaseWhere | undefined {
+  // if not overridden, remove cases that have deleted personal data for non statistic users
+  if (!where?.personalDataDeletedAt && !ANONYMIZED_ROLES.includes(user.role))
+    where = { ...where, personalDataDeletedAt: null };
   if (!where || !ANONYMIZED_ROLES.includes(user.role)) return where;
   const { family, ...rest } = where;
   return rest;
