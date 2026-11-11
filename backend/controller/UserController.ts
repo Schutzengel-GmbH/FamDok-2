@@ -27,6 +27,8 @@ import {
   KcStatus,
   UserWithTempPassword,
 } from '../../shared/types';
+import { KeyController } from './KeyController';
+import { roleNeedsKeys } from './authFns/KeyAuthFns';
 import {
   ROLES_REQUIRING_ORG,
   ROLES_WITHOUT_ORG,
@@ -255,7 +257,29 @@ export class UserController {
       include: USER_DEFAULT_INCLUDE,
     });
 
+    await UserController.dropKeysAfterRescope(reqUser, user, update);
+
     return update;
+  }
+
+  /**
+   * Grants belong to an organisation and a role that reads personal data. When either changes,
+   * the user's grants go; the key pair stays as long as the new role still uses one.
+   */
+  private static async dropKeysAfterRescope(
+    reqUser: FullUser,
+    before: FullUser,
+    after: FullUser
+  ) {
+    const orgChanged = before.organisationId !== after.organisationId;
+    const lostKeyRole = roleNeedsKeys(before.role) && !roleNeedsKeys(after.role);
+    if (!orgChanged && !lostKeyRole) return;
+    await KeyController.removeUserKeys(
+      reqUser,
+      after.id,
+      before.organisationId,
+      roleNeedsKeys(after.role)
+    );
   }
 
   /**
@@ -457,7 +481,8 @@ export class UserController {
   }
 
   /**
-   * Locks or unlocks the user's Keycloak account. Locked users can't log in.
+   * Locks or unlocks the user's Keycloak account. Locked users can't log in; locking also ends
+   * their sessions and deletes their key pair and grants.
    * @param reqUser requesting user, must be allowed to manage users
    * @param id user ID
    * @param request whether the account should be enabled
@@ -473,6 +498,17 @@ export class UserController {
 
     const adminClient = await getAdminClient();
     await adminClient.users.update({ id: user.kcId }, { enabled });
+
+    // A disabled user loses their keys for good: re-enabled, they enrol again and a
+    // coordinator checks the new fingerprint before granting.
+    if (!enabled) {
+      try {
+        await adminClient.users.logout({ id: user.kcId });
+      } catch (err) {
+        console.error('could not end keycloak sessions', err);
+      }
+      await KeyController.removeUserKeys(reqUser, user.id, user.organisationId);
+    }
 
     return UserController.withOwnKcStatus(user);
   }

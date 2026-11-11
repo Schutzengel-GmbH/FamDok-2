@@ -8,6 +8,7 @@ import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
 
 import { ContactBrief } from './contact-brief.component';
+import { ExportService } from 'src/app/services/export.service';
 import { ContactDocumentationService } from 'src/app/services/contact-documentation.service';
 
 describe('ContactBrief', () => {
@@ -88,13 +89,13 @@ describe('ContactBrief', () => {
 
   it('triggers a PDF download with the case and doc ids on click', () => {
     setup();
-    const service = TestBed.inject(ContactDocumentationService);
-    spyOn(service, 'downloadContactDocumentationPDF');
+    const service = TestBed.inject(ExportService);
+    spyOn(service, 'downloadContactDocumentation').and.resolveTo();
 
     const button = fixture.debugElement.query(By.css('button'));
     button.triggerEventHandler('click');
 
-    expect(service.downloadContactDocumentationPDF).toHaveBeenCalledWith(
+    expect(service.downloadContactDocumentation).toHaveBeenCalledWith(
       'case-1',
       'doc-1',
     );

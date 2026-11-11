@@ -237,6 +237,7 @@ export function buildCaseAttachment(overrides: Overrides<FullCaseAttachment> = {
     mimeType: 'application/pdf',
     size: 1234,
     note: null,
+    contentKeyVersion: null,
     uploadedById: nextId('user'),
     createdAt: new Date('2026-01-01'),
     ...overrides,

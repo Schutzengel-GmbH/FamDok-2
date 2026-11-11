@@ -7,6 +7,12 @@ import { FamilyScalarWhereInputObjectZodSchema } from "../generated/zod/schemas/
 import { ZielvereinbarungCreateManyInputObjectZodSchema } from "../generated/zod/schemas/objects/ZielvereinbarungCreateManyInput.schema";
 import { ZielvereinbarungScalarWhereInputObjectZodSchema } from "../generated/zod/schemas/objects/ZielvereinbarungScalarWhereInput.schema";
 import { Wire } from "./common";
+
+/**
+ * Rows holding ciphertext get their id from the browser, since the ciphertext is bound to it;
+ * see backend/util/encryptionPolicy.ts.
+ */
+const ClientId = z.uuid();
 import { FamilyCreateRequest } from "./family";
 import { CreatedByWhere } from "./user";
 
@@ -18,8 +24,10 @@ const ZielFields = ZielvereinbarungCreateManyInputObjectZodSchema.pick({
   description: true,
 });
 
-/** Body of `POST /case/i/:id/ziel` */
-export const ZielCreateRequest = ZielFields.strict();
+/** Body of `POST /case/i/:id/ziel`. `description` is a v1. envelope in encrypted orgs. */
+export const ZielCreateRequest = ZielFields.extend({
+  id: ClientId.optional(),
+}).strict();
 export type ZielCreateRequest = Wire<typeof ZielCreateRequest>;
 
 /** Body of `PUT /case/i/:id/ziel/:ziel` */
@@ -41,9 +49,12 @@ const ContactDocumentationFields =
     beratungsThemenAllgemein: z.array(z.number().int()).optional(),
   });
 
-/** Body of `POST /case/i/:id/documentation`. Empty for the draft of a new documentation. */
+/**
+ * Body of `POST /case/i/:id/documentation`. Empty for the draft of a new documentation.
+ * `zusammenfassung` and `dokumentation` are v1. envelopes in encrypted orgs.
+ */
 export const ContactDocumentationCreateRequest =
-  ContactDocumentationFields.strict();
+  ContactDocumentationFields.extend({ id: ClientId.optional() }).strict();
 export type ContactDocumentationCreateRequest = Wire<
   typeof ContactDocumentationCreateRequest
 >;
@@ -55,7 +66,10 @@ export type ContactDocumentationUpdateRequest = Wire<
   typeof ContactDocumentationUpdateRequest
 >;
 
-/** Body of `POST /case`: a new case along with its family, in the user's own organisation. */
+/**
+ * Body of `POST /case`: a new case along with its family, in the user's own organisation.
+ * `city` and `plz` are the plaintext statistics copy of the (encrypted) family address.
+ */
 export const CaseCreateRequest = CaseCreateManyInputObjectZodSchema.pick({
   startedAt: true,
   migrationBackground: true,
@@ -63,8 +77,10 @@ export const CaseCreateRequest = CaseCreateManyInputObjectZodSchema.pick({
   familienstand: true,
   partnerInvolved: true,
   bekanntJA: true,
+  city: true,
+  plz: true,
 })
-  .extend({ family: FamilyCreateRequest })
+  .extend({ id: ClientId.optional(), family: FamilyCreateRequest })
   .strict();
 export type CaseCreateRequest = Wire<typeof CaseCreateRequest>;
 
@@ -152,8 +168,9 @@ export const LatestQuery = z.strictObject({
 });
 export type LatestQuery = Wire<typeof LatestQuery>;
 
-/** Body of `POST /case/handover` */
+/** Body of `POST /case/handover`. `notes` is a v1. envelope in encrypted orgs. */
 export const HandoverRequest = z.strictObject({
+  id: ClientId.optional(),
   caseId: z.string(),
   date: z.coerce.date(),
   removedIds: z.array(z.string()),
@@ -166,8 +183,15 @@ export type HandoverRequest = Wire<typeof HandoverRequest>;
 export const CaseCloseRequest = z.strictObject({ date: z.coerce.date() });
 export type CaseCloseRequest = Wire<typeof CaseCloseRequest>;
 
-/** Body of `POST /case/i/:id/attachment`, next to the file */
+/**
+ * Body of `POST /case/i/:id/attachment`, next to the file. In encrypted orgs the file is an
+ * `FDK1` envelope sent as application/octet-stream, `filename` and `note` are v1. envelopes, and
+ * `mimeType` carries the real type of the content.
+ */
 export const CaseAttachmentRequest = z.strictObject({
+  id: ClientId.optional(),
   note: z.string().optional(),
+  filename: z.string().optional(),
+  mimeType: z.string().optional(),
 });
 export type CaseAttachmentRequest = Wire<typeof CaseAttachmentRequest>;

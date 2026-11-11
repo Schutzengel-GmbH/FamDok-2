@@ -22,6 +22,11 @@ import Keycloak from 'keycloak-js';
 import { DataViewPage } from './pages/data-view/data-view.page';
 import { AllCaseFormData } from './pages/all-caseform-data/all-caseform-data.page';
 import { authenticatedGuard } from './auth/guards/authenticatedGuard';
+import { encryptionFeatureGuard, encryptionGuard } from './auth/guards/encryptionGuard';
+import { EncryptionPage } from './pages/encryption/encryption.page';
+import { KeyManagementPage } from './pages/key-management/key-management.page';
+import { KeyMigrationPage } from './pages/key-migration/key-migration.page';
+import { KeyRotationPage } from './pages/key-rotation/key-rotation.page';
 import { unsavedChangesGuard } from './auth/guards/unsavedChangesGuard';
 import { AllContactData } from './pages/all-contact-documentation/all-contact-documentation.page';
 import { EditContactDocumentationPage } from './pages/edit-contact-documentation/edit-contact-documentation.page';
@@ -75,6 +80,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -89,6 +95,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -102,6 +109,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -114,6 +122,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -126,6 +135,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -138,6 +148,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -150,6 +161,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -197,6 +209,7 @@ export const routes: Routes = [
         Role.Controller,
         Role.OrgController,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -232,7 +245,7 @@ export const routes: Routes = [
   {
     path: 'contact-documentation-table',
     component: AllContactData,
-    canActivate: [authenticatedGuard()],
+    canActivate: [authenticatedGuard(), encryptionGuard()],
   },
   {
     path: 'my-responses',
@@ -244,6 +257,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -270,6 +284,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -282,6 +297,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -296,6 +312,29 @@ export const routes: Routes = [
     component: ErrorPage,
   },
   {
+    // Set up, unlock and manage the own encryption key; the encryption guard sends users here.
+    path: 'verschluesselung',
+    component: EncryptionPage,
+    canActivate: [authenticatedGuard(), encryptionFeatureGuard()],
+  },
+  {
+    path: 'schluesselverwaltung',
+    component: KeyManagementPage,
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController]), encryptionFeatureGuard()],
+  },
+  {
+    // Encrypts data stored before the org set up its encryption (P5)
+    path: 'schluesselverwaltung/migration',
+    component: KeyMigrationPage,
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController]), encryptionFeatureGuard()],
+  },
+  {
+    // Rotation of the org data key while the org is frozen (P6)
+    path: 'schluesselverwaltung/erneuern',
+    component: KeyRotationPage,
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController]), encryptionFeatureGuard()],
+  },
+  {
     path: 'contact-documentation',
     component: ContactDocumentation,
     canDeactivate: [unsavedChangesGuard],
@@ -306,6 +345,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -319,6 +359,7 @@ export const routes: Routes = [
         Role.OrgCoordinator,
         Role.SubOrgCoordinator,
       ]),
+      encryptionGuard(),
     ],
   },
   {
@@ -336,17 +377,18 @@ export const routes: Routes = [
         Role.Controller,
         Role.OrgController,
       ]),
+      encryptionGuard(),
     ],
   },
   {
     path: 'all-stats',
     component: DataViewPage,
-    canActivate: [authenticatedGuard()],
+    canActivate: [authenticatedGuard(), encryptionGuard()],
   },
   {
     path: 'all-caseform-data/:formId',
     component: AllCaseFormData,
-    canActivate: [authenticatedGuard()],
+    canActivate: [authenticatedGuard(), encryptionGuard()],
   },
   {
     path: 'all-form-data/:formId',

@@ -8,3 +8,4 @@ export * from "./response";
 export * from "./settings";
 export * from "./stats";
 export * from "./user";
+export * from "./keys";

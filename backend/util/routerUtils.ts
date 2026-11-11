@@ -99,3 +99,31 @@ export function route(
     }
   };
 }
+
+/**
+ * Like {@link route}, for the few routes whose body is binary (`express.raw` in front of them):
+ * the handler gets the raw bytes and the query parsed with its schema, and nothing else of `req`.
+ */
+export function rawRoute<Q extends ZodType>(
+  schemas: { query: Q },
+  handler: (
+    ctx: Omit<RouteContext<undefined, Q>, 'body'> & { body: Buffer }
+  ) => unknown
+): RequestHandler {
+  return async (req, res) => {
+    try {
+      if (!Buffer.isBuffer(req.body))
+        throw new BadRequestError('Expected application/octet-stream');
+      const result = await handler({
+        user: req.user!,
+        params: req.params as Record<string, string>,
+        body: req.body,
+        query: parseQuery(req, schemas.query) as Parsed<Q>,
+        res,
+      });
+      if (!res.headersSent) res.json(result);
+    } catch (e) {
+      handleError(e, res);
+    }
+  };
+}

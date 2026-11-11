@@ -139,7 +139,8 @@ export class WarningsController {
           !a.answerDate &&
           a.answerInt === null &&
           a.answerNum === null &&
-          a.answerText === null
+          a.answerText === null &&
+          !a.answerEncrypted
         );
       });
     });
@@ -211,6 +212,10 @@ export class WarningsController {
   }
 }
 
+/**
+ * Whether an answer is empty. Encrypted answers can't be inspected, but the browser only sends
+ * `answerEncrypted` for answers that have a value, so its presence counts as answered.
+ */
 function unansweredFilter(answer: Answer) {
   return (
     (!answer.answerSelectId || answer.answerSelectId.length < 1) &&
@@ -218,6 +223,7 @@ function unansweredFilter(answer: Answer) {
     !answer.answerDate &&
     answer.answerInt === null &&
     answer.answerNum === null &&
-    answer.answerText === null
+    answer.answerText === null &&
+    !answer.answerEncrypted
   );
 }

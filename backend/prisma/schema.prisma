@@ -56,6 +56,12 @@ model User {
 
   uploadedDocuments       Document[]
   uploadedCaseAttachments CaseAttachment[]
+
+  userKey        UserKey?
+  keyGrants      OrgKeyGrant[] @relation(name: "grantRecipient")
+  keyGrantsGiven OrgKeyGrant[] @relation(name: "grantGrantor")
+  keyEventsDone  OrgKeyEvent[] @relation(name: "keyEventActor")
+  keyEventsAbout OrgKeyEvent[] @relation(name: "keyEventSubject")
 }
 
 model Organisation {
@@ -69,6 +75,22 @@ model Organisation {
   cases            Case[]
   caseForms        CaseForm[]
   generalForms     GeneralForm[]
+
+  /// Encryption lifecycle, see shared/utils/encryptedModels.ts
+  keyState                  OrgKeyState   @default(uninitialized)
+  /// Version of the current org data key; 0 until the encryption is set up
+  keyVersion                Int           @default(0)
+  /// Version a running rotation re-encrypts to
+  pendingKeyVersion         Int?
+  frozenAt                  DateTime?
+  /// The data key wrapped under the offline recovery code (r1. format)
+  recoveryWrappedKey        String?
+  /// During a rotation: the pending version's key wrapped under the new recovery code. Stored
+  /// when the rotation starts, so the new key can't be lost with the key manager's grant.
+  pendingRecoveryWrappedKey String?
+  keyGrants                 OrgKeyGrant[]
+  keyEvents                 OrgKeyEvent[]
+  keyProofs                 OrgKeyProof[]
 }
 
 model SubOrganisation {
@@ -158,13 +180,17 @@ model Family {
   organisation   Organisation? @relation(fields: [organisationId], references: [id])
   organisationId String?
 
-  name String
+  /// Plaintext columns are only used before the org sets up its encryption (and until migrated)
+  name String?
   note String?
 
   /// [Address]
   adress           Json?
   phone            String?
   additionalPhones String[]
+
+  /// v1. envelope of name, note, adress, phone and additionalPhones
+  encrypted String?
 
   children  Child[]
   caregiver Caregiver[]
@@ -178,15 +204,17 @@ model Child {
   family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
   familyId String
 
-  name     String
+  name     String?
   lastName String?
 
-  gender Gender @default(unspecified)
+  gender Gender?
 
   /// [HealthDataPointChild]
   healthData Json[]
 
-  dateOfBirth      DateTime
+  dateOfBirth      DateTime?
+  /// v1. envelope of name, lastName, gender, dateOfBirth and healthData
+  encrypted        String?
   CaseFormResponse CaseFormResponse[]
 }
 
@@ -196,14 +224,16 @@ model Caregiver {
   family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
   familyId String
 
-  name     String
+  name     String?
   lastName String?
 
-  relation Relation
+  relation Relation?
 
-  gender Gender @default(unspecified)
+  gender Gender?
 
-  dateOfBirth      DateTime
+  dateOfBirth      DateTime?
+  /// v1. envelope of name, lastName, gender, dateOfBirth and relation
+  encrypted        String?
   CaseFormResponse CaseFormResponse[]
 }
 
@@ -345,6 +375,8 @@ model Answer {
   answerNum      Float?
   answerSelectId Int[]
   answerText     String?
+  /// For forms with personal data: v1. envelope of the typed answer columns above
+  answerEncrypted String?
 
   caseFormResponse   CaseFormResponse? @relation(fields: [caseFormResponseId], references: [id])
   caseFormResponseId String?
@@ -394,11 +426,111 @@ model CaseAttachment {
   mimeType   String
   size       Int
   note       String?
+  /// Key version the stored file content is encrypted with; null for plaintext legacy files
+  contentKeyVersion Int?
 
   uploadedBy   User?   @relation(fields: [uploadedById], references: [id])
   uploadedById String?
 
   createdAt DateTime @default(now())
+}
+
+/// A user's key pair: the public key in the clear, the private key wrapped under a key derived
+/// from their encryption passphrase. Never readable by anyone but the user.
+model UserKey {
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @id
+
+  /// base64url SPKI, ECDH P-256
+  publicKey         String
+  /// k1. format
+  wrappedPrivateKey String
+  /// [KdfParams]
+  kdfParams         Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// The org data key of one version, sealed to one user's public key (g1. format).
+model OrgKeyGrant {
+  id String @id @default(uuid())
+
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisationId String
+
+  user   User   @relation(name: "grantRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  grantedBy   User?   @relation(name: "grantGrantor", fields: [grantedById], references: [id], onDelete: SetNull)
+  grantedById String?
+
+  keyVersion Int
+  wrappedKey String
+  /// The public key the grant was sealed to, so a grant for a replaced key pair is recognisable
+  publicKey  String
+
+  createdAt DateTime @default(now())
+
+  @@unique([organisationId, userId, keyVersion])
+}
+
+/// Proof that key version `keyVersion` was introduced by someone holding version keyVersion - 1:
+/// the new key's fingerprint, encrypted under the previous key (a v1. envelope of version
+/// keyVersion - 1). Browsers only trust a new version if this checks out, so an operator can't
+/// slip in a key of their own. Version 1 has none.
+model OrgKeyProof {
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisationId String
+
+  keyVersion Int
+  proof      String
+
+  createdAt DateTime @default(now())
+
+  @@id([organisationId, keyVersion])
+}
+
+/// Append-only log of everything that changes who holds an org key, shown to coordinators.
+model OrgKeyEvent {
+  id String @id @default(uuid())
+
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisationId String
+
+  type OrgKeyEventType
+
+  actor     User?   @relation(name: "keyEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorId   String?
+  subject   User?   @relation(name: "keyEventSubject", fields: [subjectId], references: [id], onDelete: SetNull)
+  subjectId String?
+
+  keyVersion  Int?
+  /// Fingerprint of the subject's public key at the time of the event
+  fingerprint String?
+
+  createdAt DateTime @default(now())
+}
+
+enum OrgKeyState {
+  uninitialized
+  active
+  frozen
+  rotating
+}
+
+enum OrgKeyEventType {
+  setup
+  enrol
+  reenrol
+  passphraseChanged
+  grant
+  revoke
+  recovery
+  freeze
+  unfreeze
+  rotationStarted
+  rotationCompleted
 }
 
 enum Role {

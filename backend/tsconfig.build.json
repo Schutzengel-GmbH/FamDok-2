@@ -1,4 +1,4 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "prisma", "**/__tests__/**", "testUtils/**"]
+  "exclude": ["node_modules", "prisma", "**/__tests__/**", "testUtils/**", "../shared/**/__tests__/**"]
 }

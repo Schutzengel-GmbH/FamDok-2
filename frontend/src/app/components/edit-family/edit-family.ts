@@ -127,7 +127,7 @@ export class EditFamilyComponent implements OnInit {
 
     const currentCase = f.case;
 
-    this.name.setValue(f.name);
+    this.name.setValue(f.name ?? '');
     this.note.setValue(f.note);
     this.street.setValue(f.adress?.street ?? '');
     this.number.setValue(f.adress?.number ?? '');

@@ -20,9 +20,10 @@
               "browser": ""
             },
             "index": "src/index.html",
-            "allowedCommonJsDependencies": ["hammerjs"],
+            "allowedCommonJsDependencies": ["hammerjs", "pdfmake", "jszip"],
             "polyfills": ["src/polyfills.ts", "@angular/localize/init"],
             "tsConfig": "tsconfig.app.json",
+            "webWorkerTsConfig": "tsconfig.worker.json",
             "inlineStyleLanguage": "scss",
             "stylePreprocessorOptions": {
               "includePaths": ["src/styles"]
@@ -98,6 +99,7 @@
             "main": "src/test.ts",
             "polyfills": ["src/polyfills.ts", "@angular/localize/init"],
             "tsConfig": "tsconfig.spec.json",
+            "webWorkerTsConfig": "tsconfig.worker.json",
             "karmaConfig": "src/karma.conf.js",
             "inlineStyleLanguage": "scss",
             "stylePreprocessorOptions": {

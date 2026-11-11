@@ -5,17 +5,29 @@ import Keycloak from 'keycloak-js';
 import { HeaderComponent } from './header.component';
 import { mockKeycloak } from 'src/app/testing/keycloak-mock';
 import { ThemeService } from '../../services/theme.service';
+import { signal } from '@angular/core';
+import { KeySessionService } from '../../services/key-session.service';
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
   let fixture: ComponentFixture<HeaderComponent>;
   let keycloak: Keycloak;
+  let keys: { state: ReturnType<typeof signal<string>>; lock: jasmine.Spy; ensureLoaded: jasmine.Spy };
 
-  function setup(authenticated: boolean) {
+  function setup(authenticated: boolean, keyState = 'notNeeded') {
     keycloak = mockKeycloak({ authenticated });
+    keys = {
+      state: signal(keyState),
+      lock: jasmine.createSpy('lock'),
+      ensureLoaded: jasmine.createSpy('ensureLoaded').and.resolveTo(),
+    };
     TestBed.configureTestingModule({
       imports: [HeaderComponent],
-      providers: [provideRouter([]), { provide: Keycloak, useValue: keycloak }],
+      providers: [
+        provideRouter([]),
+        { provide: Keycloak, useValue: keycloak },
+        { provide: KeySessionService, useValue: keys },
+      ],
     });
 
     fixture = TestBed.createComponent(HeaderComponent);
@@ -39,9 +51,23 @@ describe('HeaderComponent', () => {
     expect(keycloak.login).toHaveBeenCalled();
   });
 
-  it('logout() delegates to Keycloak.logout', () => {
+  it('shows a lock button while unlocked that locks the keys', () => {
+    setup(true, 'unlocked');
+    const button: HTMLButtonElement = fixture.nativeElement.querySelector('.bi-unlock').parentElement;
+    button.click();
+    expect(keys.lock).toHaveBeenCalled();
+  });
+
+  it('links to the encryption page while locked', () => {
+    setup(true, 'locked');
+    const link: HTMLAnchorElement = fixture.nativeElement.querySelector('.bi-lock').parentElement;
+    expect(link.getAttribute('href')).toBe('/verschluesselung');
+  });
+
+  it('logout() discards the keys and delegates to Keycloak.logout', () => {
     setup(true);
     component.logout();
+    expect(keys.lock).toHaveBeenCalled();
     expect(keycloak.logout).toHaveBeenCalled();
   });
 

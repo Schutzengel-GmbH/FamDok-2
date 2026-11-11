@@ -13,6 +13,7 @@ Digitale Fachanwendung zur Dokumentation von Fällen im Bereich **Frühe Hilfen*
 - [Umgebungsvariablen](#umgebungsvariablen)
 - [Datenbankschema](#datenbankschema)
 - [Rollen & Berechtigungen](#rollen--berechtigungen)
+- [Verschlüsselung personenbezogener Daten](#verschlüsselung-personenbezogener-daten)
 - [Anwendungsrouten](#anwendungsrouten)
 - [API-Übersicht](#api-übersicht)
 - [Produktiv-Deployment](#produktiv-deployment)
@@ -188,6 +189,7 @@ Alle Variablen werden in **einer einzigen `.env` im Projekt-Root** gesetzt (Vorl
 | `PRODUCTION`            | Produktions-Flag                                    | `false`                                             |
 | `UPLOAD_DIR`            | Upload-Verzeichnis (Container überschreibt dies)    | `./uploads`                                         |
 | `MAX_UPLOAD_SIZE_MB`    | Maximale Upload-Größe pro Datei in MB               | `25`                                                |
+| `ORG_ENCRYPTION_ENABLED`| Bietet die Verschlüsselung personenbezogener Daten an (siehe [Verschlüsselung](#verschlüsselung-personenbezogener-daten)). **Einbahnstraße:** Sobald eine Organisation sie aktiviert hat, lässt sie sich nicht mehr abschalten; das Backend startet dann nicht mehr ohne sie | `false` |
 
 `backend/prisma/seed-prod.config.json` (Vorlage: `seed-prod.config.example.json`) bleibt bewusst eine separate, gitignorede Konfigurationsdatei – sie enthält einmalige Instanz-Seed-Daten (Organisationsname, Admin-Identität), keine Deployment-Konfiguration.
 
@@ -267,6 +269,40 @@ Das Dashboard (Route `/`) leitet nach dem Login automatisch rollenabhängig weit
 `CaseForm`/`GeneralForm`-Definitionen können global (für alle Organisationen sichtbar) oder einer einzelnen Organisation zugeordnet sein. `Controller` verwaltet globale Formulare, `OrgController` nur die seiner eigenen Organisation.
 
 ---
+
+## Verschlüsselung personenbezogener Daten
+
+Personenbezogene Daten (Familien, Kinder, Bezugspersonen, Dokumentationstexte, Zielvereinbarungs-
+beschreibungen, Übergabenotizen, Antworten personenbezogener Fragebögen, Anhänge) werden nur im
+Browser mit dem Schlüssel der Organisation ver- und entschlüsselt. Server und Datenbank speichern
+ausschließlich Chiffrat, öffentliche Schlüssel und verpackte Schlüssel.
+
+Die Verschlüsselung ist **optional**, auf zwei Ebenen:
+
+- **Server:** Nur wenn das Backend mit `ORG_ENCRYPTION_ENABLED=true` läuft, gibt es die
+  Verschlüsselung überhaupt. Ohne die Variable (Standard) sind alle Verschlüsselungsfunktionen
+  ausgeblendet, die Schlüssel-Endpunkte abgeschaltet, und alle Daten werden wie bisher im Klartext
+  gespeichert.
+- **Organisation:** Bei eingeschalteter Variable aktivieren die OrgCoordinators/OrgControllers einer
+  Organisation die Verschlüsselung für ihre Organisation. Bis dahin arbeitet sie wie bisher.
+
+Beides ist eine **Einbahnstraße**. Die Aktivierung einer Organisation lässt sich nicht
+rückgängig machen, und sobald eine Organisation die Verschlüsselung aktiviert hat, lässt sich
+`ORG_ENCRYPTION_ENABLED` nicht mehr abschalten: Ihre Daten liegen dann verschlüsselt vor und sind
+nur mit den Verschlüsselungsfunktionen les- und schreibbar. Das Backend verweigert in diesem Fall
+den Start ohne die Variable und nennt die betroffenen Organisationen.
+
+- Ist sie aktiviert, richten Benutzer*innen unter **Verschlüsselung** (`/verschluesselung`)
+  einmalig eine Verschlüsselungs-Passphrase ein und entsperren damit pro Tab.
+- OrgCoordinators und OrgControllers aktivieren die Verschlüsselung ihrer Organisation, geben
+  Zugänge nach Fingerabdruck-Vergleich frei, frieren ein und erneuern den Schlüssel unter
+  **Schlüsselverwaltung** (`/schluesselverwaltung`). Jede neue Schlüsselversion trägt einen
+  Nachweis, der mit der vorherigen Version erstellt wurde; Browser übernehmen eine neue Version
+  nur mit gültigem Nachweis.
+- Bestandsdaten werden unter `/schluesselverwaltung/migration` verschlüsselt; die Migration zum
+  Löschen der Klartextspalten liegt separat in `backend/prisma/pending-migrations/`.
+
+Wie die Verschlüsselung durch den Code läuft, beschreibt [OrgEncryption.md](OrgEncryption.md).
 
 ## Anwendungsrouten
 

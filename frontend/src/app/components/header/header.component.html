@@ -15,6 +15,48 @@
     </div>
 
     <div class="ms-auto d-flex align-items-center gap-2">
+      @switch (keys.state()) {
+        @case ("unlocked") {
+          <button
+            class="btn btn-outline-success"
+            type="button"
+            title="Entsperrt – klicken zum Sperren"
+            (click)="keys.lock()">
+            <i class="bi bi-unlock"></i>
+            <span class="visually-hidden">Schlüssel sperren</span>
+          </button>
+        }
+        @case ("locked") {
+          <a class="btn btn-outline-warning" routerLink="/verschluesselung" title="Gesperrt – entsperren">
+            <i class="bi bi-lock"></i>
+            <span class="visually-hidden">Entsperren</span>
+          </a>
+        }
+        @case ("needsEnrolment") {
+          <a class="btn btn-outline-warning" routerLink="/verschluesselung" title="Schlüssel einrichten">
+            <i class="bi bi-key"></i>
+            <span class="visually-hidden">Schlüssel einrichten</span>
+          </a>
+        }
+        @case ("awaitingGrant") {
+          <a class="btn btn-outline-warning" routerLink="/verschluesselung" title="Wartet auf Freigabe">
+            <i class="bi bi-hourglass-split"></i>
+            <span class="visually-hidden">Wartet auf Freigabe</span>
+          </a>
+        }
+        @case ("frozen") {
+          <a class="btn btn-outline-info" routerLink="/verschluesselung" title="Organisation eingefroren">
+            <i class="bi bi-snow"></i>
+            <span class="visually-hidden">Organisation eingefroren</span>
+          </a>
+        }
+        @case ("keyMismatch") {
+          <a class="btn btn-danger" routerLink="/verschluesselung" title="Unerwarteter Schlüssel">
+            <i class="bi bi-exclamation-octagon"></i>
+            <span class="visually-hidden">Unerwarteter Schlüssel</span>
+          </a>
+        }
+      }
       <button
         class="btn btn-outline-secondary"
         type="button"

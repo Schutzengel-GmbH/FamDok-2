@@ -23,7 +23,6 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7",
     "@types/passport-http-bearer": "^1.0.42",
-    "archiver": "^7.0.1",
     "cors": "^2.8.5",
     "date-fns": "^4.0",
     "dotenv": "^16.6.1",
@@ -35,12 +34,10 @@
     "openid-client": "^6.8.1",
     "passport": "^0.7.0",
     "passport-http-bearer": "^1.0.1",
-    "pdfmake": "^0.3.8",
     "superjson": "^2.2.6",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/archiver": "^6.0.4",
     "@types/cors": "^2.8.19",
     "@types/dotenv": "^8.2.3",
     "@types/express": "^5.0.3",
@@ -48,7 +45,6 @@
     "@types/jest": "^30.0.0",
     "@types/keycloak-connect": "^4.5.4",
     "@types/multer": "^2.2.0",
-    "@types/pdfmake": "^0.3.3",
     "jest": "^30.4.2",
     "nodemon": "^3.1.10",
     "prisma": "^7",

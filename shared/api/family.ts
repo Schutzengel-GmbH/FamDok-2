@@ -5,6 +5,11 @@ import { ChildCreateManyFamilyInputObjectZodSchema } from "../generated/zod/sche
 import { FamilyCreateManyInputObjectZodSchema } from "../generated/zod/schemas/objects/FamilyCreateManyInput.schema";
 import { Wire } from "./common";
 
+/** See {@link ClientId} in case.ts. */
+const ClientId = z.uuid();
+/** v1. envelope of all personal fields of the row, in encrypted orgs. */
+const EncryptedBlob = z.string().nullish();
+
 const Address = z.strictObject({
   street: z.string().nullish(),
   number: z.string().nullish(),
@@ -23,7 +28,10 @@ const ChildFields = ChildCreateManyFamilyInputObjectZodSchema.pick({
   lastName: true,
   gender: true,
   dateOfBirth: true,
-}).extend({ healthData: z.array(HealthDataPoint).optional() });
+}).extend({
+  healthData: z.array(HealthDataPoint).optional(),
+  encrypted: EncryptedBlob,
+});
 
 const CaregiverFields = CaregiverCreateManyFamilyInputObjectZodSchema.pick({
   name: true,
@@ -31,7 +39,7 @@ const CaregiverFields = CaregiverCreateManyFamilyInputObjectZodSchema.pick({
   relation: true,
   gender: true,
   dateOfBirth: true,
-});
+}).extend({ encrypted: EncryptedBlob });
 
 const FamilyFields = FamilyCreateManyInputObjectZodSchema.pick({
   name: true,
@@ -40,12 +48,16 @@ const FamilyFields = FamilyCreateManyInputObjectZodSchema.pick({
 }).extend({
   adress: Address.optional(),
   additionalPhones: z.array(z.string()).optional(),
+  encrypted: EncryptedBlob,
 });
 
 /** The family created along with a case */
 export const FamilyCreateRequest = FamilyFields.extend({
-  children: z.array(ChildFields.strict()).optional(),
-  caregivers: z.array(CaregiverFields.strict()).optional(),
+  id: ClientId.optional(),
+  children: z.array(ChildFields.extend({ id: ClientId.optional() }).strict()).optional(),
+  caregivers: z
+    .array(CaregiverFields.extend({ id: ClientId.optional() }).strict())
+    .optional(),
 }).strict();
 export type FamilyCreateRequest = Wire<typeof FamilyCreateRequest>;
 
@@ -81,8 +93,12 @@ export type CaregiverRequest = NonNullable<
   FamilyUpdateRequest["caregivers"]
 >[number];
 
-/** Body of `PUT /family/i/:id/children/:childId/health-data` */
+/**
+ * Body of `PUT /family/i/:id/children/:childId/health-data`. In encrypted orgs the health data
+ * lives in the child's blob, so the whole re-encrypted blob is sent instead.
+ */
 export const ChildHealthDataRequest = z.strictObject({
-  healthData: z.array(HealthDataPoint),
+  healthData: z.array(HealthDataPoint).optional(),
+  encrypted: EncryptedBlob,
 });
 export type ChildHealthDataRequest = Wire<typeof ChildHealthDataRequest>;

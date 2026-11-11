@@ -1,6 +1,5 @@
 import { Primitive } from 'zod/v3';
 import { Response } from 'express';
-import archiver from 'archiver';
 import { add, differenceInMinutes } from 'date-fns';
 import { prisma } from '../db';
 import {
@@ -8,12 +7,23 @@ import {
   ForbiddenError,
   NotFoundError,
 } from '../util/authUtils';
-import { PDFService, StammdatenCase } from '../util/pdfService';
+import fs from 'fs';
 import { deleteStoredFile, streamFile } from '../util/fileStorage';
+import {
+  assertBlobWrite,
+  assertClientId,
+  assertFieldWrite,
+  encryptionPolicyFor,
+} from '../util/encryptionPolicy';
+import { clearedBlobFields } from '../../shared/utils/encryptedModels';
+import {
+  BYTES_HEADER_LENGTH,
+  isBytesEnvelope,
+  parseBytesEnvelope,
+} from '../../shared/utils/ciphertext';
 import { purgeFamilyPersonalData } from '../util/personalDataPurge';
 import {
   canEditCase,
-  canExportCase,
   canHandover,
   canSeeCase,
   canSeeCases,
@@ -40,15 +50,9 @@ import {
   CONTACT_DOCUMENTATION_DEFAULT_INCLUDE,
   USER_DEFAULT_INCLUDE,
 } from '../../shared/consts';
-import { CSV_BOM, CsvColumn, toCsv } from '../../shared/utils/csv';
-import { getAnswerValue } from '../../shared/utils/answerValue';
-import {
-  caseExportFilename,
-  safeFilename,
-  stammdatenFilename,
-} from '../../shared/utils/filename';
 import { canCreateFamily } from './authFns/FamilyAuthFn';
 import {
+  CaseAttachmentRequest,
   CaseCreateRequest,
   CaseWhere,
   ContactDocumentationCreateRequest,
@@ -60,11 +64,24 @@ import {
   ZielUpdateRequest,
 } from '../../shared/api';
 
-function isoDay(d: Date | null | undefined): string {
-  if (!d) return 'ohne-Datum';
-  return new Date(d)
-    .toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' })
-    .slice(0, 10);
+/** Mime types of attachment contents, as for unencrypted uploads (see middleware/upload.ts). */
+const ATTACHMENT_MIME_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+
+/** Reads the first bytes of a stored upload, enough for the `FDK1` header. */
+async function readHeader(path: string): Promise<Uint8Array> {
+  const handle = await fs.promises.open(path, 'r');
+  try {
+    const buffer = new Uint8Array(BYTES_HEADER_LENGTH + 16);
+    const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
+    return buffer.subarray(0, bytesRead);
+  } finally {
+    await handle.close();
+  }
 }
 
 /** If the documentation has a start and end, the duration follows from them. */
@@ -138,18 +155,36 @@ export class CaseController {
     return result;
   }
 
+  /**
+   * Creates a case with its family. In encrypted orgs the browser chose all ids, the family,
+   * children and caregivers come as blobs, and `city`/`plz` are the plaintext statistics copy
+   * of the address; otherwise they are taken from the plaintext address as before.
+   */
   static async create(user: FullUser, data: CaseCreateRequest) {
     if (!canCreateFamily(user)) throw new ForbiddenError();
 
+    const policy = await encryptionPolicyFor(user.organisationId);
     const { family, ...fields } = data;
     const { children = [], caregivers = [], adress, ...familyFields } = family;
+    assertClientId(policy, fields.id, 'Case');
+    assertFieldWrite(policy, 'Case', fields);
+    assertClientId(policy, familyFields.id, 'Family');
+    assertBlobWrite(policy, 'Family', { ...familyFields, adress }, true);
+    for (const child of children) {
+      assertClientId(policy, child.id, 'Child');
+      assertBlobWrite(policy, 'Child', child, true);
+    }
+    for (const caregiver of caregivers) {
+      assertClientId(policy, caregiver.id, 'Caregiver');
+      assertBlobWrite(policy, 'Caregiver', caregiver, true);
+    }
     const organisation = { connect: { id: user.organisationId! } };
 
     return prisma.case.create({
       data: {
         ...fields,
-        city: adress?.city,
-        plz: adress?.plz,
+        city: fields.city ?? adress?.city,
+        plz: fields.plz ?? adress?.plz,
         organisation,
         createdBy: { connect: { id: user.id } },
         responsibleUsers: { connect: { id: user.id } },
@@ -183,6 +218,9 @@ export class CaseController {
     if (!c) throw new NotFoundError();
     if (!canEditCase(user, c))
       throw new ForbiddenError("User can't edit this case");
+    const policy = await encryptionPolicyFor(c.organisationId);
+    assertClientId(policy, data.id, 'Zielvereinbarung');
+    assertFieldWrite(policy, 'Zielvereinbarung', data);
 
     return prisma.case.update({
       where: { id: caseId },
@@ -207,6 +245,11 @@ export class CaseController {
     if (!c) throw new NotFoundError();
     if (!canEditCase(user, c))
       throw new ForbiddenError("User can't edit this case");
+    assertFieldWrite(
+      await encryptionPolicyFor(c.organisationId),
+      'Zielvereinbarung',
+      data
+    );
     return prisma.zielvereinbarung.update({ where: { id }, data });
   }
 
@@ -298,23 +341,6 @@ export class CaseController {
     return d;
   }
 
-  static async getContactDocumentationPDF(user: FullUser, id: string) {
-    const d = await prisma.contactDocumentation.findUnique({
-      where: { id },
-      ...contactDocumentationQueryArgsFor(user),
-      include: CONTACT_DOCUMENTATION_DEFAULT_INCLUDE,
-    });
-    if (!d) throw new NotFoundError();
-    const c = await prisma.case.findUniqueOrThrow({
-      where: { id: d.caseId },
-      include: CASE_DEFAULT_INCLUDE,
-    });
-    if (!canSeeCase(user, c))
-      throw new ForbiddenError("User can't access this case");
-
-    return PDFService.contactDocumentationPDF(d);
-  }
-
   static async getContactDocumentationForCase(
     user: FullUser,
     caseId: string,
@@ -370,6 +396,9 @@ export class CaseController {
     if (!c) throw new NotFoundError();
     if (!canEditCase(user, c))
       throw new ForbiddenError("User can't edit this case");
+    const policy = await encryptionPolicyFor(c.organisationId);
+    assertClientId(policy, input.id, 'ContactDocumentation');
+    assertFieldWrite(policy, 'ContactDocumentation', input);
 
     return prisma.contactDocumentation.create({
       data: {
@@ -400,6 +429,11 @@ export class CaseController {
 
     if (!canEditCase(user, c))
       throw new ForbiddenError("User can't edit this case");
+    assertFieldWrite(
+      await encryptionPolicyFor(c.organisationId),
+      'ContactDocumentation',
+      input
+    );
 
     return prisma.contactDocumentation.update({
       where: { id },
@@ -481,6 +515,9 @@ export class CaseController {
     if (!c) throw new NotFoundError();
     if (!(await canHandover(initiatingUser, c, handover)))
       throw new ForbiddenError('Illegal Handover');
+    const policy = await encryptionPolicyFor(c.organisationId);
+    assertClientId(policy, handover.id, 'Handover');
+    assertFieldWrite(policy, 'Handover', { notes: handover.notes });
 
     const update = await prisma.case.update({
       where: { id: c.id },
@@ -495,6 +532,7 @@ export class CaseController {
 
     const ho = await prisma.handover.create({
       data: {
+        id: policy.active ? handover.id : undefined,
         case: { connect: { id: c.id } },
         date: handover.date,
         createdById: initiatingUser.id,
@@ -615,11 +653,16 @@ export class CaseController {
     });
   }
 
+  /**
+   * Stores an uploaded attachment. In encrypted orgs the upload is an `FDK1` envelope under the
+   * current key version, filename and note are envelopes, and the real mime type comes in the
+   * body; anything else is deleted again and refused.
+   */
   static async createCaseAttachment(
     user: FullUser,
     caseId: string,
     file: Express.Multer.File | undefined,
-    note?: string
+    body: CaseAttachmentRequest = {}
   ) {
     const c = await prisma.case.findUnique({
       where: { id: caseId },
@@ -630,14 +673,41 @@ export class CaseController {
       throw new ForbiddenError("User can't attach files to this case");
     if (!file) throw new BadRequestError('No file uploaded');
 
+    const policy = await encryptionPolicyFor(c.organisationId);
+    let contentKeyVersion: number | null = null;
+    try {
+      if (policy.active) {
+        assertClientId(policy, body.id, 'CaseAttachment');
+        assertFieldWrite(policy, 'CaseAttachment', body);
+        if (!body.filename)
+          throw new BadRequestError('CaseAttachment.filename is missing');
+        if (!body.mimeType || !ATTACHMENT_MIME_TYPES.has(body.mimeType))
+          throw new BadRequestError('CaseAttachment.mimeType is not allowed');
+        const header = await readHeader(file.path);
+        if (
+          !isBytesEnvelope(header) ||
+          parseBytesEnvelope(header).keyVersion !== policy.keyVersion
+        )
+          throw new BadRequestError('The file must be encrypted with the current key');
+        contentKeyVersion = policy.keyVersion;
+      } else if (file.mimetype === 'application/octet-stream') {
+        throw new BadRequestError(`File type ${file.mimetype} is not allowed`);
+      }
+    } catch (e) {
+      deleteStoredFile(file.filename, 'case-attachments');
+      throw e;
+    }
+
     return prisma.caseAttachment.create({
       data: {
+        id: policy.active ? body.id : undefined,
         case: { connect: { id: caseId } },
-        filename: file.originalname,
+        filename: policy.active ? body.filename! : file.originalname,
         storageKey: file.filename,
-        mimeType: file.mimetype,
+        mimeType: policy.active ? body.mimeType! : file.mimetype,
         size: file.size,
-        note,
+        note: body.note,
+        contentKeyVersion,
         uploadedBy: { connect: { id: user.id } },
       },
       include: CASE_ATTACHMENT_DEFAULT_INCLUDE,
@@ -662,11 +732,13 @@ export class CaseController {
     if (!canSeeCaseAttachments(user, c))
       throw new ForbiddenError("User can't access this case's attachments");
 
+    // encrypted contents go out as opaque bytes; the browser decrypts name and content
+    const encrypted = attachment.contentKeyVersion !== null;
     streamFile(
       attachment.storageKey,
       'case-attachments',
-      attachment.filename,
-      attachment.mimeType,
+      encrypted ? 'attachment.bin' : attachment.filename,
+      encrypted ? 'application/octet-stream' : attachment.mimeType,
       res
     );
   }
@@ -688,148 +760,6 @@ export class CaseController {
     });
     deleteStoredFile(deleted.storageKey, 'case-attachments');
     return deleted;
-  }
-
-  /**
-   * Loads a case with everything the Stammdaten PDF needs, after checking the user may export it.
-   * Throws BadRequestError once the family's personal data has been purged - there's no
-   * Stammdaten left to export then.
-   */
-  private static async loadCaseForExport(
-    user: FullUser,
-    id: string
-  ): Promise<StammdatenCase> {
-    const c = await prisma.case.findUnique({
-      where: { id },
-      include: {
-        ...CASE_DEFAULT_INCLUDE,
-        organisation: true,
-        subOrganisation: true,
-      },
-    });
-    if (!c) throw new NotFoundError();
-    if (!canExportCase(user, c))
-      throw new ForbiddenError("User can't export this case");
-    if (!c.family)
-      throw new BadRequestError(
-        'Personal data of this family has already been deleted'
-      );
-
-    return c;
-  }
-
-  static async getStammdatenPDF(user: FullUser, id: string) {
-    const c = await CaseController.loadCaseForExport(user, id);
-    const buffer = await PDFService.stammdatenPDF(c);
-    return { filename: stammdatenFilename(c.family?.name), buffer };
-  }
-
-  /**
-   * Builds a ZIP of a case's full history: the Stammdaten PDF, one PDF per contact documentation,
-   * and one CSV per CaseForm (one row per response). Authorization and all data loading happen
-   * before anything is returned, so the caller can still send a proper error response; the
-   * returned archive is already finalized and only needs piping into the response.
-   */
-  static async getCaseExport(user: FullUser, id: string) {
-    const c = await CaseController.loadCaseForExport(user, id);
-
-    const [docs, responses] = await Promise.all([
-      prisma.contactDocumentation.findMany({
-        where: { caseId: id },
-        include: CONTACT_DOCUMENTATION_DEFAULT_INCLUDE,
-        orderBy: { date: 'asc' },
-      }),
-      prisma.caseFormResponse.findMany({
-        where: { caseId: id },
-        include: {
-          answers: true,
-          caseForm: { include: { questions: { orderBy: { order: 'asc' } } } },
-          child: true,
-          caregiver: true,
-          createdBy: { include: USER_DEFAULT_INCLUDE },
-        },
-      }),
-    ]);
-
-    const stammdaten = await PDFService.stammdatenPDF(c);
-    const docPDFs = await Promise.all(
-      docs.map((d) => PDFService.contactDocumentationPDF(d))
-    );
-
-    const archive = archiver('zip');
-    archive.append(stammdaten, { name: stammdatenFilename(c.family?.name) });
-
-    const perDayCount = new Map<string, number>();
-    docs.forEach((d, i) => {
-      const day = isoDay(d.date);
-      const n = (perDayCount.get(day) ?? 0) + 1;
-      perDayCount.set(day, n);
-      archive.append(docPDFs[i], {
-        name: `Kontaktdokumentationen/${day}_${String(n).padStart(2, '0')}.pdf`,
-      });
-    });
-
-    type ExportResponse = (typeof responses)[number];
-    const byForm = new Map<string, ExportResponse[]>();
-    for (const r of responses) {
-      if (!r.caseForm) continue;
-      byForm.set(r.caseForm.id, [...(byForm.get(r.caseForm.id) ?? []), r]);
-    }
-
-    const usedNames = new Set<string>();
-    for (const rows of byForm.values()) {
-      const form = rows[0].caseForm!;
-      const columns: CsvColumn<ExportResponse>[] = [
-        ...(form.isPersonal
-          ? [
-              {
-                header: 'Person',
-                value: (r: ExportResponse) => {
-                  const p = r.child ?? r.caregiver;
-                  return p
-                    ? [p.name, p.lastName].filter(Boolean).join(' ')
-                    : '';
-                },
-              },
-            ]
-          : []),
-        ...form.questions.map((q) => ({
-          header: q.text,
-          value: (r: ExportResponse) =>
-            getAnswerValue(
-              r.answers.find((a) => a.questionId === q.id),
-              q
-            ),
-        })),
-        {
-          header: 'Erstellt von',
-          value: (r) =>
-            r.createdBy
-              ? [r.createdBy.firstName, r.createdBy.lastName]
-                  .filter(Boolean)
-                  .join(' ') || r.createdBy.email
-              : '',
-        },
-      ];
-
-      let name = safeFilename(form.name);
-      for (let i = 2; usedNames.has(name); i++)
-        name = `${safeFilename(form.name)}_${i}`;
-      usedNames.add(name);
-
-      archive.append(CSV_BOM + toCsv(rows, columns), {
-        name: `Fragebögen/${name}.csv`,
-      });
-    }
-
-    // Failures are surfaced via the archive's 'error' event (handled by the router); swallow the
-    // promise rejection so it doesn't additionally crash the process as an unhandled rejection.
-    archive.finalize().catch(() => {});
-
-    return {
-      filename: caseExportFilename(c.family?.name),
-      archive,
-    };
   }
 }
 
