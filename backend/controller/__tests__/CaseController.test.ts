@@ -89,7 +89,7 @@ describe('CaseController', () => {
       });
     });
 
-    it('restricts a filter to return only cases with personal data for users, unless explicitly set', async () => {
+    it('restricts a filter to return only cases with personal data for users by default', async () => {
       const user = buildUser({ role: Role.User });
       prismaMock.case.findMany.mockResolvedValue([]);
 
@@ -104,6 +104,11 @@ describe('CaseController', () => {
           { responsibleUsers: { some: { id: user.id } } },
         ],
       });
+    });
+
+    it('applies an explicitly set personalDataDeletedAt filter for users', async () => {
+      const user = buildUser({ role: Role.User });
+      prismaMock.case.findMany.mockResolvedValue([]);
 
       await CaseController.getAll(user, {
         city: 'Berlin',
