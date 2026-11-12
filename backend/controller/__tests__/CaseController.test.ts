@@ -89,6 +89,36 @@ describe('CaseController', () => {
       });
     });
 
+    it('restricts a filter to return only cases with personal data for users, unless explicitly set', async () => {
+      const user = buildUser({ role: Role.User });
+      prismaMock.case.findMany.mockResolvedValue([]);
+
+      await CaseController.getAll(user, {
+        city: 'Berlin',
+      });
+
+      expect(prismaMock.case.findMany.mock.calls[0][0].where).toEqual({
+        AND: [
+          { city: 'Berlin', personalDataDeletedAt: null },
+          {},
+          { responsibleUsers: { some: { id: user.id } } },
+        ],
+      });
+
+      await CaseController.getAll(user, {
+        city: 'Berlin',
+        personalDataDeletedAt: { lt: '2026-01-01' },
+      });
+
+      expect(prismaMock.case.findMany.mock.calls[0][0].where).toEqual({
+        AND: [
+          { city: 'Berlin', personalDataDeletedAt: { lt: '2026-01-01' } },
+          {},
+          { responsibleUsers: { some: { id: user.id } } },
+        ],
+      });
+    });
+
     it('restricts an OrgCoordinator to their organisation', async () => {
       const user = buildUser({
         role: Role.OrgCoordinator,
