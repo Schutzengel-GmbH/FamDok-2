@@ -19,7 +19,7 @@ export class WarningsController {
     // check expiring and expired ZV
     const zvs = await prisma.zielvereinbarung.findMany({
       where: {
-        case: { responsibleUsers: { some: { id: userId } } },
+        case: { responsibleUsers: { some: { id: userId } }, closedAt: null },
         finishBy: { lt: add(now, { months: 1 }) },
         status: 'inProgress',
       },
@@ -54,6 +54,7 @@ export class WarningsController {
       where: {
         responsibleUsers: { some: { id: userId } },
         personalDataDeletedAt: null,
+        closedAt: null,
       },
       include: {
         contactDocumentation: {
@@ -91,7 +92,11 @@ export class WarningsController {
     //  - check contactDocs
     const contactDocumentations = await prisma.contactDocumentation.findMany({
       where: {
-        caseId: { in: userCases.map((c) => c.id) },
+        case: {
+          id: { in: userCases.map((c) => c.id) },
+          closedAt: null,
+          personalDataDeletedAt: null,
+        },
       },
     });
     const unfinishedContactDos = contactDocumentations.filter(
@@ -126,6 +131,7 @@ export class WarningsController {
       where: {
         case: {
           id: { in: userCases.map((c) => c.id) },
+          closedAt: null,
           personalDataDeletedAt: null,
         },
       },
