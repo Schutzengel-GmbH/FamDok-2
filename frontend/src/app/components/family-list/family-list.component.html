@@ -64,8 +64,17 @@
           name="Notiz"
           prop="family.note"
           [sortable]="false">
-          <ng-template let-value="value" ngx-datatable-cell-template>
+          <ng-template
+            let-row="row"
+            let-value="value"
+            ngx-datatable-cell-template>
             <div class="cell-secondary">{{ value }}</div>
+            @if (row.closedAt) {
+              <div class="d-flex gap-1">
+                <i class="bi bi-exclamation-circle text-warning"></i>
+                Abgeschlossen zum {{ row.closedAt.toLocaleDateString() }}
+              </div>
+            }
           </ng-template>
         </ngx-datatable-column>
 
@@ -96,7 +105,10 @@
           [sortable]="false"
           [maxWidth]="120"
           [canAutoResize]="false">
-          <ng-template let-value="value" let-row="row" ngx-datatable-cell-template>
+          <ng-template
+            let-value="value"
+            let-row="row"
+            ngx-datatable-cell-template>
             @if (row.family) {
               @if (canEditCase(row)) {
                 <button
@@ -131,7 +143,11 @@
             <div class="detail-panel">
               <div class="detail-panel__label">Adresse</div>
               <div class="detail-panel__value">
-                {{ row.family ? getAdressString(row.family.adress) : "Keine Adresse hinterlegt" }}
+                {{
+                  row.family
+                    ? getAdressString(row.family.adress)
+                    : "Keine Adresse hinterlegt"
+                }}
               </div>
             </div>
           </ng-template>
@@ -165,6 +181,12 @@
 
             <div class="family-row__trailing">
               @if (row.family) {
+                @if (row.closedAt) {
+                  <div>
+                    <i class="bi bi-exclamation-circle text-warning"></i>
+                    Abgeschlossen zum {{ row.closedAt.toLocaleDateString() }}
+                  </div>
+                }
                 @if (canEditCase(row)) {
                   <button
                     type="button"
@@ -183,7 +205,9 @@
                   </button>
                 }
               }
-              <i class="bi bi-chevron-right family-row__chevron" aria-hidden="true"></i>
+              <i
+                class="bi bi-chevron-right family-row__chevron"
+                aria-hidden="true"></i>
             </div>
           </div>
         } @empty {
@@ -237,4 +261,3 @@
     </div>
   </div>
 </div>
-

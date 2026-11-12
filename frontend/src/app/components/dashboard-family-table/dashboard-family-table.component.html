@@ -9,7 +9,7 @@
         <div class="family-worklist-title">
           {{ familyNamePipe.transform(row.family) }}
           @if (row.closedAt) {
-            <span class="text-warning"
+            <span class="text-warning d-flex gap-1"
               ><i class="bi bi-exclamation-circle"></i> Familie wurde zum
               {{ row.closedAt.toLocaleDateString() }} abgeschlossen</span
             >
@@ -87,6 +87,12 @@
         <div class="worklist-row__main">
           <span class="worklist-row__title">
             {{ familyNamePipe.transform(row.family) }}
+            @if (row.closedAt) {
+              <span class="text-warning d-flex gap-1"
+                ><i class="bi bi-exclamation-circle"></i> Familie wurde zum
+                {{ row.closedAt.toLocaleDateString() }} abgeschlossen</span
+              >
+            }
           </span>
           <span class="worklist-row__meta">
             {{ getChildrenCount(row) }} Kinder · Letzter Kontakt:
