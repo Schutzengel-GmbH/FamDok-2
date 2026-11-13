@@ -71,11 +71,49 @@ describe('CaseController', () => {
       const user = buildUser({ role: Role.User });
       prismaMock.case.findMany.mockResolvedValue([]);
 
-      await CaseController.getAll(user, { city: 'Berlin' });
+      await CaseController.getAll(user, {
+        city: 'Berlin',
+        personalDataDeletedAt: null,
+      });
 
       expect(prismaMock.case.findMany.mock.calls[0][0].where).toEqual({
         AND: [
-          { city: 'Berlin' },
+          { city: 'Berlin', personalDataDeletedAt: null },
+          {},
+          { responsibleUsers: { some: { id: user.id } } },
+        ],
+      });
+    });
+
+    it('restricts a filter to return only cases with personal data for users by default', async () => {
+      const user = buildUser({ role: Role.User });
+      prismaMock.case.findMany.mockResolvedValue([]);
+
+      await CaseController.getAll(user, {
+        city: 'Berlin',
+      });
+
+      expect(prismaMock.case.findMany.mock.calls[0][0].where).toEqual({
+        AND: [
+          { city: 'Berlin', personalDataDeletedAt: null },
+          {},
+          { responsibleUsers: { some: { id: user.id } } },
+        ],
+      });
+    });
+
+    it('applies an explicitly set personalDataDeletedAt filter for users', async () => {
+      const user = buildUser({ role: Role.User });
+      prismaMock.case.findMany.mockResolvedValue([]);
+
+      await CaseController.getAll(user, {
+        city: 'Berlin',
+        personalDataDeletedAt: { lt: '2026-01-01' },
+      });
+
+      expect(prismaMock.case.findMany.mock.calls[0][0].where).toEqual({
+        AND: [
+          { city: 'Berlin', personalDataDeletedAt: { lt: '2026-01-01' } },
           {},
           { responsibleUsers: { some: { id: user.id } } },
         ],
@@ -426,7 +464,8 @@ describe('CaseController', () => {
         case: { city: 'Berlin', family: { name: 'x' } },
       });
 
-      const { where } = prismaMock.contactDocumentation.findMany.mock.calls[0][0];
+      const { where } =
+        prismaMock.contactDocumentation.findMany.mock.calls[0][0];
       expect(where.AND[0]).toEqual({ duration: 30, case: { city: 'Berlin' } });
     });
 
@@ -1086,9 +1125,9 @@ describe('CaseController', () => {
     it("scope 'org' is forbidden for a non-OrgCoordinator", async () => {
       const user = buildUser({ role: Role.User });
 
-      await expect(CaseController.getMyCases(user, { scope: 'org' })).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        CaseController.getMyCases(user, { scope: 'org' })
+      ).rejects.toThrow(ForbiddenError);
       expect(prismaMock.case.findMany).not.toHaveBeenCalled();
     });
 
@@ -1122,9 +1161,9 @@ describe('CaseController', () => {
         subOrganisations: [],
       });
 
-      await expect(CaseController.getMyCases(user, { scope: 'subOrg' })).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        CaseController.getMyCases(user, { scope: 'subOrg' })
+      ).rejects.toThrow(ForbiddenError);
       expect(prismaMock.case.findMany).not.toHaveBeenCalled();
     });
   });

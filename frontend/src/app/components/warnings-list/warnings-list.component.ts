@@ -112,6 +112,8 @@ export class WarningsListComponent implements OnInit {
         }
       case WarningType.CLOSED_WITHOUT_DOC:
         return `Fall seit ${this.formatDate(w.data.closedAt)} geschlossen, Abschlussdokumentation fehlt.`;
+      case WarningType.PENDING_PERSONAL_DATA_DELETION:
+        return `Familiendaten werden zum ${w.data.personalDataDueAt.toLocaleDateString()} gelöscht.`;
       default:
         return 'Hinweis.';
     }
@@ -133,6 +135,8 @@ export class WarningsListComponent implements OnInit {
         return 'Dokumentation fertigstellen';
       case WarningType.CLOSED_WITHOUT_DOC:
         return 'Abschlussdokumentation öffnen';
+      case WarningType.PENDING_PERSONAL_DATA_DELETION:
+        return 'Abschluss';
       default:
         return 'Öffnen';
     }
@@ -167,6 +171,9 @@ export class WarningsListComponent implements OnInit {
             queryParams: { caseId: w.data.caseId },
           });
         });
+        return;
+      case WarningType.PENDING_PERSONAL_DATA_DELETION:
+        this.router.navigate(['/']);
         return;
     }
   }
