@@ -82,6 +82,7 @@ export const CASE_DEFAULT_INCLUDE = {
   family: { include: FAMILY_DEFAULT_INCLUDE },
   contactDocumentation: {
     include: { createdBy: { include: USER_DEFAULT_INCLUDE } },
+    orderBy: { date: { sort: "desc", nulls: "last" } },
   },
   createdBy: { include: USER_DEFAULT_INCLUDE },
   attachments: {
