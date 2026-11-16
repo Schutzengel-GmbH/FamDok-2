@@ -119,6 +119,19 @@ export class TabClose {
     if (d instanceof Date) this.date.set(d);
   }
 
+  clickClose() {
+    if (
+      this.warnings().filter((w) => w.data.caseId === this.selectedCase().id)
+        .length > 0
+    )
+      this.dialogService.open({
+        title: 'Achtung',
+        text: 'Es liegen noch unbearbeitete Warnunge zu diesem Fall vor',
+        confirmAction: () => this.close(),
+      });
+    else this.close();
+  }
+
   close() {
     if (this.readOnly()) return;
     const isFirstClose = !this.selectedCase().closedAt;

@@ -19,7 +19,7 @@ export class WarningsController {
     // check expiring and expired ZV
     const zvs = await prisma.zielvereinbarung.findMany({
       where: {
-        case: { responsibleUsers: { some: { id: userId } } },
+        case: { responsibleUsers: { some: { id: userId } }, closedAt: null },
         finishBy: { lt: add(now, { months: 1 }) },
         status: 'inProgress',
       },
@@ -51,7 +51,11 @@ export class WarningsController {
     // check case contacts
     // get latest contact for each
     const userCases = await prisma.case.findMany({
-      where: { responsibleUsers: { some: { id: userId } } },
+      where: {
+        responsibleUsers: { some: { id: userId } },
+        personalDataDeletedAt: null,
+        closedAt: null,
+      },
       include: {
         contactDocumentation: {
           take: 1,
@@ -88,7 +92,11 @@ export class WarningsController {
     //  - check contactDocs
     const contactDocumentations = await prisma.contactDocumentation.findMany({
       where: {
-        caseId: { in: userCases.map((c) => c.id) },
+        case: {
+          id: { in: userCases.map((c) => c.id) },
+          closedAt: null,
+          personalDataDeletedAt: null,
+        },
       },
     });
     const unfinishedContactDos = contactDocumentations.filter(
@@ -120,7 +128,13 @@ export class WarningsController {
     }
     //  - check caseForms
     const caseFormResponses = await prisma.caseFormResponse.findMany({
-      where: { caseId: { in: userCases.map((c) => c.id) } },
+      where: {
+        case: {
+          id: { in: userCases.map((c) => c.id) },
+          closedAt: null,
+          personalDataDeletedAt: null,
+        },
+      },
       include: {
         answers: { include: { question: QUESTION_DEFAULT_INCLUDE } },
       },
@@ -173,6 +187,7 @@ export class WarningsController {
           responsibleUsers: { some: { id: userId } },
           closedAt: { not: null },
           caseformResponses: { none: { caseFormId: closingDocSetting.value } },
+          personalDataDeletedAt: null,
         },
       });
       for (const c of closedWithNoDoc) {
