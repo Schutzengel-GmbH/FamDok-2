@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Root orchestration for local development (backend + frontend + dev infra)",
   "scripts": {
+    "ci:all": "npm ci && npm --prefix shared ci && npm --prefix backend ci && npm --prefix frontend ci",
     "infra:up": "docker compose -f docker-compose-dev.yaml up -d --wait",
     "infra:down": "docker compose -f docker-compose-dev.yaml down",
     "wait:keycloak": "wait-on -t 60000 http-get://localhost:8090/realms/master",

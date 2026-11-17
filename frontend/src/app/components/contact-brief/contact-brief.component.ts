@@ -6,11 +6,13 @@ import { ContactDocumentationService } from 'src/app/services/contact-documentat
 import { ContactDocumentationOptions } from '../../../../../shared/sharedGlobals';
 import { FullContactDocumentation } from '../../../../../shared/types';
 import { userPipe } from 'src/app/util/tableTransformPipes';
+import { ContactDocSearchHit } from 'src/app/util/contactDocSearch';
+import { HighlightedText } from '../highlighted-text/highlighted-text.component';
 
 @Component({
   selector: 'app-contact-brief',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, HighlightedText],
   templateUrl: './contact-brief.component.html',
   styleUrl: './contact-brief.component.scss',
 })
@@ -21,6 +23,8 @@ export class ContactBrief implements OnInit {
   doc = input.required<FullContactDocumentation>();
   hasWarning = input<boolean>(false);
   readOnly = input(false);
+  /** When set, the card shows where a keyword search matched instead of the plain summary. */
+  searchHit = input<ContactDocSearchHit>();
   link!: string;
 
   ngOnInit() {

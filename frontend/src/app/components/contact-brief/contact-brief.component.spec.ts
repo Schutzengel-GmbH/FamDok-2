@@ -105,4 +105,72 @@ describe('ContactBrief', () => {
     setup({ zusammenfassung: 'Ein Testbericht' });
     expect(fixture.nativeElement.textContent).toContain('Ein Testbericht');
   });
+
+  describe('with a search hit', () => {
+    function setupHit(hit: Record<string, unknown>) {
+      const d = { ...doc, zusammenfassung: 'Termin beim Jobcenter' };
+      fixture.componentRef.setInput('doc', d);
+      fixture.componentRef.setInput('searchHit', {
+        doc: d,
+        topics: [],
+        dokumentation: [],
+        ...hit,
+      });
+      fixture.detectChanges();
+    }
+
+    it('marks the matched part of the summary', () => {
+      setupHit({
+        zusammenfassung: [
+          { text: 'Termin beim ', match: false },
+          { text: 'Jobcenter', match: true },
+        ],
+      });
+      const marks = fixture.nativeElement.querySelectorAll('mark');
+      expect(marks.length).toBe(1);
+      expect(marks[0].textContent).toBe('Jobcenter');
+      expect(fixture.nativeElement.textContent).toContain('Termin beim Jobcenter');
+    });
+
+    it('shows the plain summary when only other fields matched', () => {
+      setupHit({
+        dokumentation: [[{ text: 'Kita', match: true }]],
+      });
+      expect(fixture.nativeElement.textContent).toContain('Zusammenfassung:');
+      expect(fixture.nativeElement.textContent).toContain('Termin beim Jobcenter');
+    });
+
+    it('lists the topic field with all selected topics', () => {
+      setupHit({
+        topics: [
+          {
+            label: 'Allgemeine Beratungsthemen',
+            topics: [
+              [
+                { text: 'Wohn', match: true },
+                { text: 'situation', match: false },
+              ],
+              [{ text: 'Finanzen', match: false }],
+            ],
+          },
+        ],
+      });
+      const text = fixture.nativeElement.textContent;
+      expect(text).toContain('Allgemeine Beratungsthemen:');
+      expect(text).toContain('Wohnsituation, Finanzen');
+    });
+
+    it('shows one documentation line per excerpt', () => {
+      setupHit({
+        dokumentation: [
+          [{ text: 'Kita', match: true }],
+          [{ text: 'kita', match: true }],
+        ],
+      });
+      const lines = [...fixture.nativeElement.querySelectorAll('li')].filter(
+        (li: HTMLElement) => li.textContent!.includes('Dokumentation:'),
+      );
+      expect(lines.length).toBe(2);
+    });
+  });
 });

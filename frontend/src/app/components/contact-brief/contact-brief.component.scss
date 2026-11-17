@@ -12,3 +12,10 @@ div.ml {
 span.name {
   font-size: 0.9rem;
 }
+
+// Keyword search results: label followed by the (highlighted) text
+li.search-result {
+  .search-label {
+    margin-right: 0.35em;
+  }
+}
