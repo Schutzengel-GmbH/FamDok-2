@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './components/header/header.component';
 import { MenuComponent } from './components/menu/menu.component';
 import { ToastContainer } from './components/toast-container/toast-container';
 import { ConfirmDialogContainer } from './components/confirm-dialog/confirm-dialog-container.component';
+import { SidebarService } from './services/sidebar.service';
 
 @Component({
   selector: 'app-root',
@@ -21,5 +22,5 @@ import { ConfirmDialogContainer } from './components/confirm-dialog/confirm-dial
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  constructor() {}
+  protected sidebar = inject(SidebarService);
 }

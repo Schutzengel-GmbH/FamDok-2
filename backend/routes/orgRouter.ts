@@ -1,29 +1,24 @@
 import { Router } from 'express';
-import { handleError } from '../util/routerUtils';
+import { handleError, route } from '../util/routerUtils';
+import { OrgRequest } from '../../shared/api';
 import { OrgController } from '../controller/OrgController';
-import { Prisma } from '../../shared/generated/prisma/client';
 
 export const OrgRouter = Router();
 
-OrgRouter.get('/', async (req, res) => {
-  try {
-    const orgs = await OrgController.getAllOrgs(req.user!);
-    res.status(200).json(orgs);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+OrgRouter.get(
+  '/',
+  route(({ user }) =>
+    OrgController.getAllOrgs(user)
+  )
+);
 
-OrgRouter.post('/', async (req, res) => {
-  try {
-    const data = req.body as Prisma.OrganisationCreateInput;
-
-    const update = await OrgController.createOrg(req.user!, data);
-    res.status(201).json(update);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+OrgRouter.post(
+  '/',
+  route({ body: OrgRequest }, ({ user, body, res }) => {
+    res.status(201);
+    return OrgController.createOrg(user, body);
+  })
+);
 
 OrgRouter.get('/i/:id', async (req, res) => {
   try {
@@ -47,14 +42,29 @@ OrgRouter.delete('/i/:id', async (req, res) => {
   }
 });
 
-OrgRouter.put('/i/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const data = req.body as Prisma.OrganisationUpdateInput;
+OrgRouter.put(
+  '/i/:id',
+  route({ body: OrgRequest }, ({ user, params, body }) =>
+    OrgController.updateOrg(user, params.id, body)
+  )
+);
 
-    const update = await OrgController.updateOrg(req.user!, id, data);
-    res.status(200).json(update);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+OrgRouter.post(
+  '/i/:id/sub',
+  route({ body: OrgRequest }, ({ user, params, body, res }) => {
+    res.status(201);
+    return OrgController.createSubOrg(user, params.id, body);
+  })
+);
+
+OrgRouter.put(
+  '/sub/:id',
+  route({ body: OrgRequest }, ({ user, params, body }) =>
+    OrgController.updateSubOrg(user, params.id, body)
+  )
+);
+
+OrgRouter.delete(
+  '/sub/:id',
+  route(({ user, params }) => OrgController.deleteSubOrg(user, params.id))
+);

@@ -17,6 +17,10 @@ import { StatsRouter } from './routes/statsRouter';
 import { SettingsRouter } from './routes/settingsRouter';
 import { WarningsRouter } from './routes/warningsRouter';
 import DocumentRouter from './routes/documentRouter';
+import { DisabledKeyRouter, KeyRouter } from './routes/keyRouter';
+import { ORG_ENCRYPTION_ENABLED } from './config';
+import { assertEncryptionConfig } from './util/encryptionConfig';
+import { requireOrgNotFrozen } from './middleware/orgFrozen';
 import { startPersonalDataRetentionJob } from './util/personalDataRetentionJob';
 
 const app = express();
@@ -28,7 +32,8 @@ app.use(
   })
 );
 
-app.use(express.json());
+// Rotation and migration send batches of ciphertext, well above express' 100 kB default
+app.use(express.json({ limit: '10mb' }));
 app.use(superJsonMiddleware);
 
 passport.use(bearerStrategy);
@@ -36,6 +41,7 @@ passport.use(bearerStrategy);
 app.use(
   '/family',
   passport.authenticate('bearer', { session: false }),
+  requireOrgNotFrozen,
   FamilyRouter
 );
 app.use(
@@ -46,6 +52,7 @@ app.use(
 app.use(
   '/case-form-response',
   passport.authenticate('bearer', { session: false }),
+  requireOrgNotFrozen,
   CaseFormResponseRouter
 );
 app.use(
@@ -58,6 +65,7 @@ app.use('/org', passport.authenticate('bearer', { session: false }), OrgRouter);
 app.use(
   '/case',
   passport.authenticate('bearer', { session: false }),
+  requireOrgNotFrozen,
   CaseRouter
 );
 app.use(
@@ -78,6 +86,7 @@ app.use(
 app.use(
   '/warnings',
   passport.authenticate('bearer', { session: false }),
+  requireOrgNotFrozen,
   WarningsRouter
 );
 app.use(
@@ -86,8 +95,21 @@ app.use(
   DocumentRouter
 );
 
-startPersonalDataRetentionJob();
+// Without ORG_ENCRYPTION_ENABLED only GET /keys/me answers, telling the frontend the feature is off
+app.use(
+  '/keys',
+  passport.authenticate('bearer', { session: false }),
+  ORG_ENCRYPTION_ENABLED ? KeyRouter : DisabledKeyRouter
+);
 
-app.listen(PORT, () => {
-  console.log(`✅ Server läuft auf http://localhost:${PORT}`);
-});
+assertEncryptionConfig()
+  .then(() => {
+    startPersonalDataRetentionJob();
+    app.listen(PORT, () => {
+      console.log(`✅ Server läuft auf http://localhost:${PORT}`);
+    });
+  })
+  .catch((e) => {
+    console.error(`❌ ${e instanceof Error ? e.message : e}`);
+    process.exit(1);
+  });

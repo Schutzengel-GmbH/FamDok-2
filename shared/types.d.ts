@@ -27,7 +27,7 @@ import {
   USER_DEFAULT_INCLUDE,
 } from "./consts";
 import z from "zod";
-import { SettingsKeys, Settings as SettingsZ } from "./zodTypes";
+import { SettingsKeys, Settings as SettingsZ } from "./api/settings";
 import { ContactDocumentationScalarFieldEnum } from "./generated/prisma/internal/prismaNamespace";
 
 export interface AuthHandlerConfig {

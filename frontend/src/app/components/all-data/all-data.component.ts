@@ -26,12 +26,6 @@ import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import { MeService } from 'src/app/services/me.service';
 import { ToastService } from 'src/app/services/toast.service';
 import { Router } from '@angular/router';
-import {
-  AnswerWhereInput,
-  CaseFormResponseWhereInput,
-  CaseWhereInput,
-  UserWhereInput,
-} from '../../../../../shared/generated/prisma/models';
 import { Role } from '../../../../../shared/generated/prisma/enums';
 import {
   AnswerModel as Answer,
@@ -53,6 +47,12 @@ import {
   XlsxColumn,
   xlsxFilename,
 } from 'src/app/util/xlsxExport';
+import type {
+  AnswerWhere,
+  CaseFormResponseWhere,
+  CaseWhere,
+  CreatedByWhere,
+} from '../../../../../shared/api';
 
 @Component({
   selector: 'app-all-data',
@@ -87,10 +87,10 @@ export class AllDataComponent {
   protected currentUser = toSignal(this.meService.getMe());
 
   form = input.required<FullCaseForm>();
-  filter = signal<CaseFormResponseWhereInput>({});
+  filter = signal<CaseFormResponseWhere>({});
 
   /** Per-question answer filters, each of which must independently match some answer on the response. */
-  private questionFilters = new Map<string, AnswerWhereInput>();
+  private questionFilters = new Map<string, AnswerWhere>();
 
   form$ = toObservable(this.form);
   filter$ = toObservable(this.filter);
@@ -99,37 +99,10 @@ export class AllDataComponent {
     combineLatest({
       form: this.form$,
       filter: this.filter$,
-      user: this.meService.getMe(),
     }).pipe(
-      switchMap((o) => {
-        const filter: CaseFormResponseWhereInput = {
-          ...o.filter,
-          case:
-            o.user.role === Role.User
-              ? {
-                  ...(o.filter.case as CaseWhereInput),
-                  responsibleUsers: { some: { id: o.user.id } },
-                }
-              : o.user.role === Role.OrgController ||
-                  o.user.role === Role.OrgCoordinator
-                ? {
-                    ...(o.filter.case as CaseWhereInput),
-                    organisation: { id: o.user.organisationId! },
-                  }
-                : o.user.role === Role.SubOrgCoordinator
-                  ? {
-                      ...(o.filter.case as CaseWhereInput),
-                      subOrganisationId: {
-                        in: o.user.subOrganisations.map((so) => so.id),
-                      },
-                    }
-                  : o.filter.case,
-        };
-        return this.caseFormService.getCaseFormResponsesForForm(
-          o.form.id,
-          filter,
-        );
-      }),
+      switchMap((o) =>
+        this.caseFormService.getCaseFormResponsesForForm(o.form.id, o.filter),
+      ),
     ),
   );
 
@@ -156,15 +129,15 @@ export class AllDataComponent {
     });
   }
 
-  caseFilterChange(filter: CaseWhereInput) {
+  caseFilterChange(filter: CaseWhere) {
     this.filter.update((f) => ({ ...f, case: filter }));
   }
 
-  createdByOrgFilterChanged(filter: UserWhereInput) {
+  createdByOrgFilterChanged(filter: CreatedByWhere) {
     this.filter.update((f) => ({ ...f, createdBy: filter }));
   }
 
-  questionFilterChange(questionId: string, filter: AnswerWhereInput) {
+  questionFilterChange(questionId: string, filter: AnswerWhere) {
     // A cleared filter comes in as `{}` (modal Reset/dismiss) - drop it entirely instead of
     // storing an empty `answers.some` clause, which would wrongly require every response to
     // have at least one answer and hide cases with none.

@@ -11,7 +11,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { FormsModule } from '@angular/forms';
 import { SimpleSelectFilter } from 'src/app/components/filter-inputs/simple-select-filter/simple-select-filter.component';
 import { QuestionModel as Question } from '../../../../../../../shared/generated/prisma/models';
-import { AnswerWhereInput } from '../../../../../../../shared/generated/prisma/models';
+import type { AnswerWhere } from '../../../../../../../shared/api';
 
 @Component({
   selector: 'app-select-question-filter',
@@ -21,7 +21,7 @@ import { AnswerWhereInput } from '../../../../../../../shared/generated/prisma/m
 })
 export class SelectQuestionFilter {
   question = input.required<Question>();
-  filterChanged = output<AnswerWhereInput>();
+  filterChanged = output<AnswerWhere>();
 
   options = computed(() => this.question().selectOptions);
 

@@ -19,7 +19,7 @@ export class WarningsController {
     // check expiring and expired ZV
     const zvs = await prisma.zielvereinbarung.findMany({
       where: {
-        case: { responsibleUsers: { some: { id: userId } } },
+        case: { responsibleUsers: { some: { id: userId } }, closedAt: null },
         finishBy: { lt: add(now, { months: 1 }) },
         status: 'inProgress',
       },
@@ -51,7 +51,11 @@ export class WarningsController {
     // check case contacts
     // get latest contact for each
     const userCases = await prisma.case.findMany({
-      where: { responsibleUsers: { some: { id: userId } } },
+      where: {
+        responsibleUsers: { some: { id: userId } },
+        personalDataDeletedAt: null,
+        closedAt: null,
+      },
       include: {
         contactDocumentation: {
           take: 1,
@@ -88,7 +92,11 @@ export class WarningsController {
     //  - check contactDocs
     const contactDocumentations = await prisma.contactDocumentation.findMany({
       where: {
-        caseId: { in: userCases.map((c) => c.id) },
+        case: {
+          id: { in: userCases.map((c) => c.id) },
+          closedAt: null,
+          personalDataDeletedAt: null,
+        },
       },
     });
     const unfinishedContactDos = contactDocumentations.filter(
@@ -120,7 +128,13 @@ export class WarningsController {
     }
     //  - check caseForms
     const caseFormResponses = await prisma.caseFormResponse.findMany({
-      where: { caseId: { in: userCases.map((c) => c.id) } },
+      where: {
+        case: {
+          id: { in: userCases.map((c) => c.id) },
+          closedAt: null,
+          personalDataDeletedAt: null,
+        },
+      },
       include: {
         answers: { include: { question: QUESTION_DEFAULT_INCLUDE } },
       },
@@ -139,7 +153,8 @@ export class WarningsController {
           !a.answerDate &&
           a.answerInt === null &&
           a.answerNum === null &&
-          a.answerText === null
+          a.answerText === null &&
+          !a.answerEncrypted
         );
       });
     });
@@ -172,6 +187,7 @@ export class WarningsController {
           responsibleUsers: { some: { id: userId } },
           closedAt: { not: null },
           caseformResponses: { none: { caseFormId: closingDocSetting.value } },
+          personalDataDeletedAt: null,
         },
       });
       for (const c of closedWithNoDoc) {
@@ -211,6 +227,10 @@ export class WarningsController {
   }
 }
 
+/**
+ * Whether an answer is empty. Encrypted answers can't be inspected, but the browser only sends
+ * `answerEncrypted` for answers that have a value, so its presence counts as answered.
+ */
 function unansweredFilter(answer: Answer) {
   return (
     (!answer.answerSelectId || answer.answerSelectId.length < 1) &&
@@ -218,6 +238,7 @@ function unansweredFilter(answer: Answer) {
     !answer.answerDate &&
     answer.answerInt === null &&
     answer.answerNum === null &&
-    answer.answerText === null
+    answer.answerText === null &&
+    !answer.answerEncrypted
   );
 }

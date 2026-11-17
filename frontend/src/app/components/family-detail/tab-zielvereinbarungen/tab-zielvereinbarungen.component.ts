@@ -33,10 +33,7 @@ import { ConfirmDialogService } from 'src/app/services/confirm-dialog.service';
 import { Status } from '../../../../../../shared/generated/prisma/enums';
 import { ZielvereinbarungModel as Zielvereinbarung } from '../../../../../../shared/generated/prisma/models';
 import { CaseService } from 'src/app/services/case.service';
-import {
-  ZielvereinbarungCreateInput,
-  ZielvereinbarungUpdateInput,
-} from '../../../../../../shared/generated/prisma/models';
+import type { ZielCreateRequest } from '../../../../../../shared/api';
 
 type ZvWarning = Extract<
   Warning,
@@ -167,12 +164,21 @@ export class TabZielvereinbarungenComponent {
       });
   }
 
+  private zielRequest() {
+    const { topic, description, startedAt, finishBy, status } =
+      this.currentZiel();
+    return {
+      topic,
+      description,
+      startedAt,
+      finishBy,
+      status,
+    } as ZielCreateRequest;
+  }
+
   addZiel() {
     this.caseService
-      .addZiel(
-        this.selectedCase().id,
-        this.currentZiel() as ZielvereinbarungCreateInput,
-      )
+      .addZiel(this.selectedCase().id, this.zielRequest())
       .subscribe({
         next: () => {
           this.toastService.show({
@@ -197,15 +203,12 @@ export class TabZielvereinbarungenComponent {
   }
 
   updateZiel() {
-    const update = {
-      topic: this.currentZiel().topic,
-      description: this.currentZiel().description,
-      startedAt: this.currentZiel().startedAt,
-      finishBy: this.currentZiel().finishBy,
-      status: this.currentZiel().status,
-    } as ZielvereinbarungUpdateInput;
     this.caseService
-      .updateZiel(this.selectedCase().id, this.currentZiel().id!, update)
+      .updateZiel(
+        this.selectedCase().id,
+        this.currentZiel().id!,
+        this.zielRequest(),
+      )
       .subscribe({
         next: () => {
           this.toastService.show({

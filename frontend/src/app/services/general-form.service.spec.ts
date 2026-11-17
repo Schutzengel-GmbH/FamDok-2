@@ -102,8 +102,8 @@ describe('GeneralFormService', () => {
 
       const req = httpMock.expectOne(`${environment.apiUrl}/general-form/responses/i/resp-1`);
       expect(req.request.method).toBe('PUT');
-      expect(req.request.body.answers.updateMany[0].where).toEqual({ id: 'answer-1' });
-      expect(req.request.body.answers.updateMany[0].data.answerText).toBe('hi');
+      expect(req.request.body.answers[0].id).toBe('answer-1');
+      expect(req.request.body.answers[0].answerText).toBe('hi');
       req.flush({});
     });
 
@@ -118,9 +118,9 @@ describe('GeneralFormService', () => {
 
       const req = httpMock.expectOne(`${environment.apiUrl}/general-form/responses`);
       expect(req.request.method).toBe('POST');
-      expect(req.request.body.form).toEqual({ connect: { id: 'form-1' } });
-      expect(req.request.body.answers.createMany.data).toEqual([
-        { questionId: 'q1', answerText: 'hi' },
+      expect(req.request.body.generalFormId).toBe('form-1');
+      expect(req.request.body.answers).toEqual([
+        jasmine.objectContaining({ questionId: 'q1', answerText: 'hi' }),
       ]);
       req.flush({});
     });

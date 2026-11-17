@@ -1,0 +1,10 @@
+/* Web Workers: the Argon2id key derivation (src/app/util/crypto/kdf.worker.ts). */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/worker",
+    "lib": ["es2022", "webworker"],
+    "types": []
+  },
+  "include": ["src/**/*.worker.ts"]
+}

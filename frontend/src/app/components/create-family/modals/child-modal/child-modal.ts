@@ -13,7 +13,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { NgbDateDeParserFormatter } from 'src/app/util/NgbDatePickerFormatter';
-import { ChildCreateInput } from '../../../../../../../shared/generated/prisma/models';
+import type { ChildRequest } from '../../../../../../../shared/api';
 import { Gender } from '../../../../../../../shared/generated/prisma/enums';
 
 @Component({
@@ -27,7 +27,7 @@ import { Gender } from '../../../../../../../shared/generated/prisma/enums';
   ],
 })
 export class ChildModalComponent implements OnInit {
-  @Input() child: ChildCreateInput | undefined;
+  @Input() child: ChildRequest | undefined;
 
   private fb = inject(FormBuilder);
 
@@ -59,7 +59,7 @@ export class ChildModalComponent implements OnInit {
     this.activeModal.close({
       reason: 'save',
       value: {
-        ...(this.form.value as ChildCreateInput),
+        ...(this.form.value as ChildRequest),
         id: this.child?.id,
       },
     });

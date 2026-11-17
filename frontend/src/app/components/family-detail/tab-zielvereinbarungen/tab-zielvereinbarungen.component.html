@@ -6,7 +6,7 @@
     </div>
   </div>
 
-  <div class="table-responsive ziel-table-wrap">
+  <div class="table-responsive ziel-table-wrap ziel-table-wrap--desktop">
     <table class="table table-sm align-middle ziel-table mb-0">
       <thead>
         <tr>
@@ -95,6 +95,71 @@
         </tfoot>
       }
     </table>
+  </div>
+
+  <div class="ziel-list ziel-list--mobile">
+    @for (z of ziele(); track z.id) {
+      <div class="ziel-row">
+        <div class="ziel-row__main">
+          <div class="ziel-row__title">
+            <span [class]="zielDotClass(z.status)"></span>
+            {{ z.topic }}
+          </div>
+
+          @if (z.description) {
+            <div class="ziel-row__desc">{{ z.description }}</div>
+          }
+
+          <div class="ziel-row__meta">
+            <span [class]="zielBadgeClass(z.status)">
+              {{ zielBadgeText(z.status) || "Unbekannt" }}
+            </span>
+            <span>Ziel: {{ z.finishBy | date }}</span>
+            @if (zielWarningTooltip(z.id); as tooltip) {
+              <span
+                class="badge rounded-pill text-bg-danger"
+                [title]="tooltip">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+              </span>
+            }
+          </div>
+        </div>
+
+        @if (!readOnly()) {
+          <div class="ziel-actions">
+            <button
+              type="button"
+              class="btn btn-link btn-sm p-0"
+              title="Bearbeiten"
+              (click)="openZielFormEdit(z.id)">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button
+              type="button"
+              class="btn btn-link btn-sm p-0 text-danger"
+              title="Löschen"
+              (click)="deleteZiel(z.id)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        }
+      </div>
+    } @empty {
+      <div class="ziel-row__empty">
+        bisher keine Zielvereinbarungen definiert
+      </div>
+    }
+
+    @if (!readOnly()) {
+      <button
+        type="button"
+        class="btn btn-link btn-sm p-0 ziel-add-btn"
+        title="Zielvereinbarung hinzufügen"
+        (click)="openZielFormNew()">
+        <i class="bi bi-plus-circle"></i>
+        <span class="ms-2">Zielvereinbarung hinzufügen</span>
+      </button>
+    }
   </div>
 
   <div class="ziel-form-shell" [class.ziel-form-shell--open]="zielFormOpen()">

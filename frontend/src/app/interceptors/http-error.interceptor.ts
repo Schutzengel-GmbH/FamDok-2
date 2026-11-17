@@ -4,9 +4,10 @@ import {
   HttpEvent,
   HttpHandlerFn,
 } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, Injector } from '@angular/core';
 import { Observable, catchError, throwError } from 'rxjs';
 import { ToastService } from '../services/toast.service';
+import { KeySessionService } from '../services/key-session.service';
 
 function errorMessage(err: HttpErrorResponse): string {
   switch (err.status) {
@@ -20,6 +21,8 @@ function errorMessage(err: HttpErrorResponse): string {
       return 'Nicht gefunden';
     case 409:
       return 'Konflikt';
+    case 423:
+      return 'Organisation gesperrt';
     case 500:
       return 'Interner Serverfehler';
     case 502:
@@ -50,8 +53,13 @@ export function httpErrorInterceptor(
   next: HttpHandlerFn,
 ): Observable<HttpEvent<any>> {
   const toastService = inject(ToastService);
+  const injector = inject(Injector);
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
+      // 423: the org was frozen meanwhile - update the key state so the UI shows why. Resolved
+      // lazily, as the key session itself makes requests through this interceptor.
+      if (err.status === 423)
+        injector.get(KeySessionService).refresh().catch(() => {});
       const detail = errorDetail(err);
       toastService.show({
         title: `Fehler ${err.status}`,

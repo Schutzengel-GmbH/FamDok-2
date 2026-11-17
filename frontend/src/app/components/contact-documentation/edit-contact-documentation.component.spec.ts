@@ -160,7 +160,6 @@ describe('EditContactDocumentation', () => {
         r.url === `${environment.apiUrl}/case/i/case-1/documentation` &&
         r.method === 'POST',
     );
-    expect(req.request.body.case).toEqual({ connect: { id: 'case-1' } });
     req.flush({ id: 'doc-2' });
 
     expect(toast.toasts().length).toBe(1);

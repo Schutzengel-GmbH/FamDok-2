@@ -12,10 +12,10 @@ import { ToastService } from 'src/app/services/toast.service';
 import { QuestionFormService } from 'src/app/services/question-form.service';
 import { QuestionEditorComponent } from '../question-editor/question-editor';
 import { QuestionType } from '../../../../../shared/generated/prisma/enums';
-import {
-  GeneralFormCreateInput,
-  GeneralFormUpdateInput,
-} from '../../../../../shared/generated/prisma/models';
+import type {
+  GeneralFormCreateRequest,
+  GeneralFormUpdateRequest,
+} from '../../../../../shared/api';
 
 @Component({
   selector: 'app-general-form-editor',
@@ -151,19 +151,17 @@ export class GeneralFormEditorComponent implements OnInit {
     this.router.navigate(['einstellungen']);
   }
 
-  private buildCreateInput(name: string): GeneralFormCreateInput {
+  private buildCreateInput(name: string): GeneralFormCreateRequest {
     return {
       name,
-      questions: this.questionFormService.buildQuestionsCreateInput(
-        this.questions,
-      ),
+      questions: this.questionFormService.buildQuestions(this.questions),
     };
   }
 
-  private buildUpdateInput(name: string): GeneralFormUpdateInput {
+  private buildUpdateInput(name: string): GeneralFormUpdateRequest {
     return {
       name,
-      questions: this.questionFormService.buildQuestionsUpdateInput(
+      ...this.questionFormService.buildQuestionUpdates(
         this.questions,
         this.deletedQuestionIds,
       ),

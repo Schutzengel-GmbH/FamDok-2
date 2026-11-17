@@ -69,6 +69,73 @@
   padding: 0.75rem;
 }
 
+// Mobile: a dense list of rows instead of a 6-column table that would otherwise need
+// horizontal scrolling to read on a phone.
+.ziel-list--mobile {
+  display: none;
+  flex-direction: column;
+}
+
+.ziel-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 14px;
+  background: var(--bs-card-bg);
+
+  &:not(:last-of-type) {
+    margin-bottom: 0.6rem;
+  }
+}
+
+.ziel-row__main {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ziel-row__title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ziel-row__desc {
+  font-size: 0.85rem;
+  color: var(--bs-secondary-color);
+}
+
+.ziel-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--bs-secondary-color);
+}
+
+.ziel-row__empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--bs-secondary-color);
+}
+
+@include media-down("nav") {
+  .ziel-table-wrap--desktop {
+    display: none;
+  }
+
+  .ziel-list--mobile {
+    display: flex;
+  }
+}
+
 @include media-down("sm") {
   .tab-section--fixed {
     min-height: 560px;

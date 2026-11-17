@@ -12,20 +12,19 @@ import {
 import { MeService } from './me.service';
 import { SettingsService } from './settings.service';
 import { triggerBlobDownload } from './document.service';
-import {
-  caseExportFilename,
-  stammdatenFilename,
-} from '../../../../shared/utils/filename';
-import {
-  CaseCreateInput,
-  CaseWhereInput,
-  CaseInclude,
-  FamilyCreateInput,
-  ZielvereinbarungCreateInput,
-  ZielvereinbarungUpdateInput,
-} from '../../../../shared/generated/prisma/models';
-import { map, mergeMap, Observable } from 'rxjs';
+import { from, map, Observable, of, switchMap } from 'rxjs';
+import { PersonalDataService } from './personal-data.service';
+import { matchesFamily, splitCaseWhere } from '../util/crypto/clientFilters';
 import { Status } from '../../../../shared/generated/prisma/enums';
+import type {
+  CaseCreateRequest,
+  CaseWhere,
+  HandoverRequest,
+  MyCasesQuery,
+  ZielCreateRequest,
+  ZielUpdateRequest,
+} from '../../../../shared/api';
+import { toQuery } from '../util/apiUtils';
 
 @Injectable({
   providedIn: 'root',
@@ -34,9 +33,9 @@ export class CaseService {
   private http = inject(HttpClient);
   private meService = inject(MeService);
   private settingsService = inject(SettingsService);
+  private personal = inject(PersonalDataService);
 
   protected caseApiUrl = environment.apiUrl + '/case';
-  protected familyApiUrl = environment.apiUrl + '/family';
 
   protected settings!: Settings;
 
@@ -46,14 +45,22 @@ export class CaseService {
 
   /**
    * Fetches cases from the API.
-   * @param {CaseWhereInput} [filter] Optional Prisma where filter
+   * @param {CaseWhere} [filter] Optional Prisma where filter
    * @returns {Observable<FullCase[]>} Observable emitting an array of cases
    */
-  getCases(filter?: CaseWhereInput): Observable<FullCase[]> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
-    return this.http.get<FullCase[]>(this.caseApiUrl + '?' + params.toString());
+  getCases(filter?: CaseWhere): Observable<FullCase[]> {
+    if (!this.personal.active())
+      return this.http
+        .get<FullCase[]>(this.caseApiUrl + toQuery({ where: filter }))
+        .pipe(this.personal.decrypting('Case'));
+    // the family name is encrypted, so that part of the filter runs on the decrypted cases
+    const { server, family } = splitCaseWhere(filter);
+    return this.http
+      .get<FullCase[]>(this.caseApiUrl + toQuery({ where: server }))
+      .pipe(
+        this.personal.decrypting<FullCase[]>('Case'),
+        map((cases) => (family ? cases.filter((c) => matchesFamily(c, family)) : cases)),
+      );
   }
 
   /**
@@ -62,23 +69,9 @@ export class CaseService {
    * @returns {Observable<FullCase>} Observable emitting the case
    */
   getCase(caseId: string): Observable<FullCase> {
-    return this.http.get<FullCase>(this.caseApiUrl + '/i/' + caseId);
-  }
-
-  /**
-   * Fetches cases where the provided user is responsible.
-   * @param {string} userId UUID of the user, can be either the User Id or the User's Keycloak ID
-   * @param {CaseWhereInput} [filter] Optional additional Prisma where filter
-   * @returns {Observable<FullCase[]>} Observable emitting matching cases
-   */
-  getCasesForUser(
-    userId: string,
-    filter?: CaseWhereInput,
-  ): Observable<FullCase[]> {
-    return this.getCases({
-      ...filter,
-      responsibleUsers: { some: { OR: [{ id: userId }, { kcId: userId }] } },
-    });
+    return this.http
+      .get<FullCase>(this.caseApiUrl + '/i/' + caseId)
+      .pipe(this.personal.decrypting('Case'));
   }
 
   /**
@@ -87,119 +80,84 @@ export class CaseService {
    * 'org'/'subOrg' additionally let an OrgCoordinator/SubOrgCoordinator browse their whole
    * org's/suborg's cases - the backend derives the actual org/suborg from the requesting user
    * and rejects the scope for anyone not permitted to use it.
-   * @param {CaseWhereInput} [filter] Optional Prisma where filter
+   * @param {MyCasesQuery} query Optional filter, scope and preset
    * @returns {Observable<FullCase[]>} Observable emitting the matching cases
    */
-  getMyCases(input: {
-    filter?: CaseWhereInput;
-    include?: CaseInclude;
-    scope?: 'own' | 'org' | 'subOrg';
-  }): Observable<FullCase[]> {
-    const { filter, include, scope } = input;
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-      include: include ? JSON.stringify(include) : '',
-      scope: scope ?? 'own',
-    });
-    return this.http.get<FullCase[]>(
-      this.caseApiUrl + '/my' + '?' + params.toString(),
-    );
+  getMyCases(query: MyCasesQuery = {}): Observable<FullCase[]> {
+    const { server, family } = this.personal.active()
+      ? splitCaseWhere(query.where)
+      : { server: query.where, family: undefined };
+    return this.http
+      .get<FullCase[]>(
+        this.caseApiUrl + '/my' + toQuery({ ...query, where: server }),
+      )
+      .pipe(
+        this.personal.decrypting<FullCase[]>('Case'),
+        map((cases) => (family ? cases.filter((c) => matchesFamily(c, family)) : cases)),
+      );
   }
 
   /**
-   * Creates a family and a related case.
-   * The request first creates the family then creates a case that connects to the newly created family.
-   *
-   * It also makes sure that the family and case are created for the requesting user and attaches the requesting user as
-   * the sole responsibleUser for the case as well as attaching family and case to the user's organisation.
-   *
-   * The `caseInput` parameter is an `Omit<Prisma.CaseCreateInput, 'createdBy' | 'responsibleUsers' | 'family' | 'caseformResponses'>` —
-   * callers should provide all case fields except those managed by the server (createdBy, responsibleUsers, family relation and case form responses).
-   * Typically `startedAt` will be provided by callers.
-   *
-   * @param {Prisma.FamilyCreateInput} familyInput Family create input
-   * @param {Omit<Prisma.CaseCreateInput, 'createdBy'|'responsibleUsers'|'family'|'caseformResponses'>} caseInput Case create input without server-managed relations
+   * Creates a new case together with its family, in the user's own organisation.
+   * @param {CaseCreateRequest} request The case and its family
    * @returns {Observable<FullCase>} Observable emitting the created case
    */
-  createCase(
-    familyInput: FamilyCreateInput,
-    caseInput: Omit<
-      CaseCreateInput,
-      | 'createdBy'
-      | 'responsibleUsers'
-      | 'organisation'
-      | 'family'
-      | 'caseformResponses'
-      | 'closedAt'
-      | 'closingDocId'
-    >,
-  ): Observable<FullCase> {
-    return this.meService.getMe().pipe(
-      mergeMap((user) => {
-        if (!user.organisationId)
-          throw new Error(
-            'Sie sind nicht Teil einer Organisation, Familien/Fälle müssen einer Organisation zugewiesen sein. Kontaktieren sie einen Administrator, falls sie Teil einer Organisation sein sollten.',
-          );
-        familyInput = {
-          ...familyInput,
-          organisation: { connect: { id: user.organisationId } },
-        };
-        caseInput = {
-          ...caseInput,
-          responsibleUsers: { connect: { id: user.id } },
-          createdBy: { connect: { id: user.id } },
-          organisation: { connect: { id: user.organisationId } },
-          city: (familyInput.adress as PrismaJson.Address).city,
-          plz: (familyInput.adress as PrismaJson.Address).plz,
-        } as CaseCreateInput;
-        return this.http
-          .post<FullFamily>(this.familyApiUrl, {
-            ...familyInput,
-          } as FamilyCreateInput)
-          .pipe(
-            mergeMap((_family) =>
-              this.http.post<FullCase>(this.caseApiUrl, {
-                ...caseInput,
-                family: { connect: { id: _family.id } },
-              }),
-            ),
-          );
-      }),
-    );
+  createCase(request: CaseCreateRequest): Observable<FullCase> {
+    return this.personal
+      .send(
+        request,
+        () => this.personal.prepareCaseCreate(request),
+        (body) => this.http.post<FullCase>(this.caseApiUrl, body),
+      )
+      .pipe(this.personal.decrypting('Case'));
   }
 
   /**
    * Adds a Zielvereinbarung to a case.
    * @param {string} caseId UUID of the case
-   * @param {ZielvereinbarungCreateInput} ziel Zielvereinbarung create input
+   * @param {ZielCreateRequest} ziel Zielvereinbarung to create
    * @returns {Observable<FullCase>} Observable emitting the updated case
    */
-  addZiel(
-    caseId: string,
-    ziel: ZielvereinbarungCreateInput,
-  ): Observable<FullCase> {
-    return this.http.post<FullCase>(
-      this.caseApiUrl + '/i/' + caseId + '/ziel',
-      ziel,
-    );
+  addZiel(caseId: string, ziel: ZielCreateRequest): Observable<FullCase> {
+    return this.personal
+      .send(
+        ziel,
+        () => {
+          const id = this.personal.newId();
+          return this.personal.prepareZiel(id, { ...ziel, id });
+        },
+        (body) =>
+          this.http.post<FullCase>(
+            this.caseApiUrl + '/i/' + caseId + '/ziel',
+            body,
+          ),
+      )
+      .pipe(this.personal.decrypting('Case'));
   }
 
   /**
    * Updates a Zielvereinbarung on a case.
    * @param {string} caseId UUID of the case
    * @param {string} zielId UUID of the Zielvereinbarung
-   * @param {ZielvereinbarungUpdateInput} update Update input
+   * @param {ZielUpdateRequest} update Update input
    * @returns {Observable<FullCase>} Observable emitting the updated case
    */
   updateZiel(
     caseId: string,
     zielId: string,
-    update: ZielvereinbarungUpdateInput,
+    update: ZielUpdateRequest,
   ): Observable<FullCase> {
-    return this.http.put<FullCase>(
-      this.caseApiUrl + '/i/' + caseId + '/ziel/' + zielId,
-      update,
-    );
+    return this.personal
+      .send(
+        update,
+        () => this.personal.prepareZiel(zielId, update),
+        (body) =>
+          this.http.put<FullCase>(
+            this.caseApiUrl + '/i/' + caseId + '/ziel/' + zielId,
+            body,
+          ),
+      )
+      .pipe(this.personal.decrypting('Zielvereinbarung'));
   }
 
   /**
@@ -209,9 +167,9 @@ export class CaseService {
    * @returns {Observable<FullCase>} Observable emitting the updated case
    */
   deleteZiel(caseId: string, zielId: string): Observable<FullCase> {
-    return this.http.delete<FullCase>(
-      this.caseApiUrl + '/i/' + caseId + '/ziel/' + zielId,
-    );
+    return this.http
+      .delete<FullCase>(this.caseApiUrl + '/i/' + caseId + '/ziel/' + zielId)
+      .pipe(this.personal.decrypting('Zielvereinbarung'));
   }
 
   /** Closes a case. Note that this does not handle redirection to a closing survey.
@@ -220,9 +178,9 @@ export class CaseService {
    * @returns {Observable<FullCase>} closed Case
    */
   closeCase(caseId: string, date: Date): Observable<FullCase> {
-    return this.http.post<FullCase>(this.caseApiUrl + '/close/' + caseId, {
-      date,
-    });
+    return this.http
+      .post<FullCase>(this.caseApiUrl + '/close/' + caseId, { date })
+      .pipe(this.personal.decrypting('Case'));
   }
 
   /** Reverts a case's closure. This deletes the case's existing Abschlussdokumentation, if any.
@@ -230,7 +188,9 @@ export class CaseService {
    * @returns {Observable<FullCase>} reopened Case
    */
   reopenCase(caseId: string): Observable<FullCase> {
-    return this.http.post<FullCase>(this.caseApiUrl + '/reopen/' + caseId, {});
+    return this.http
+      .post<FullCase>(this.caseApiUrl + '/reopen/' + caseId, {})
+      .pipe(this.personal.decrypting('Case'));
   }
 
   /** Immediately purges a case's family's personal data, skipping any waiting period.
@@ -238,45 +198,9 @@ export class CaseService {
    * @returns {Observable<FullCase>} updated Case
    */
   purgeFamily(caseId: string): Observable<FullCase> {
-    return this.http.post<FullCase>(
-      this.caseApiUrl + '/i/' + caseId + '/purge',
-      {},
-    );
-  }
-
-  /**
-   * Download the case's Stammdaten (case + family data) as a PDF
-   * @param {string} caseId UUID of the case
-   * @param {string} familyName used for the file name
-   */
-  downloadStammdatenPDF(caseId: string, familyName: string): Observable<void> {
     return this.http
-      .get(this.caseApiUrl + '/i/' + caseId + '/export/stammdaten', {
-        responseType: 'blob',
-      })
-      .pipe(
-        map((blob) =>
-          triggerBlobDownload(stammdatenFilename(familyName), blob),
-        ),
-      );
-  }
-
-  /**
-   * Download the case's full history as a ZIP: Stammdaten PDF, all contact documentation as
-   * PDFs and all case form responses as CSVs
-   * @param {string} caseId UUID of the case
-   * @param {string} familyName used for the file name
-   */
-  downloadCaseExport(caseId: string, familyName: string): Observable<void> {
-    return this.http
-      .get(this.caseApiUrl + '/i/' + caseId + '/export', {
-        responseType: 'blob',
-      })
-      .pipe(
-        map((blob) =>
-          triggerBlobDownload(caseExportFilename(familyName), blob),
-        ),
-      );
+      .post<FullCase>(this.caseApiUrl + '/i/' + caseId + '/purge', {})
+      .pipe(this.personal.decrypting('Case'));
   }
 
   /**
@@ -287,18 +211,26 @@ export class CaseService {
   getHandovers(
     caseId: string,
   ): Observable<(Handover & { added: FullUser[]; removed: FullUser[] })[]> {
-    return this.http.get<
-      (Handover & { added: FullUser[]; removed: FullUser[] })[]
-    >(this.caseApiUrl + '/handover/' + caseId);
+    return this.http
+      .get<(Handover & { added: FullUser[]; removed: FullUser[] })[]>(
+        this.caseApiUrl + '/handover/' + caseId,
+      )
+      .pipe(this.personal.decrypting('Handover'));
   }
 
   /**
    * Perform a handover of a case.
-   * @param {Handover} handover Handover to perform
+   * @param {HandoverRequest} handover Handover to perform
    * @returns {Observable<FullCase>} Observable emitting the updated case
    */
-  handover(handover: Handover): Observable<FullCase> {
-    return this.http.post<FullCase>(this.caseApiUrl + '/handover', handover);
+  handover(handover: HandoverRequest): Observable<FullCase> {
+    return this.personal
+      .send(
+        handover,
+        () => this.personal.prepareHandover(handover),
+        (body) => this.http.post<FullCase>(this.caseApiUrl + '/handover', body),
+      )
+      .pipe(this.personal.decrypting('Case'));
   }
 
   /**
@@ -307,9 +239,11 @@ export class CaseService {
    * @returns {Observable<FullCaseAttachment[]>} Observable emitting the attachment list
    */
   getAttachments(caseId: string): Observable<FullCaseAttachment[]> {
-    return this.http.get<FullCaseAttachment[]>(
-      this.caseApiUrl + '/i/' + caseId + '/attachment',
-    );
+    return this.http
+      .get<FullCaseAttachment[]>(
+        this.caseApiUrl + '/i/' + caseId + '/attachment',
+      )
+      .pipe(this.personal.decrypting('CaseAttachment'));
   }
 
   /**
@@ -324,13 +258,30 @@ export class CaseService {
     file: File,
     note?: string,
   ): Observable<FullCaseAttachment> {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (note) formData.append('note', note);
-    return this.http.post<FullCaseAttachment>(
-      this.caseApiUrl + '/i/' + caseId + '/attachment',
-      formData,
-    );
+    return this.personal
+      .send(
+        null,
+        () => this.personal.prepareAttachment(file, note),
+        (prepared) => {
+          const formData = new FormData();
+          if (prepared?.encrypted) {
+            // text fields first: the server reads them before it stores the file
+            formData.append('id', prepared.id);
+            formData.append('filename', prepared.filename);
+            formData.append('mimeType', prepared.mimeType);
+            if (prepared.note) formData.append('note', prepared.note);
+            formData.append('file', prepared.content, 'encrypted.bin');
+          } else {
+            formData.append('file', file);
+            if (note) formData.append('note', note);
+          }
+          return this.http.post<FullCaseAttachment>(
+            this.caseApiUrl + '/i/' + caseId + '/attachment',
+            formData,
+          );
+        },
+      )
+      .pipe(this.personal.decrypting('CaseAttachment'));
   }
 
   /** Downloads a case attachment and triggers a browser save-as for it. */
@@ -345,6 +296,14 @@ export class CaseService {
           '/download',
         { responseType: 'blob' },
       )
+      .pipe(
+        switchMap((blob) =>
+          attachment.contentKeyVersion === null ||
+          attachment.contentKeyVersion === undefined
+            ? of(blob)
+            : from(this.personal.decryptAttachmentContent(attachment, blob)),
+        ),
+      )
       .subscribe((blob) => triggerBlobDownload(attachment.filename, blob));
   }
 
@@ -358,9 +317,11 @@ export class CaseService {
     caseId: string,
     attachmentId: string,
   ): Observable<FullCaseAttachment> {
-    return this.http.delete<FullCaseAttachment>(
-      this.caseApiUrl + '/i/' + caseId + '/attachment/i/' + attachmentId,
-    );
+    return this.http
+      .delete<FullCaseAttachment>(
+        this.caseApiUrl + '/i/' + caseId + '/attachment/i/' + attachmentId,
+      )
+      .pipe(this.personal.decrypting('CaseAttachment'));
   }
 
   /**

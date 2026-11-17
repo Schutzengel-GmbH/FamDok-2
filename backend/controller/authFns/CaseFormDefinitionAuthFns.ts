@@ -10,16 +10,12 @@ export function canEdit(user: FullUser) {
 }
 
 /**
- * Whether the user can create a new CaseForm with the given data - OrgController may only
- * create forms scoped to their own organisation, never global ones or another org's.
+ * Whether the user can create a new CaseForm - for an OrgController, it is always scoped to
+ * their own organisation, never global or another org's.
  */
-export function canCreateCaseForm(
-  user: FullUser,
-  data: Prisma.CaseFormCreateInput
-) {
+export function canCreateCaseForm(user: FullUser) {
   if (canEdit(user)) return true;
-  if (user.role !== Role.OrgController) return false;
-  return data.organisation?.connect?.id === user.organisationId;
+  return user.role === Role.OrgController && !!user.organisationId;
 }
 
 /**

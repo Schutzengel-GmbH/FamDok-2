@@ -12,7 +12,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { FormsModule } from '@angular/forms';
 import { SimpleTextFilter } from 'src/app/components/filter-inputs/simple-text-filter/simple-text-filter.component';
 import { QuestionModel as Question } from '../../../../../../../shared/generated/prisma/models';
-import { AnswerWhereInput } from '../../../../../../../shared/generated/prisma/models';
+import type { AnswerWhere } from '../../../../../../../shared/api';
 
 @Component({
   selector: 'app-text-question-filter',
@@ -22,7 +22,7 @@ import { AnswerWhereInput } from '../../../../../../../shared/generated/prisma/m
 })
 export class TextQuestionFilter {
   question = input.required<Question>();
-  filterChanged = output<AnswerWhereInput>();
+  filterChanged = output<AnswerWhere>();
 
   options = computed(() => {
     const options =

@@ -19,12 +19,10 @@ describe('UserService', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('getAllUsers GETs the user list with an optional filter', () => {
-    service.getAllUsers({ role: 'Admin' } as any).subscribe();
+  it('getAllUsers GETs the user list', () => {
+    service.getAllUsers().subscribe();
 
-    const req = httpMock.expectOne(
-      (r) => r.url.includes('/user') && decodeURIComponent(r.urlWithParams).includes('where={"role":"Admin"}'),
-    );
+    const req = httpMock.expectOne((r) => r.url.endsWith('/user'));
     expect(req.request.method).toBe('GET');
     req.flush([]);
   });

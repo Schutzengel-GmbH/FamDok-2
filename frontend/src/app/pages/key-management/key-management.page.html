@@ -1,0 +1,140 @@
+<div class="card mb-3">
+  <div class="card-header">
+    <i class="bi bi-key"></i>{{ " " }}
+    <strong>Schlüsselverwaltung</strong>
+    @if (org(); as o) {
+      <span class="text-body-secondary"> – {{ o.name }}</span>
+    }
+  </div>
+  <div class="card-body">
+    @if (org(); as o) {
+      <dl class="row">
+        <dt class="col-sm-4">Status</dt>
+        <dd class="col-sm-8">
+          @switch (o.keyState) {
+            @case ("uninitialized") { Nicht aktiviert (optional) }
+            @case ("active") { Aktiv }
+            @case ("frozen") { Eingefroren seit {{ o.frozenAt | date: "short" }} }
+            @case ("rotating") { Schlüssel wird erneuert (Version {{ o.pendingKeyVersion }}) }
+          }
+        </dd>
+        @if (o.keyState !== "uninitialized") {
+          <dt class="col-sm-4">Schlüsselversion</dt>
+          <dd class="col-sm-8">{{ o.keyVersion }}</dd>
+          <dt class="col-sm-4">Fingerabdruck Organisationsschlüssel</dt>
+          <dd class="col-sm-8 font-monospace">
+            {{ session.orgKeyFingerprint() ?? "(nach dem Entsperren sichtbar)" }}
+          </dd>
+        }
+      </dl>
+
+      @if (o.keyState === "uninitialized") {
+        <app-encryption-opt-in />
+        <a class="btn btn-outline-primary" routerLink="/verschluesselung"
+          >Verschlüsselung aktivieren …</a
+        >
+      } @else {
+        <div class="d-flex flex-wrap gap-2">
+          @if (o.keyState === "active") {
+            <button class="btn btn-outline-danger" (click)="freeze()">
+              <i class="bi bi-snow"></i> Einfrieren
+            </button>
+            <a class="btn btn-outline-secondary" routerLink="/schluesselverwaltung/migration"
+              >Bestandsdaten verschlüsseln</a
+            >
+          }
+          @if (o.keyState === "frozen") {
+            <button class="btn btn-outline-secondary" (click)="unfreeze()">Auftauen</button>
+          }
+          @if (o.keyState === "frozen" || o.keyState === "rotating") {
+            <a class="btn btn-primary" routerLink="/schluesselverwaltung/erneuern"
+              >Schlüssel erneuern</a
+            >
+          }
+        </div>
+      }
+    }
+  </div>
+</div>
+
+@if (!session.isUnlocked() && org()?.keyState !== "uninitialized") {
+  <div class="alert alert-info">
+    Um Zugänge freizugeben, <a routerLink="/verschluesselung">entsperren</a> Sie zuerst Ihren Schlüssel.
+  </div>
+}
+
+<div class="card mb-3">
+  <div class="card-header"><strong>Mitglieder</strong></div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Rolle</th>
+          <th>Status</th>
+          <th>Fingerabdruck</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of members(); track m.id) {
+          <tr>
+            <td>{{ nameOf(m) }}<br /><small class="text-body-secondary">{{ m.email }}</small></td>
+            <td>{{ m.role }}</td>
+            <td>
+              @switch (m.status) {
+                @case ("noKeysNeeded") { <span class="text-body-secondary">kein Schlüssel nötig</span> }
+                @case ("notEnrolled") { <span class="badge text-bg-secondary">nicht eingerichtet</span> }
+                @case ("awaiting") { <span class="badge text-bg-warning">wartet auf Freigabe</span> }
+                @case ("keyChanged") { <span class="badge text-bg-warning">neuer Schlüssel</span> }
+                @case ("granted") { <span class="badge text-bg-success">freigegeben</span> }
+              }
+            </td>
+            <td class="font-monospace small">{{ m.fingerprint ?? "–" }}</td>
+            <td class="text-end text-nowrap">
+              @if (m.status === "awaiting" || m.status === "keyChanged") {
+                <button
+                  class="btn btn-sm btn-primary"
+                  [disabled]="busy() || !session.isUnlocked()"
+                  (click)="grant(m)">
+                  Freigeben
+                </button>
+              }
+              @if (m.grant) {
+                <button class="btn btn-sm btn-outline-danger ms-1" (click)="revoke(m)">
+                  Entziehen
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><strong>Protokoll</strong></div>
+  <ul class="list-group list-group-flush">
+    @for (e of events(); track e.id) {
+      <li class="list-group-item small">
+        <span class="text-body-secondary">{{ e.createdAt | date: "short" }}</span>
+        – {{ eventLabel(e.type) }}
+        @if (e.subject && e.subject.id !== e.actor?.id) {
+          für {{ nameOf(e.subject) }}
+        }
+        @if (e.actor) {
+          (durch {{ nameOf(e.actor) }})
+        }
+        @if (e.keyVersion) {
+          · Version {{ e.keyVersion }}
+        }
+        @if (e.fingerprint) {
+          · <span class="font-monospace">{{ e.fingerprint }}</span>
+        }
+      </li>
+    } @empty {
+      <li class="list-group-item text-body-secondary">Noch keine Einträge.</li>
+    }
+  </ul>
+</div>

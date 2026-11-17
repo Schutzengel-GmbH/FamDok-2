@@ -238,10 +238,9 @@ describe('Settings', () => {
       component.addSubOrg(org);
       modalRef.closed.next({ reason: 'save', value: 'Neue Unter-Org' });
 
-      const req = httpMock.expectOne((r) => r.url.includes('/org/i/org-1'));
-      expect(req.request.body).toEqual({
-        subOrganisations: { create: { name: 'Neue Unter-Org' } },
-      });
+      const req = httpMock.expectOne((r) => r.url.endsWith('/org/i/org-1/sub'));
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ name: 'Neue Unter-Org' });
       req.flush(org);
       httpMock.expectOne((r) => r.url.includes('/org')).flush([]);
     });
@@ -256,10 +255,8 @@ describe('Settings', () => {
       component.deleteSubOrg(subOrg);
       dialogService.openDialogs()[0].confirmAction();
 
-      const req = httpMock.expectOne((r) => r.url.includes('/org/i/org-1'));
-      expect(req.request.body).toEqual({
-        subOrganisations: { delete: { id: 'sub-1' } },
-      });
+      const req = httpMock.expectOne((r) => r.url.endsWith('/org/sub/sub-1'));
+      expect(req.request.method).toBe('DELETE');
       req.flush({});
       httpMock.expectOne((r) => r.url.includes('/org')).flush([]);
     });

@@ -22,6 +22,11 @@ import Keycloak from 'keycloak-js';
 import { DataViewPage } from './pages/data-view/data-view.page';
 import { AllCaseFormData } from './pages/all-caseform-data/all-caseform-data.page';
 import { authenticatedGuard } from './auth/guards/authenticatedGuard';
+import { encryptionFeatureGuard, encryptionGuard } from './auth/guards/encryptionGuard';
+import { EncryptionPage } from './pages/encryption/encryption.page';
+import { KeyManagementPage } from './pages/key-management/key-management.page';
+import { KeyMigrationPage } from './pages/key-migration/key-migration.page';
+import { KeyRotationPage } from './pages/key-rotation/key-rotation.page';
 import { unsavedChangesGuard } from './auth/guards/unsavedChangesGuard';
 import { AllContactData } from './pages/all-contact-documentation/all-contact-documentation.page';
 import { EditContactDocumentationPage } from './pages/edit-contact-documentation/edit-contact-documentation.page';
@@ -56,85 +61,108 @@ export const routes: Routes = [
   {
     path: 'surveys',
     component: CaseFormsPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'familien',
     component: Families,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     // Full detail view of a single case - former family-detail-modal, now a page of its own
     // so changes made there keep the URL (and thus back/reload) pinned to the current case.
     path: 'familien/:caseId',
     component: FamilyDetailPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     // Same page, opened directly on a given tab (e.g. from a warning link) - see TabKey.
     path: 'familien/:caseId/:tab',
     component: FamilyDetailPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     path: 'gesundheit',
     component: HealthDataPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     path: 'gesundheit/:caseId',
     component: HealthDataPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     path: 'gesundheit/:caseId/:childId',
     component: HealthDataPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     path: 'dashboard',
     component: DashboardPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     path: 'stats',
@@ -152,12 +180,14 @@ export const routes: Routes = [
   {
     path: 'formulare',
     component: CaseFormsPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     path: 'import/survey',
@@ -170,25 +200,30 @@ export const routes: Routes = [
     path: 'responses/:caseFormId',
     component: CaseFormResponsePage,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-      Role.Controller,
-      Role.OrgController,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+        Role.Controller,
+        Role.OrgController,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     path: 'general-responses',
     component: GeneralFormPage,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+    ],
   },
   {
     // Also reachable by Controller/OrgController in read-only ("inspect") mode - see the
@@ -196,29 +231,34 @@ export const routes: Routes = [
     path: 'general-responses/:id',
     component: GeneralFormPage,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-      Role.Controller,
-      Role.OrgController,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+        Role.Controller,
+        Role.OrgController,
+      ]),
+    ],
   },
   {
     path: 'contact-documentation-table',
     component: AllContactData,
-    canActivate: [authenticatedGuard()],
+    canActivate: [authenticatedGuard(), encryptionGuard()],
   },
   {
     path: 'my-responses',
     component: MyResponsesPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     path: 'me',
@@ -237,53 +277,90 @@ export const routes: Routes = [
   {
     path: 'create-family',
     component: CreateFamilyComponent,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     path: 'edit-family/:id',
     component: EditFamilyPage,
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     path: 'user-admin',
     component: UserAdminComponent,
-    canActivate: [roleGuard([Role.Admin])],
+    canActivate: [
+      roleGuard([Role.Admin, Role.OrgController, Role.OrgCoordinator]),
+    ],
   },
   {
     path: 'error',
     component: ErrorPage,
   },
   {
+    // Set up, unlock and manage the own encryption key; the encryption guard sends users here.
+    path: 'verschluesselung',
+    component: EncryptionPage,
+    canActivate: [authenticatedGuard(), encryptionFeatureGuard()],
+  },
+  {
+    path: 'schluesselverwaltung',
+    component: KeyManagementPage,
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController]), encryptionFeatureGuard()],
+  },
+  {
+    // Encrypts data stored before the org set up its encryption (P5)
+    path: 'schluesselverwaltung/migration',
+    component: KeyMigrationPage,
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController]), encryptionFeatureGuard()],
+  },
+  {
+    // Rotation of the org data key while the org is frozen (P6)
+    path: 'schluesselverwaltung/erneuern',
+    component: KeyRotationPage,
+    canActivate: [roleGuard([Role.OrgCoordinator, Role.OrgController]), encryptionFeatureGuard()],
+  },
+  {
     path: 'contact-documentation',
     component: ContactDocumentation,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     path: 'contact-documentation/:caseId',
     component: ContactDocumentation,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     // Also reachable by Controller/OrgController in read-only ("inspect") mode from the
@@ -291,24 +368,27 @@ export const routes: Routes = [
     path: 'contact-documentation/:caseId/:docId',
     component: EditContactDocumentationPage,
     canDeactivate: [unsavedChangesGuard],
-    canActivate: [roleGuard([
-      Role.User,
-      Role.Admin,
-      Role.OrgCoordinator,
-      Role.SubOrgCoordinator,
-      Role.Controller,
-      Role.OrgController,
-    ])],
+    canActivate: [
+      roleGuard([
+        Role.User,
+        Role.Admin,
+        Role.OrgCoordinator,
+        Role.SubOrgCoordinator,
+        Role.Controller,
+        Role.OrgController,
+      ]),
+      encryptionGuard(),
+    ],
   },
   {
     path: 'all-stats',
     component: DataViewPage,
-    canActivate: [authenticatedGuard()],
+    canActivate: [authenticatedGuard(), encryptionGuard()],
   },
   {
     path: 'all-caseform-data/:formId',
     component: AllCaseFormData,
-    canActivate: [authenticatedGuard()],
+    canActivate: [authenticatedGuard(), encryptionGuard()],
   },
   {
     path: 'all-form-data/:formId',
@@ -335,29 +415,21 @@ export const routes: Routes = [
   {
     path: 'allgemeine-formulare/neu',
     component: GeneralFormEditorComponent,
-    canActivate: [
-      roleGuard([Role.Admin, Role.Controller, Role.OrgController]),
-    ],
+    canActivate: [roleGuard([Role.Admin, Role.Controller, Role.OrgController])],
   },
   {
     path: 'allgemeine-formulare/:id',
     component: GeneralFormEditorComponent,
-    canActivate: [
-      roleGuard([Role.Admin, Role.Controller, Role.OrgController]),
-    ],
+    canActivate: [roleGuard([Role.Admin, Role.Controller, Role.OrgController])],
   },
   {
     path: 'fallbezogene-formulare/neu',
     component: CaseFormEditorComponent,
-    canActivate: [
-      roleGuard([Role.Admin, Role.Controller, Role.OrgController]),
-    ],
+    canActivate: [roleGuard([Role.Admin, Role.Controller, Role.OrgController])],
   },
   {
     path: 'fallbezogene-formulare/:id',
     component: CaseFormEditorComponent,
-    canActivate: [
-      roleGuard([Role.Admin, Role.Controller, Role.OrgController]),
-    ],
+    canActivate: [roleGuard([Role.Admin, Role.Controller, Role.OrgController])],
   },
 ];

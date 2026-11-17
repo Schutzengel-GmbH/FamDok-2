@@ -7,9 +7,17 @@ import {
   canSeeAllFamilies,
   canSeeFamilies,
   canSeeFamily,
-  canCreateFamily,
   canEditFamily,
 } from './authFns/FamilyAuthFn';
+import { ChildHealthDataRequest, FamilyUpdateRequest } from '../../shared/api';
+import {
+  assertBlobWrite,
+  assertClientId,
+  assertFieldWrite,
+  encryptionPolicyFor,
+} from '../util/encryptionPolicy';
+import { BadRequestError } from '../util/authUtils';
+import { clearedBlobFields } from '../../shared/utils/encryptedModels';
 
 export class FamilyController {
   static async getAll(
@@ -105,19 +113,13 @@ export class FamilyController {
     return family;
   }
 
-  static create(user: FullUser, data: Prisma.FamilyCreateInput) {
-    if (!canCreateFamily(user, data)) throw new ForbiddenError();
-    return prisma.family.create({
-      data,
-      include: FAMILY_DEFAULT_INCLUDE,
-    });
-  }
-
-  static async update(
-    user: FullUser,
-    id: string,
-    data: Prisma.FamilyUpdateInput
-  ) {
+  /**
+   * Updates a family with its children and caregivers, and the case fields edited alongside.
+   * In encrypted orgs every personal field arrives inside the blobs (and `case.city`/`plz` as
+   * the plaintext statistics copy); writing a blob also clears plaintext left over from before
+   * the migration.
+   */
+  static async update(user: FullUser, id: string, data: FamilyUpdateRequest) {
     const family = await prisma.family.findUniqueOrThrow({
       where: { id },
       include: FAMILY_DEFAULT_INCLUDE,
@@ -126,9 +128,21 @@ export class FamilyController {
     if (!family) throw new NotFoundError();
     if (!canEditFamily(user, family)) throw new ForbiddenError();
 
-    const adress = data.adress as PrismaJson.Address | undefined;
-    if (adress?.city || adress?.plz) {
-      const up = await prisma.case.updateMany({
+    const policy = await encryptionPolicyFor(family.organisationId);
+    const { children, caregivers, case: caseFields, adress, ...fields } = data;
+    assertBlobWrite(policy, 'Family', { ...fields, adress }, false);
+    for (const child of children ?? []) {
+      assertClientId(policy, child.id, 'Child');
+      assertBlobWrite(policy, 'Child', child, true);
+    }
+    for (const caregiver of caregivers ?? []) {
+      assertClientId(policy, caregiver.id, 'Caregiver');
+      assertBlobWrite(policy, 'Caregiver', caregiver, true);
+    }
+    if (caseFields) assertFieldWrite(policy, 'Case', caseFields);
+
+    if (!policy.active && (adress?.city || adress?.plz)) {
+      await prisma.case.updateMany({
         where: { familyId: id },
         data: { city: adress.city, plz: adress.plz },
       });
@@ -136,7 +150,60 @@ export class FamilyController {
 
     return prisma.family.update({
       where: { id },
-      data,
+      data: {
+        ...(fields.encrypted ? clearedBlobFields('Family') : {}),
+        ...fields,
+        adress: adress as PrismaJson.Address | undefined,
+        children: children && {
+          deleteMany: {},
+          createMany: {
+            data: children as Prisma.ChildCreateManyFamilyInput[],
+          },
+        },
+        caregiver: caregivers && {
+          deleteMany: {},
+          createMany: { data: caregivers },
+        },
+        case: caseFields && { update: caseFields },
+      },
+      include: FAMILY_DEFAULT_INCLUDE,
+    });
+  }
+
+  /**
+   * Replaces a child's health data. In encrypted orgs it lives in the child's blob, so the whole
+   * re-encrypted blob replaces the old one.
+   */
+  static async updateChildHealthData(
+    user: FullUser,
+    id: string,
+    childId: string,
+    { healthData, encrypted }: ChildHealthDataRequest
+  ) {
+    const family = await prisma.family.findUniqueOrThrow({
+      where: { id },
+      include: FAMILY_DEFAULT_INCLUDE,
+    });
+
+    if (!canEditFamily(user, family)) throw new ForbiddenError();
+
+    const policy = await encryptionPolicyFor(family.organisationId);
+    assertBlobWrite(policy, 'Child', { healthData, encrypted }, policy.active);
+    if (!policy.active && !healthData)
+      throw new BadRequestError('healthData is missing');
+
+    return prisma.family.update({
+      where: { id },
+      data: {
+        children: {
+          update: {
+            where: { id: childId },
+            data: policy.active
+              ? { ...clearedBlobFields('Child'), encrypted }
+              : { healthData: healthData as PrismaJson.HealthDataPointChild[] },
+          },
+        },
+      },
       include: FAMILY_DEFAULT_INCLUDE,
     });
   }

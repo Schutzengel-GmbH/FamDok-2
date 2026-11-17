@@ -113,6 +113,28 @@ describe('GeneralFormController', () => {
       expect(result).toBe(responses);
     });
 
+    it('only lets a plain user find their own responses', async () => {
+      const user = buildUser({ role: Role.User, organisationId: 'org-1' });
+      prismaMock.generalFormResponse.findMany.mockResolvedValue([]);
+
+      await GeneralFormController.getResponses(user, { generalFormId: 'f' });
+
+      expect(prismaMock.generalFormResponse.findMany.mock.calls[0][0].where).toEqual({
+        AND: [{ generalFormId: 'f' }, { OR: [{ userId: user.id }] }],
+      });
+    });
+
+    it('lets an OrgCoordinator find the responses of their organisation', async () => {
+      const user = buildUser({ role: Role.OrgCoordinator, organisationId: 'org-1' });
+      prismaMock.generalFormResponse.findMany.mockResolvedValue([]);
+
+      await GeneralFormController.getResponses(user);
+
+      expect(prismaMock.generalFormResponse.findMany.mock.calls[0][0].where.AND[1]).toEqual({
+        OR: [{ userId: user.id }, { createdBy: { organisationId: 'org-1' } }],
+      });
+    });
+
     it('returns a single response', async () => {
       const user = buildUser();
       const response = buildGeneralFormResponse({ createdBy: { id: user.id } });
@@ -137,15 +159,15 @@ describe('GeneralFormController', () => {
     it('fills in missing answers for each question and attaches the creator', async () => {
       const user = buildUser();
       const definition = buildGeneralForm({ questions: [{ id: 'q1' }, { id: 'q2' }] });
-      prismaMock.generalForm.findUniqueOrThrow.mockResolvedValue(definition);
+      prismaMock.generalForm.findFirst.mockResolvedValue(definition);
 
       const created = buildGeneralFormResponse();
       prismaMock.generalFormResponse.create.mockResolvedValue(created);
 
       const data = {
-        form: { connect: { id: definition.id } },
-        answers: { createMany: { data: [{ questionId: 'q1', answerText: 'hi' }] } },
-      } as any;
+        generalFormId: definition.id,
+        answers: [{ questionId: 'q1', answerText: 'hi' }],
+      };
 
       const result = await GeneralFormController.createResponse(user, data);
 
@@ -157,6 +179,19 @@ describe('GeneralFormController', () => {
       ]);
       expect(createCall.data.createdBy).toEqual({ connect: { id: user.id } });
     });
+
+    it('throws NotFoundError for a form the user cannot see', async () => {
+      const user = buildUser();
+      prismaMock.generalForm.findFirst.mockResolvedValue(null);
+
+      await expect(
+        GeneralFormController.createResponse(user, {
+          generalFormId: 'foreign',
+          answers: [],
+        })
+      ).rejects.toThrow(NotFoundError);
+      expect(prismaMock.generalFormResponse.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateResponse', () => {
@@ -167,7 +202,9 @@ describe('GeneralFormController', () => {
       const updated = { ...existing };
       prismaMock.generalFormResponse.update.mockResolvedValue(updated);
 
-      const result = await GeneralFormController.updateResponse(user, existing.id, {} as any);
+      const result = await GeneralFormController.updateResponse(user, existing.id, {
+        answers: [],
+      });
 
       expect(result).toBe(updated);
     });
@@ -177,7 +214,7 @@ describe('GeneralFormController', () => {
       prismaMock.generalFormResponse.findUnique.mockResolvedValue(null);
 
       await expect(
-        GeneralFormController.updateResponse(user, 'missing', {} as any)
+        GeneralFormController.updateResponse(user, 'missing', { answers: [] })
       ).rejects.toThrow(NotFoundError);
     });
   });

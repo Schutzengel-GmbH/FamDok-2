@@ -9,8 +9,8 @@ const prismaMock = prisma as unknown as ReturnType<typeof createPrismaMock>;
 
 beforeEach(() => {
   jest.resetAllMocks();
-  prismaMock.$transaction.mockImplementation((operations: unknown[]) =>
-    Promise.all(operations)
+  prismaMock.$transaction.mockImplementation((operations) =>
+    Promise.all(operations as unknown[])
   );
 });
 

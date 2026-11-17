@@ -1,35 +1,23 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
-import {
-  ChildModel as Child,
-  FamilyUpdateInput,
-  FamilyWhereInput,
-} from '../../../../shared/generated/prisma/models';
+import { ChildModel as Child } from '../../../../shared/generated/prisma/models';
 import { FullFamily } from '../../../../shared/types';
-import { map, Observable } from 'rxjs';
+import type {
+  ChildHealthDataRequest,
+  FamilyUpdateRequest,
+} from '../../../../shared/api';
+import { firstValueFrom, map, Observable } from 'rxjs';
+import { PersonalDataService } from './personal-data.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class FamilyService {
   private http = inject(HttpClient);
+  private personal = inject(PersonalDataService);
 
   protected familyApiUrl = environment.apiUrl + '/family';
-
-  /**
-   * Fetches families from the API.
-   * @param {FamilyWhereInput} [filter] Optional Prisma where filter
-   * @returns {Observable<FullFamily[]>} Observable emitting an array of families
-   */
-  getFamilies(filter?: FamilyWhereInput): Observable<FullFamily[]> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
-    return this.http.get<FullFamily[]>(
-      this.familyApiUrl + '?' + params.toString(),
-    );
-  }
 
   /**
    * Fetches a single Family by ID.
@@ -37,7 +25,9 @@ export class FamilyService {
    * @returns {Observable<FullFamily>} Observable emitting the Family
    */
   getFamily(id: string): Observable<FullFamily> {
-    return this.http.get<FullFamily>(this.familyApiUrl + '/i/' + id);
+    return this.http
+      .get<FullFamily>(this.familyApiUrl + '/i/' + id)
+      .pipe(this.personal.decrypting('Family'));
   }
 
   /**
@@ -50,41 +40,61 @@ export class FamilyService {
     familyId: string,
     childId: string,
   ): Observable<PrismaJson.HealthDataPointChild[]> {
+    return this.getChild(familyId, childId).pipe(map((c) => c.healthData));
+  }
+
+  /** A child of a family, decrypted. */
+  private getChild(familyId: string, childId: string): Observable<Child> {
     return this.http
       .get<Child>(this.familyApiUrl + '/i/' + familyId + '/children/' + childId)
-      .pipe(map((c) => c.healthData));
+      .pipe(this.personal.decrypting('Child'));
   }
 
   /**
    * Updates a family by ID.
    * @param {string} id UUID of the family
-   * @param {FamilyUpdateInput} update Update data
+   * @param {FamilyUpdateRequest} update Update data
    * @returns {Observable<FullFamily>} Observable emitting the updated family
    */
-  updateFamily(id: string, update: FamilyUpdateInput): Observable<FullFamily> {
-    return this.http.put<FullFamily>(this.familyApiUrl + '/i/' + id, update);
+  updateFamily(id: string, update: FamilyUpdateRequest): Observable<FullFamily> {
+    // the family's blob holds all its personal fields, so a partial update needs the rest
+    return this.personal
+      .send(
+        update,
+        async () =>
+          this.personal.prepareFamilyUpdate(await firstValueFrom(this.getFamily(id)), update),
+        (body) => this.http.put<FullFamily>(this.familyApiUrl + '/i/' + id, body),
+      )
+      .pipe(this.personal.decrypting('Family'));
   }
 
   /**
    * Replaces a child's full healthData array.
    * @param {string} familyId UUID of the family
    * @param {string} childId UUID of the child
-   * @param {PrismaJson.HealthDataPointChild[]} healthData The new full healthData array
+   * @param {ChildHealthDataRequest['healthData']} healthData The new full healthData array
    * @returns {Observable<FullFamily>} Observable emitting the updated family
    */
   updateHealthData(
     familyId: string,
     childId: string,
-    healthData: PrismaJson.HealthDataPointChild[],
+    healthData: NonNullable<ChildHealthDataRequest['healthData']>,
   ): Observable<FullFamily> {
-    return this.updateFamily(familyId, {
-      children: {
-        update: {
-          where: { id: childId },
-          data: { healthData },
-        },
-      },
-    });
+    return this.personal
+      .send(
+        { healthData } as ChildHealthDataRequest,
+        async () =>
+          this.personal.prepareHealthData(
+            await firstValueFrom(this.getChild(familyId, childId)),
+            healthData,
+          ),
+        (body) =>
+          this.http.put<FullFamily>(
+            `${this.familyApiUrl}/i/${familyId}/children/${childId}/health-data`,
+            body,
+          ),
+      )
+      .pipe(this.personal.decrypting('Family'));
   }
 
   /**
@@ -93,6 +103,8 @@ export class FamilyService {
    * @returns {Observable<FullFamily>} Observable emitting the deleted family or deletion result
    */
   deleteFamily(id: string): Observable<FullFamily> {
-    return this.http.delete<FullFamily>(this.familyApiUrl + '/i/' + id);
+    return this.http
+      .delete<FullFamily>(this.familyApiUrl + '/i/' + id)
+      .pipe(this.personal.decrypting('Family'));
   }
 }

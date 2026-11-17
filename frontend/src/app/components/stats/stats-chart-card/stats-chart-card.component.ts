@@ -12,7 +12,7 @@ import { PieChart } from '../../charts/pie-chart/pie-chart.component';
 import { BarChart } from '../../charts/bar-chart/bar-chart.component';
 import { ChartsService } from './chart.service';
 import { StatsDashboardStateService } from 'src/app/services/stats-dashoard-state.service';
-import { CaseWhereInput } from '../../../../../../shared/generated/prisma/models';
+import type { AnonCaseWhere } from '../../../../../../shared/api';
 
 export type ChartKey = 'artDerBeratung' | 'ziel' | 'ort';
 
@@ -50,7 +50,7 @@ export class StatsChartCardComponent implements OnInit {
     this.chartsService.labels.subscribe((labels) => (this.labels = labels));
   }
 
-  filter = input<CaseWhereInput>();
+  filter = input<AnonCaseWhere>();
   range = input.required<{ start: Date; end: Date }>();
 
   availableCharts: { key: ChartKey; label: string }[] = [

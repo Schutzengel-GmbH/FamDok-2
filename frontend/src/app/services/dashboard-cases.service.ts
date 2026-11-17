@@ -3,16 +3,8 @@ import { CaseService } from './case.service';
 import { MeService } from './me.service';
 import { FullCase } from '../../../../shared/types';
 import { Role } from '../../../../shared/generated/prisma/enums';
-import { CaseInclude } from '../../../../shared/generated/prisma/models';
 
 export type MyCasesScope = 'own' | 'org' | 'subOrg';
-
-const CASES_INCLUDE: CaseInclude = {
-  contactDocumentation: {
-    orderBy: { date: { sort: 'desc', nulls: 'last' } },
-    take: 1,
-  },
-};
 
 /**
  * Single shared source for the dashboard's "my cases" list, used by both dashboard variants
@@ -49,7 +41,7 @@ export class DashboardCasesService {
 
   reload(): void {
     this.caseService
-      .getMyCases({ include: CASES_INCLUDE, scope: this.scope() })
+      .getMyCases({ preset: 'latestContact', scope: this.scope() })
       .subscribe({
         next: (cases) => this.cases.set(cases ?? []),
         error: (error) => {

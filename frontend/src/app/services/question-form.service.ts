@@ -157,50 +157,32 @@ export class QuestionFormService {
     };
   }
 
-  /** Nested-write input for creating all questions of a brand new form. */
-  buildQuestionsCreateInput(array: FormArray<FormGroup>) {
-    return {
-      createMany: {
-        data: array.controls.map((c, order) =>
-          this.toQuestionData(c.value as QuestionFormValue, order),
-        ),
-      },
-    };
+  /** All questions of a brand new form. */
+  buildQuestions(array: FormArray<FormGroup>) {
+    return array.controls.map((c, order) =>
+      this.toQuestionData(c.value as QuestionFormValue, order),
+    );
   }
 
   /**
-   * Nested-write input for updating an existing form's questions: existing questions are
-   * updated in place (so answers referencing them survive), new ones are created, and only
-   * questions the admin actually removed are deleted (cascading their answers). Each
-   * question's `order` reflects its current position in `array` (captured here, before
-   * splitting into update/create groups) so reordering in the editor persists.
+   * The questions of an existing form: those with an id are updated in place (so answers
+   * referencing them survive), new ones are created, and only questions the admin actually
+   * removed are deleted (cascading their answers). Each question's `order` reflects its current
+   * position in `array`, so reordering in the editor persists.
    */
-  buildQuestionsUpdateInput(
+  buildQuestionUpdates(
     array: FormArray<FormGroup>,
     deletedQuestionIds: string[],
   ) {
-    const questions = array.controls.map((c, order) => ({
-      value: c.value as QuestionFormValue,
-      order,
-    }));
-    const toUpdate = questions.filter((q) => q.value.id);
-    const toCreate = questions.filter((q) => !q.value.id);
-
     return {
-      ...(toUpdate.length && {
-        update: toUpdate.map((q) => ({
-          where: { id: q.value.id! },
-          data: this.toQuestionData(q.value, q.order),
-        })),
+      questions: array.controls.map((c, order) => {
+        const value = c.value as QuestionFormValue;
+        return {
+          id: value.id ?? undefined,
+          ...this.toQuestionData(value, order),
+        };
       }),
-      ...(toCreate.length && {
-        createMany: {
-          data: toCreate.map((q) => this.toQuestionData(q.value, q.order)),
-        },
-      }),
-      ...(deletedQuestionIds.length && {
-        deleteMany: { id: { in: deletedQuestionIds } },
-      }),
+      deletedQuestionIds,
     };
   }
 }

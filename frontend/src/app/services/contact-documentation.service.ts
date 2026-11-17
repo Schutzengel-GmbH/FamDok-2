@@ -1,15 +1,20 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import {
-  ContactDocumentationWhereInput,
-  ContactDocumentationCreateInput,
-  ContactDocumentationUpdateInput,
-} from '../../../../shared/generated/prisma/models';
+import { map, Observable } from 'rxjs';
+import type {
+  ContactDocumentationCreateRequest,
+  ContactDocumentationUpdateRequest,
+  ContactDocumentationWhere,
+} from '../../../../shared/api';
 import { FullContactDocumentation } from '../../../../shared/types';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
-import { triggerBlobDownload } from './document.service';
+import { PersonalDataService } from './personal-data.service';
+import {
+  matchesContactDocumentation,
+  splitContactDocumentationWhere,
+} from '../util/crypto/clientFilters';
 import { WarningsService } from './warnings.service';
+import { toQuery } from '../util/apiUtils';
 
 @Injectable({
   providedIn: 'root',
@@ -17,39 +22,51 @@ import { WarningsService } from './warnings.service';
 export class ContactDocumentationService {
   private http = inject(HttpClient);
   private warningsService = inject(WarningsService);
+  private personal = inject(PersonalDataService);
 
   protected caseApiUrl = environment.apiUrl + '/case';
 
   /**
    * Get all (filtered) ContactDocumentation.
-   * @param {ContactDocumentationWhereInput} filter Prisma Where Input filter
+   * @param {ContactDocumentationWhere} filter Optional filter
    * @returns {Observable<FullContactDocumentation[]>}
    */
   getDocumentations(
-    filter?: ContactDocumentationWhereInput,
+    filter?: ContactDocumentationWhere,
   ): Observable<FullContactDocumentation[]> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
-    return this.http.get<FullContactDocumentation[]>(
-      this.caseApiUrl + '/documentation/all?' + params.toString(),
-    );
+    return this.list('/documentation/all', filter);
+  }
+
+  /**
+   * Loads a documentation list. In encrypted orgs the filters on the free-text fields and the
+   * family name run on the decrypted results instead of the server.
+   */
+  private list(
+    path: string,
+    filter?: ContactDocumentationWhere,
+  ): Observable<FullContactDocumentation[]> {
+    const { server, client } = this.personal.active()
+      ? splitContactDocumentationWhere(filter)
+      : { server: filter, client: undefined };
+    return this.http
+      .get<FullContactDocumentation[]>(this.caseApiUrl + path + toQuery({ where: server }))
+      .pipe(
+        this.personal.decrypting<FullContactDocumentation[]>('ContactDocumentation'),
+        map((docs) =>
+          client ? docs.filter((d) => matchesContactDocumentation(d, client)) : docs,
+        ),
+      );
   }
 
   /**
    * Get all my (filtered) ContactDocumentation.
-   * @param {ContactDocumentationWhereInput} filter Prisma Where Input filter
+   * @param {ContactDocumentationWhere} filter Optional filter
    * @returns {Observable<FullContactDocumentation[]>}
    */
   getMyDocumentations(
-    filter?: ContactDocumentationWhereInput,
+    filter?: ContactDocumentationWhere,
   ): Observable<FullContactDocumentation[]> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
-    return this.http.get<FullContactDocumentation[]>(
-      this.caseApiUrl + '/documentation/my?' + params.toString(),
-    );
+    return this.list('/documentation/my', filter);
   }
 
   /**
@@ -62,56 +79,27 @@ export class ContactDocumentationService {
     caseId: string,
     docId: string,
   ): Observable<FullContactDocumentation> {
-    return this.http.get<FullContactDocumentation>(
-      this.caseApiUrl + '/i/' + caseId + '/documentation/i/' + docId,
-    );
-  }
-
-  /**
-   * Download a PDF for the contact documentation
-   * @param {string} caseId UUID of the case
-   * @param {string} docId UUID of the Documentation
-   */
-  downloadContactDocumentationPDF(caseId: string, docId: string) {
-    this.http
-      .get(
-        this.caseApiUrl +
-          '/i/' +
-          caseId +
-          '/documentation/i/' +
-          docId +
-          '/download',
-        { responseType: 'blob' },
+    return this.http
+      .get<FullContactDocumentation>(
+        this.caseApiUrl + '/i/' + caseId + '/documentation/i/' + docId,
       )
-      .subscribe({
-        next: (blob) => {
-          triggerBlobDownload('doc.pdf', blob);
-        },
-        error: () => {},
-      });
+      .pipe(this.personal.decrypting('ContactDocumentation'));
   }
 
   /**
    * Get all (or filtered) Contact Documentation for a case
    * @param {string} caseId UUID of the case
-   * @param {ContactDocumentationWhereInput} filter Prisma Where Input filter
+   * @param {ContactDocumentationWhere} filter Optional filter
    * @returns {Observable<FullContactDocumentation>} Observable emitting the Contact Documentation
    */
   getDocumentationForCase(
     caseId: string,
-    filter?: ContactDocumentationWhereInput,
+    filter?: ContactDocumentationWhere,
   ): Observable<FullContactDocumentation> {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
-    return this.http.get<FullContactDocumentation>(
-      this.caseApiUrl +
-        '/i/' +
-        caseId +
-        '/documentation' +
-        '?' +
-        params.toString(),
-    );
+    return this.list(
+      '/i/' + caseId + '/documentation',
+      filter,
+    ) as unknown as Observable<FullContactDocumentation>;
   }
 
   /**
@@ -124,48 +112,68 @@ export class ContactDocumentationService {
     caseId: string,
     n?: number,
   ): Observable<FullContactDocumentation[]> {
-    return this.http.get<FullContactDocumentation[]>(
-      this.caseApiUrl + '/i/' + caseId + '/documentation/latest',
-      { params: n ? { n } : undefined },
-    );
+    return this.http
+      .get<FullContactDocumentation[]>(
+        this.caseApiUrl + '/i/' + caseId + '/documentation/latest' + toQuery({ n }),
+      )
+      .pipe(this.personal.decrypting('ContactDocumentation'));
   }
 
   /**
    * Create a new Documentation for a case
    * @param {string} caseId UUID of the case
-   * @param {ContactDocumentationCreateInput} input Prisma Create input
+   * @param {ContactDocumentationCreateRequest} input Create input
    * @returns {Observable<FullContactDocumentation>} Observable emitting the Contact Documentation
    */
   createDocumentation(
     caseId: string,
-    input: ContactDocumentationCreateInput,
+    input: ContactDocumentationCreateRequest,
   ): Observable<FullContactDocumentation> {
-    return this.http
-      .post<FullContactDocumentation>(
-        this.caseApiUrl + '/i/' + caseId + '/documentation',
+    return this.personal
+      .send(
         input,
+        () => {
+          const id = this.personal.newId();
+          return this.personal.prepareContactDocumentation(id, { ...input, id });
+        },
+        (body) =>
+          this.http.post<FullContactDocumentation>(
+            this.caseApiUrl + '/i/' + caseId + '/documentation',
+            body,
+          ),
       )
-      .pipe(this.warningsService.refreshAfter());
+      .pipe(
+        this.personal.decrypting('ContactDocumentation'),
+        this.warningsService.refreshAfter(),
+      );
   }
 
   /**
    * Update a Contact Documentation
    * @param {string} caseId UUID of the case
    * @param {string} docId UUID of the Documentation
-   * @param {ContactDocumentationUpdateInput} update Prisma Update input
+   * @param {ContactDocumentationUpdateRequest} update Update input
    * @returns {Observable<FullContactDocumentation>} Observable emitting the Contact Documentation
    */
   updateDocumentation(
     caseId: string,
     docId: string,
-    update: ContactDocumentationUpdateInput,
+    update: ContactDocumentationUpdateRequest,
   ): Observable<FullContactDocumentation> {
-    return this.http
-      .put<FullContactDocumentation>(
-        this.caseApiUrl + '/i/' + caseId + '/documentation/i/' + docId,
+    return this.personal
+      .send(
         update,
+        () => this.personal.prepareContactDocumentation(docId, update),
+        (body) =>
+          this.http.put<FullContactDocumentation>(
+            this.caseApiUrl + '/i/' + caseId + '/documentation/i/' + docId,
+            body,
+          ),
       )
-      .pipe(this.warningsService.refreshAfter());
+      .pipe(
+        this.personal.decrypting('ContactDocumentation'),
+        this.warningsService.refreshAfter(),
+      );
   }
 
   /**
@@ -182,6 +190,9 @@ export class ContactDocumentationService {
       .delete<FullContactDocumentation>(
         this.caseApiUrl + '/i/' + caseId + '/documentation/i/' + docId,
       )
-      .pipe(this.warningsService.refreshAfter());
+      .pipe(
+        this.personal.decrypting('ContactDocumentation'),
+        this.warningsService.refreshAfter(),
+      );
   }
 }

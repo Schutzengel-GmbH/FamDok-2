@@ -55,43 +55,12 @@ describe('AllDataComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('scopes responses to only the cases the current user is responsible for, for a plain User', () => {
-    setup(buildUser({ role: Role.User, id: 'me' }));
+  it('filters by form and leaves what the user may see to the backend', () => {
+    setup(buildUser({ role: Role.OrgCoordinator, organisationId: 'org-9' }));
 
     const { req, url } = currentRequestUrl();
-    expect(url).toContain('"responsibleUsers":{"some":{"id":"me"}}');
-    req.flush([]);
-  });
-
-  it("scopes responses to the current user's organisation for an OrgController/OrgCoordinator", () => {
-    setup(
-      buildUser({ role: Role.OrgCoordinator, id: 'me', organisationId: 'org-9' }),
-    );
-
-    const { req, url } = currentRequestUrl();
-    expect(url).toContain('"organisation":{"id":"org-9"}');
-    req.flush([]);
-  });
-
-  it('scopes responses to the sub-organisations for a SubOrgCoordinator', () => {
-    setup(
-      buildUser({
-        role: Role.SubOrgCoordinator,
-        id: 'me',
-        subOrganisations: [{ id: 'sub-1' }, { id: 'sub-2' }],
-      }),
-    );
-
-    const { req, url } = currentRequestUrl();
-    expect(url).toContain('"subOrganisationId":{"in":["sub-1","sub-2"]}');
-    req.flush([]);
-  });
-
-  it('leaves the case filter untouched for Admin/Controller', () => {
-    setup(buildUser({ role: Role.Admin, id: 'me' }));
-
-    const { req, url } = currentRequestUrl();
-    expect(url).not.toContain('"case":');
+    expect(url).toContain('"caseFormId"');
+    expect(url).not.toContain('org-9');
     req.flush([]);
   });
 

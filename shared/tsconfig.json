@@ -1,0 +1,16 @@
+{
+  // Editor/type-check config for shared/ on its own (tests included).
+  // backend/ and frontend/ compile shared/ with their own tsconfigs; this file doesn't affect them.
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "types": ["jest", "node"]
+  },
+  "exclude": ["node_modules"]
+}

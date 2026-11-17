@@ -37,6 +37,7 @@ export function buildAnswer(overrides: Record<string, any> = {}) {
     caseFormResponseId: null,
     closingDocumentationId: null,
     generalFormResponseId: null,
+    answerEncrypted: null as string | null,
     ...overrides,
   };
 }

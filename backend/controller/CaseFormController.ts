@@ -1,13 +1,19 @@
 import { CASEFORM_DEFAULT_INCLUDE } from '../../shared/consts';
 import { FullUser } from '../../shared/types';
 import { prisma } from '../db';
-import { Prisma, Role } from '../../shared/generated/prisma/client';
+import { Role } from '../../shared/generated/prisma/client';
 import { ForbiddenError, NotFoundError } from '../util/authUtils';
 import {
   canCreateCaseForm,
   canEditCaseForm,
   caseFormWhereRestrictions,
 } from './authFns/CaseFormDefinitionAuthFns';
+import {
+  CaseFormCreateRequest,
+  CaseFormListQuery,
+  CaseFormUpdateRequest,
+} from '../../shared/api';
+import { questionWrites } from '../util/formWrites';
 
 export class CaseFormController {
   static async getAll(user: FullUser) {
@@ -18,7 +24,7 @@ export class CaseFormController {
     });
   }
 
-  static async getWhere(user: FullUser, where?: Prisma.CaseFormWhereInput) {
+  static async getWhere(user: FullUser, where?: CaseFormListQuery['where']) {
     return prisma.caseForm.findMany({
       where: { AND: [{ ...where }, ...caseFormWhereRestrictions(user)] },
       orderBy: { name: 'asc' },
@@ -35,34 +41,38 @@ export class CaseFormController {
     return form;
   }
 
-  static create(user: FullUser, data: Prisma.CaseFormCreateInput) {
-    if (!canCreateCaseForm(user, data))
+  static create(user: FullUser, data: CaseFormCreateRequest) {
+    if (!canCreateCaseForm(user))
       throw new ForbiddenError("User can't create new Forms");
 
+    const { questions, ...fields } = data;
+
     return prisma.caseForm.create({
-      data,
+      data: {
+        ...fields,
+        // Admin/Controller create global forms, OrgController forms of their own organisation
+        organisationId:
+          user.role === Role.OrgController ? user.organisationId : null,
+        questions: { createMany: { data: questions } },
+      },
       include: CASEFORM_DEFAULT_INCLUDE,
     });
   }
 
-  static async update(
-    user: FullUser,
-    id: string,
-    data: Prisma.CaseFormUpdateInput
-  ) {
+  static async update(user: FullUser, id: string, data: CaseFormUpdateRequest) {
     const existing = await prisma.caseForm.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError();
     if (!canEditCaseForm(user, existing))
       throw new ForbiddenError("User can't update Forms");
 
-    // OrgController can't move a form to another org or make it global - only Admin/Controller
-    // (who bypass this check above) may change organisationId.
-    // TODO: should this fail silently or throw an Error?
-    if (user.role === Role.OrgController) delete data.organisation;
+    const { questions, deletedQuestionIds, ...fields } = data;
 
     return prisma.caseForm.update({
       where: { id },
-      data,
+      data: {
+        ...fields,
+        questions: questionWrites({ questions, deletedQuestionIds }),
+      },
       include: CASEFORM_DEFAULT_INCLUDE,
     });
   }

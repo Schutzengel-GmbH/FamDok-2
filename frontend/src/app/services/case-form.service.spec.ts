@@ -43,7 +43,7 @@ describe('CaseFormService', () => {
     service.getCaseFormResponsesForForm('form-1').subscribe();
 
     const req = httpMock.expectOne((r) => r.url.includes('/case-form-response'));
-    expect(decodeURIComponent(req.request.url)).toContain('"caseForm":{"id":"form-1"}');
+    expect(decodeURIComponent(req.request.url)).toContain('"caseFormId":"form-1"}');
     req.flush([]);
   });
 
@@ -119,8 +119,8 @@ describe('CaseFormService', () => {
 
       const req = httpMock.expectOne(`${environment.apiUrl}/case-form-response/i/resp-1`);
       expect(req.request.method).toBe('PUT');
-      expect(req.request.body.caregiver).toEqual({ connect: { id: 'cg-1' } });
-      expect(req.request.body.child).toEqual({ connect: { id: 'child-1' } });
+      expect(req.request.body.caregiverId).toBe('cg-1');
+      expect(req.request.body.childId).toBe('child-1');
       req.flush({});
     });
 
@@ -130,8 +130,8 @@ describe('CaseFormService', () => {
         .subscribe();
 
       const req = httpMock.expectOne(`${environment.apiUrl}/case-form-response/i/resp-1`);
-      expect(req.request.body.caregiver).toEqual({ disconnect: true });
-      expect(req.request.body.child).toEqual({ disconnect: true });
+      expect(req.request.body.caregiverId).toBeNull();
+      expect(req.request.body.childId).toBeNull();
       req.flush({});
     });
 
@@ -146,10 +146,10 @@ describe('CaseFormService', () => {
 
       const req = httpMock.expectOne(`${environment.apiUrl}/case-form-response`);
       expect(req.request.method).toBe('POST');
-      expect(req.request.body.caseForm).toEqual({ connect: { id: 'form-1' } });
-      expect(req.request.body.case).toEqual({ connect: { id: 'case-1' } });
-      expect(req.request.body.answers.createMany.data).toEqual([
-        { questionId: 'q1', answerText: 'hi' },
+      expect(req.request.body.caseFormId).toBe('form-1');
+      expect(req.request.body.caseId).toBe('case-1');
+      expect(req.request.body.answers).toEqual([
+        jasmine.objectContaining({ questionId: 'q1', answerText: 'hi' }),
       ]);
       req.flush({});
     });

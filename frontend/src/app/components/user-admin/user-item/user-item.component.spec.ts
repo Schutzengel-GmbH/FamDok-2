@@ -169,7 +169,7 @@ describe('UserItemComponent', () => {
     expect(httpMock.match(() => true).length).toBe(0);
   });
 
-  it('save() sends the update, connecting the chosen organisation, and shows a success toast', () => {
+  it('save() sends the update with the chosen organisation and shows a success toast', () => {
     const user = buildUser({ id: 'user-1', organisationId: null });
     setup(user);
     component.form.patchValue({ organisationId: 'org-1' });
@@ -179,7 +179,7 @@ describe('UserItemComponent', () => {
 
     const req = httpMock.expectOne((r) => r.url.includes('/user/i/user-1'));
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body.organisation).toEqual({ connect: { id: 'org-1' } });
+    expect(req.request.body.organisationId).toBe('org-1');
     req.flush(user);
 
     expect(toastService.toasts().length).toBe(1);
@@ -187,7 +187,7 @@ describe('UserItemComponent', () => {
     expect(component.form.pristine).toBeTrue();
   });
 
-  it('save() disconnects the organisation when none is selected', () => {
+  it('save() clears the organisation when none is selected', () => {
     const user = buildUser({ id: 'user-1', organisationId: 'org-1' });
     setup(user);
     component.form.patchValue({ organisationId: null });
@@ -196,7 +196,7 @@ describe('UserItemComponent', () => {
     component.save();
 
     const req = httpMock.expectOne((r) => r.url.includes('/user/i/user-1'));
-    expect(req.request.body.organisation).toEqual({ disconnect: true });
+    expect(req.request.body.organisationId).toBeNull();
     req.flush(user);
   });
 

@@ -22,6 +22,8 @@
     "skipLibCheck": true
   },
   "include": ["./**/*.ts", "../shared/**/*.ts"],
+  // shared/ tests are Jest (run from shared/), not Jasmine.
+  "exclude": ["node_modules", "../shared/node_modules", "../shared/**/__tests__/**"],
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,

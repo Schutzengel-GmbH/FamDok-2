@@ -36,7 +36,7 @@ export function getChildData(
 
   return (child.healthData ?? [])
     .map((h) => ({
-      x: ageInMonths(new Date(child.dateOfBirth), new Date(h.date)),
+      x: ageInMonths(new Date(child.dateOfBirth!), new Date(h.date)),
       y: metric === 'height' ? h.sizeCm : h.weightKg,
     }))
     .filter(
@@ -56,12 +56,12 @@ export function buildGrowthChartData(
   return {
     datasets: [
       {
-        label: child.name,
+        label: child.name ?? '',
         borderColor: theme === 'light' ? 'rgba(0,0,0,1)' : 'white',
         spanGaps: true,
         data: getChildData(child, metric, range),
       },
-      ...getPercentileDatasets(child.gender, ageRange, metric),
+      ...getPercentileDatasets(child.gender ?? 'unspecified', ageRange, metric),
     ],
   };
 }

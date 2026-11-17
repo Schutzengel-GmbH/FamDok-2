@@ -23,4 +23,8 @@
   &--green {
     @include badge-soft-variant(var(--bs-success));
   }
+
+  &--gray {
+    @include badge-soft-variant(var(--bs-secondary-color));
+  }
 }

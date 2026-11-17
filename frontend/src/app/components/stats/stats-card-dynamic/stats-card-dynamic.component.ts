@@ -91,15 +91,19 @@ export class StatsCardDynamicComponent {
     if (!this.selectedForm() || !this.selectedQuestion()) return;
     this.formService
       .getResponsesForDefinition(this.selectedForm()!.id, {
-        answers: {
-          some: {
-            questionId: this.dateQuestion()?.id,
-            answerDate: {
-              gte: this.range()?.start.toISOString(),
-              lte: this.range()?.end.toISOString(),
+        AND: [
+          {
+            answers: {
+              some: {
+                questionId: this.dateQuestion()?.id,
+                answerDate: {
+                  gte: this.range()?.start.toISOString(),
+                  lte: this.range()?.end.toISOString(),
+                },
+              },
             },
           },
-        },
+        ],
       })
       .pipe(
         map((res) => {

@@ -1,23 +1,40 @@
 import { Component, inject, input, output } from '@angular/core';
 import { ToastService } from 'src/app/services/toast.service';
 
-/** Shows a temporary password once, so the admin can pass it on. It is not stored anywhere. */
 @Component({
   selector: 'app-temp-password',
   standalone: true,
   template: `
-    <div class="alert alert-warning d-flex flex-wrap align-items-center gap-2 mb-0" role="alert">
-      <span>Temporäres Passwort für {{ email() }}:</span>
-      <code class="fs-5 user-select-all">{{ password() }}</code>
-      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="copy()">
-        <i class="bi bi-clipboard"></i> Kopieren
-      </button>
-      <span class="small">
-        Wird nur jetzt angezeigt und muss beim ersten Login geändert werden.
-      </span>
-      <button class="btn-close ms-auto" type="button" aria-label="Schließen" (click)="dismiss.emit()"></button>
+    <div class="temp-password-banner" role="alert">
+      <div class="temp-password-banner__icon">
+        <i class="bi bi-key-fill"></i>
+      </div>
+      <div class="temp-password-banner__body">
+        <span class="temp-password-banner__label">
+          Temporäres Passwort für {{ email() }}
+        </span>
+        <div class="temp-password-banner__value">
+          <code>{{ password() }}</code>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            type="button"
+            (click)="copy()">
+            <i class="bi bi-clipboard"></i>
+            Kopieren
+          </button>
+        </div>
+        <span class="temp-password-banner__hint">
+          Wird nur jetzt angezeigt und muss beim ersten Login geändert werden.
+        </span>
+      </div>
+      <button
+        class="btn-close"
+        type="button"
+        aria-label="Schließen"
+        (click)="dismiss.emit()"></button>
     </div>
   `,
+  styleUrl: './temp-password.component.scss',
 })
 export class TempPasswordComponent {
   email = input.required<string>();

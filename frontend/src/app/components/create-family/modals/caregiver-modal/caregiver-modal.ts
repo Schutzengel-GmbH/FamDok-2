@@ -13,7 +13,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { NgbDateDeParserFormatter } from 'src/app/util/NgbDatePickerFormatter';
-import { CaregiverCreateInput } from '../../../../../../../shared/generated/prisma/models';
+import type { CaregiverRequest } from '../../../../../../../shared/api';
 import {
   Gender,
   Relation,
@@ -66,7 +66,7 @@ export class CaregiverModalComponent implements OnInit {
   save() {
     this.activeModal.close({
       reason: 'save',
-      value: this.form.value as CaregiverCreateInput,
+      value: this.form.value as CaregiverRequest,
     });
   }
 

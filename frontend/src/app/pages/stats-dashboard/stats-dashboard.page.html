@@ -77,19 +77,19 @@
   </div>
 
   <div class="row gx-3 align-items-start stats-kpi-row">
-    <div class="col-auto">
+    <div class="col-12 col-sm-auto">
       <app-count-cases-card [count]="(caseCount$() | async) ?? 0" />
     </div>
-    <div class="col-auto">
+    <div class="col-12 col-sm-auto">
       <app-contact-card [docs]="(docs$() | async) ?? []" />
     </div>
   </div>
 
   <div class="row gx-3 align-items-stretch stats-main-row">
-    <div class="col-6">
+    <div class="col-12 col-lg-6">
       <app-stats-chart-card [filter]="filter()" [range]="range()" />
     </div>
-    <div class="col-6">
+    <div class="col-12 col-lg-6">
       <app-stats-card-dynamic [range]="range()" />
     </div>
   </div>

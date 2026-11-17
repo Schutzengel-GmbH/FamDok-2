@@ -31,11 +31,11 @@ describe('ContactDocumentationService', () => {
     req.flush([]);
   });
 
-  it('getDocumentations encodes the given filter into the where param', () => {
-    service.getDocumentations({ caseId: 'case-1' }).subscribe();
+  it('getDocumentations encodes the given filter into the query', () => {
+    service.getDocumentations({ duration: 30 }).subscribe();
 
     const req = httpMock.expectOne((r) => r.url.includes('/case/documentation/all'));
-    expect(decodeURIComponent(req.request.url)).toContain('"caseId":"case-1"');
+    expect(decodeURIComponent(req.request.url)).toContain('"duration":30');
     req.flush([]);
   });
 
@@ -65,11 +65,11 @@ describe('ContactDocumentationService', () => {
     req.flush({});
   });
 
-  it('getDocumentationForCase encodes the given filter into the where param', () => {
-    service.getDocumentationForCase('case-1', { id: 'doc-1' }).subscribe();
+  it('getDocumentationForCase encodes the given filter into the query', () => {
+    service.getDocumentationForCase('case-1', { duration: 30 }).subscribe();
 
     const req = httpMock.expectOne((r) => r.url.includes('/case/i/case-1/documentation'));
-    expect(decodeURIComponent(req.request.url)).toContain('"id":"doc-1"');
+    expect(decodeURIComponent(req.request.url)).toContain('"duration":30');
     req.flush({});
   });
 
@@ -77,17 +77,16 @@ describe('ContactDocumentationService', () => {
     service.getLatestDocumentationForCase('case-1').subscribe();
 
     const req = httpMock.expectOne(`${environment.apiUrl}/case/i/case-1/documentation/latest`);
-    expect(req.request.params.has('n')).toBeFalse();
-    req.flush([]);
+        req.flush([]);
   });
 
   it('getLatestDocumentationForCase includes n when given', () => {
     service.getLatestDocumentationForCase('case-1', 3).subscribe();
 
     const req = httpMock.expectOne(
-      (r) => r.url === `${environment.apiUrl}/case/i/case-1/documentation/latest`,
+      (r) => r.url.startsWith(`${environment.apiUrl}/case/i/case-1/documentation/latest`),
     );
-    expect(req.request.params.get('n')).toBe('3');
+    expect(decodeURIComponent(req.request.url)).toContain('{"n":3}');
     req.flush([]);
   });
 
@@ -137,21 +136,5 @@ describe('ContactDocumentationService', () => {
       .flush('Boom', { status: 500, statusText: 'Server Error' });
 
     httpMock.expectNone(`${environment.apiUrl}/warnings`);
-  });
-
-  it('downloadContactDocumentationPDF fetches the PDF as a blob and triggers a save', () => {
-    const clickSpy = spyOn(HTMLAnchorElement.prototype, 'click');
-    spyOn(URL, 'createObjectURL').and.returnValue('blob:mock');
-    spyOn(URL, 'revokeObjectURL');
-
-    service.downloadContactDocumentationPDF('case-1', 'doc-1');
-
-    const req = httpMock.expectOne(
-      `${environment.apiUrl}/case/i/case-1/documentation/i/doc-1/download`,
-    );
-    expect(req.request.responseType).toBe('blob');
-    req.flush(new Blob());
-
-    expect(clickSpy).toHaveBeenCalled();
   });
 });

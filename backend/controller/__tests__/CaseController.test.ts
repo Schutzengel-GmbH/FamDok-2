@@ -1,9 +1,6 @@
 jest.mock('../../db', () => ({
   prisma: require('../../testUtils/prismaMock').createPrismaMock(),
 }));
-jest.mock('../../util/pdfService', () => ({
-  PDFService: { contactDocumentationPDF: jest.fn(), stammdatenPDF: jest.fn() },
-}));
 jest.mock('../../util/fileStorage', () => ({
   streamFile: jest.fn(),
   deleteStoredFile: jest.fn(),
@@ -29,7 +26,6 @@ import {
   ForbiddenError,
   NotFoundError,
 } from '../../util/authUtils';
-import { PDFService } from '../../util/pdfService';
 import { streamFile, deleteStoredFile } from '../../util/fileStorage';
 import { Role } from '../../../shared/generated/prisma/client';
 
@@ -71,14 +67,103 @@ describe('CaseController', () => {
       await expect(CaseController.getAll(user)).rejects.toThrow(ForbiddenError);
     });
 
-    it('throws a validation error for an unknown where field', async () => {
-      const user = buildUser({ role: Role.Admin });
+    it('restricts a filter to what the user may see', async () => {
+      const user = buildUser({ role: Role.User });
+      prismaMock.case.findMany.mockResolvedValue([]);
 
-      await expect(
-        CaseController.getAll(user, { notARealField: true } as any)
-      ).rejects.toThrow();
-      expect(prismaMock.case.findMany).not.toHaveBeenCalled();
+      await CaseController.getAll(user, {
+        city: 'Berlin',
+        personalDataDeletedAt: null,
+      });
+
+      expect(prismaMock.case.findMany.mock.calls[0][0].where).toEqual({
+        AND: [
+          { city: 'Berlin', personalDataDeletedAt: null },
+          {},
+          { responsibleUsers: { some: { id: user.id } } },
+        ],
+      });
     });
+
+    it('restricts a filter to return only cases with personal data for users by default', async () => {
+      const user = buildUser({ role: Role.User });
+      prismaMock.case.findMany.mockResolvedValue([]);
+
+      await CaseController.getAll(user, {
+        city: 'Berlin',
+      });
+
+      expect(prismaMock.case.findMany.mock.calls[0][0].where).toEqual({
+        AND: [
+          { city: 'Berlin', personalDataDeletedAt: null },
+          {},
+          { responsibleUsers: { some: { id: user.id } } },
+        ],
+      });
+    });
+
+    it('applies an explicitly set personalDataDeletedAt filter for users', async () => {
+      const user = buildUser({ role: Role.User });
+      prismaMock.case.findMany.mockResolvedValue([]);
+
+      await CaseController.getAll(user, {
+        city: 'Berlin',
+        personalDataDeletedAt: { lt: '2026-01-01' },
+      });
+
+      expect(prismaMock.case.findMany.mock.calls[0][0].where).toEqual({
+        AND: [
+          { city: 'Berlin', personalDataDeletedAt: { lt: '2026-01-01' } },
+          {},
+          { responsibleUsers: { some: { id: user.id } } },
+        ],
+      });
+    });
+
+    it('restricts an OrgCoordinator to their organisation', async () => {
+      const user = buildUser({
+        role: Role.OrgCoordinator,
+        organisationId: 'org-1',
+      });
+      prismaMock.case.findMany.mockResolvedValue([]);
+
+      await CaseController.getAll(user);
+
+      expect(prismaMock.case.findMany.mock.calls[0][0].where.AND[2]).toEqual({
+        organisationId: { in: ['org-1'] },
+      });
+    });
+
+    it('finds nothing for an org-scoped user without organisation', async () => {
+      const user = buildUser({
+        role: Role.OrgController,
+        organisationId: null,
+      });
+      prismaMock.case.findMany.mockResolvedValue([]);
+
+      await CaseController.getAll(user);
+
+      expect(prismaMock.case.findMany.mock.calls[0][0].where.AND[2]).toEqual({
+        organisationId: { in: [] },
+      });
+    });
+
+    it.each([Role.Controller, Role.OrgController])(
+      'ignores family filters for %s',
+      async (role) => {
+        const user = buildUser({ role, organisationId: 'org-1' });
+        prismaMock.case.findMany.mockResolvedValue([]);
+
+        await CaseController.getAll(user, {
+          city: 'Berlin',
+          family: { name: { startsWith: 'A' } },
+        });
+
+        expect(prismaMock.case.findMany.mock.calls[0][0].where.AND[0]).toEqual({
+          city: 'Berlin',
+        });
+      }
+    );
   });
 
   describe('get', () => {
@@ -113,78 +198,58 @@ describe('CaseController', () => {
   });
 
   describe('create', () => {
-    function validCreateData(user: any) {
-      return {
-        startedAt: new Date('2026-01-01'),
-        createdBy: { connect: { id: user.id } },
-        organisation: { connect: { id: user.organisationId } },
-        family: { connect: { id: 'family-1' } },
-      } as any;
-    }
+    const data = {
+      startedAt: new Date('2026-01-01'),
+      family: {
+        name: 'Family',
+        adress: { street: 'Street', number: '1', plz: '12345', city: 'City' },
+        children: [{ name: 'Child', dateOfBirth: new Date('2025-01-01') }],
+      },
+    };
 
-    it('creates a case when the user owns org/createdBy', async () => {
-      const user = buildUser({ role: Role.User });
+    it('creates the case and family in the org of the user', async () => {
+      const user = buildUser({ role: Role.User, organisationId: 'org-1' });
       const created = caseFor(user);
       prismaMock.case.create.mockResolvedValue(created);
 
-      const result = await CaseController.create(user, validCreateData(user));
+      const result = await CaseController.create(user, data);
 
       expect(result).toBe(created);
+      const organisation = { connect: { id: 'org-1' } };
+      const createData = prismaMock.case.create.mock.calls[0][0].data;
+      expect(createData).toEqual(
+        expect.objectContaining({
+          organisation,
+          createdBy: { connect: { id: user.id } },
+          responsibleUsers: { connect: { id: user.id } },
+          city: 'City',
+          plz: '12345',
+        })
+      );
+      expect(createData.family.create).toEqual(
+        expect.objectContaining({ name: 'Family', organisation })
+      );
     });
 
-    it('throws ForbiddenError when creating for a different organisation', async () => {
-      const user = buildUser({ role: Role.User, organisationId: 'org-1' });
-      const data = validCreateData(user);
-      data.organisation = { connect: { id: 'org-2' } };
+    it.each([Role.Controller, Role.OrgController])(
+      'throws ForbiddenError for %s',
+      async (role) => {
+        const user = buildUser({ role, organisationId: 'org-1' });
+
+        await expect(CaseController.create(user, data)).rejects.toThrow(
+          ForbiddenError
+        );
+        expect(prismaMock.case.create).not.toHaveBeenCalled();
+      }
+    );
+
+    it('throws ForbiddenError for users without organisation', async () => {
+      const user = buildUser({ role: Role.Admin, organisationId: null });
 
       await expect(CaseController.create(user, data)).rejects.toThrow(
         ForbiddenError
       );
       expect(prismaMock.case.create).not.toHaveBeenCalled();
-    });
-
-    it('throws a validation error when required fields are missing', async () => {
-      const user = buildUser({ role: Role.User });
-
-      await expect(
-        CaseController.create(user, { startedAt: new Date() } as any)
-      ).rejects.toThrow();
-    });
-  });
-
-  describe('updateCase', () => {
-    it('updates a case the user can edit', async () => {
-      const user = buildUser({ role: Role.Admin });
-      const c = caseFor(user);
-      prismaMock.case.findUnique.mockResolvedValue(c);
-      const updated = { ...c, city: 'Berlin' };
-      prismaMock.case.update.mockResolvedValue(updated);
-
-      const result = await CaseController.updateCase(user, c.id, {
-        city: 'Berlin',
-      });
-
-      expect(result).toBe(updated);
-    });
-
-    it('throws NotFoundError when missing', async () => {
-      const user = buildUser({ role: Role.Admin });
-      prismaMock.case.findUnique.mockResolvedValue(null);
-
-      await expect(
-        CaseController.updateCase(user, 'missing', {})
-      ).rejects.toThrow(NotFoundError);
-    });
-
-    it('throws ForbiddenError when the user cannot edit the case', async () => {
-      const user = buildUser({ role: Role.User });
-      const c = caseFor({ id: 'someone-else' });
-      prismaMock.case.findUnique.mockResolvedValue(c);
-
-      await expect(CaseController.updateCase(user, c.id, {})).rejects.toThrow(
-        ForbiddenError
-      );
-      expect(prismaMock.case.update).not.toHaveBeenCalled();
     });
   });
 
@@ -374,8 +439,34 @@ describe('CaseController', () => {
 
       expect(result).toEqual([doc]);
       expect(prismaMock.contactDocumentation.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { createdBy: { id: user.id } } })
+        expect.objectContaining({
+          where: {
+            AND: [
+              {},
+              {
+                userId: user.id,
+                case: { responsibleUsers: { some: { id: user.id } } },
+              },
+            ],
+          },
+        })
       );
+    });
+
+    it('ignores personal-data filters for anonymized roles', async () => {
+      const user = buildUser({ role: Role.Controller });
+      prismaMock.contactDocumentation.findMany.mockResolvedValue([]);
+
+      await CaseController.getContactDocumentations(user, {
+        duration: 30,
+        dokumentation: { contains: 'x' },
+        zusammenfassung: { contains: 'x' },
+        case: { city: 'Berlin', family: { name: 'x' } },
+      });
+
+      const { where } =
+        prismaMock.contactDocumentation.findMany.mock.calls[0][0];
+      expect(where.AND[0]).toEqual({ duration: 30, case: { city: 'Berlin' } });
     });
 
     it('throws ForbiddenError when a related case is not visible', async () => {
@@ -424,52 +515,6 @@ describe('CaseController', () => {
       await expect(
         CaseController.getContactDocumentation(user, doc.id)
       ).rejects.toThrow(ForbiddenError);
-    });
-  });
-
-  describe('getContactDocumentationPDF', () => {
-    it('renders the PDF for a visible document', async () => {
-      const user = buildUser({ role: Role.Admin });
-      const doc = buildContactDocumentation();
-      prismaMock.contactDocumentation.findUnique.mockResolvedValue(doc);
-      prismaMock.case.findUniqueOrThrow.mockResolvedValue(
-        caseFor(user, { id: doc.caseId })
-      );
-      const buffer = Buffer.from('pdf');
-      (PDFService.contactDocumentationPDF as jest.Mock).mockResolvedValue(
-        buffer
-      );
-
-      const result = await CaseController.getContactDocumentationPDF(
-        user,
-        doc.id
-      );
-
-      expect(result).toBe(buffer);
-      expect(PDFService.contactDocumentationPDF).toHaveBeenCalledWith(doc);
-    });
-
-    it('throws NotFoundError when missing', async () => {
-      const user = buildUser({ role: Role.Admin });
-      prismaMock.contactDocumentation.findUnique.mockResolvedValue(null);
-
-      await expect(
-        CaseController.getContactDocumentationPDF(user, 'missing')
-      ).rejects.toThrow(NotFoundError);
-    });
-
-    it('throws ForbiddenError when the related case is not visible', async () => {
-      const user = buildUser({ role: Role.User });
-      const doc = buildContactDocumentation();
-      prismaMock.contactDocumentation.findUnique.mockResolvedValue(doc);
-      prismaMock.case.findUniqueOrThrow.mockResolvedValue(
-        caseFor({ id: 'someone-else' }, { id: doc.caseId })
-      );
-
-      await expect(
-        CaseController.getContactDocumentationPDF(user, doc.id)
-      ).rejects.toThrow(ForbiddenError);
-      expect(PDFService.contactDocumentationPDF).not.toHaveBeenCalled();
     });
   });
 
@@ -1016,18 +1061,40 @@ describe('CaseController', () => {
   });
 
   describe('getMyCases', () => {
+    it('only loads the latest contact with the latestContact preset', async () => {
+      const user = buildUser({ role: Role.User });
+      prismaMock.case.findMany.mockResolvedValue([]);
+
+      await CaseController.getMyCases(user, { preset: 'latestContact' });
+
+      const { include } = prismaMock.case.findMany.mock.calls[0][0];
+      expect(include.contactDocumentation.take).toBe(1);
+    });
+
+    it('only loads the latest contact with the latestContact preset', async () => {
+      const user = buildUser({ role: Role.User });
+      prismaMock.case.findMany.mockResolvedValue([]);
+
+      await CaseController.getMyCases(user, { preset: 'latestContact' });
+
+      const { include } = prismaMock.case.findMany.mock.calls[0][0];
+      expect(include.contactDocumentation.take).toBe(1);
+    });
+
     it("scope 'own' filters to the user's own cases", async () => {
       const user = buildUser({ role: Role.User });
       const cases = [caseFor(user)];
       prismaMock.case.findMany.mockResolvedValue(cases);
 
-      const result = await CaseController.getMyCases(user, 'own');
+      const result = await CaseController.getMyCases(user, { scope: 'own' });
 
       expect(result).toBe(cases);
       expect(prismaMock.case.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            responsibleUsers: { some: { id: user.id } },
+            AND: expect.arrayContaining([
+              { responsibleUsers: { some: { id: user.id } } },
+            ]),
           }),
         })
       );
@@ -1043,12 +1110,14 @@ describe('CaseController', () => {
       ];
       prismaMock.case.findMany.mockResolvedValue(cases);
 
-      const result = await CaseController.getMyCases(user, 'org');
+      const result = await CaseController.getMyCases(user, { scope: 'org' });
 
       expect(result).toBe(cases);
       expect(prismaMock.case.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ organisationId: 'org-1' }),
+          where: expect.objectContaining({
+            AND: expect.arrayContaining([{ organisationId: 'org-1' }]),
+          }),
         })
       );
     });
@@ -1056,9 +1125,9 @@ describe('CaseController', () => {
     it("scope 'org' is forbidden for a non-OrgCoordinator", async () => {
       const user = buildUser({ role: Role.User });
 
-      await expect(CaseController.getMyCases(user, 'org')).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        CaseController.getMyCases(user, { scope: 'org' })
+      ).rejects.toThrow(ForbiddenError);
       expect(prismaMock.case.findMany).not.toHaveBeenCalled();
     });
 
@@ -1072,13 +1141,15 @@ describe('CaseController', () => {
       ];
       prismaMock.case.findMany.mockResolvedValue(cases);
 
-      const result = await CaseController.getMyCases(user, 'subOrg');
+      const result = await CaseController.getMyCases(user, { scope: 'subOrg' });
 
       expect(result).toBe(cases);
       expect(prismaMock.case.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            subOrganisationId: { in: ['suborg-1'] },
+            AND: expect.arrayContaining([
+              { subOrganisationId: { in: ['suborg-1'] } },
+            ]),
           }),
         })
       );
@@ -1090,9 +1161,9 @@ describe('CaseController', () => {
         subOrganisations: [],
       });
 
-      await expect(CaseController.getMyCases(user, 'subOrg')).rejects.toThrow(
-        ForbiddenError
-      );
+      await expect(
+        CaseController.getMyCases(user, { scope: 'subOrg' })
+      ).rejects.toThrow(ForbiddenError);
       expect(prismaMock.case.findMany).not.toHaveBeenCalled();
     });
   });
@@ -1143,7 +1214,7 @@ describe('CaseController', () => {
         user,
         c.id,
         file,
-        'a note'
+        { note: 'a note' }
       );
 
       expect(result).toBe(created);
@@ -1292,183 +1363,6 @@ describe('CaseController', () => {
       await expect(
         CaseController.deleteCaseAttachment(user, 'missing')
       ).rejects.toThrow(NotFoundError);
-    });
-  });
-
-  describe('case export authorization', () => {
-    const ORG = 'org-1';
-    const SUBORG = 'suborg-1';
-
-    function exportCase(overrides: Record<string, any> = {}) {
-      return buildCase({
-        organisationId: ORG,
-        subOrganisationId: SUBORG,
-        organisation: { id: ORG, name: 'Org' },
-        subOrganisation: { id: SUBORG, name: 'SubOrg' },
-        ...overrides,
-      });
-    }
-
-    const allowed: [string, () => { user: any; c: any }][] = [
-      [
-        'Admin',
-        () => ({ user: buildUser({ role: Role.Admin }), c: exportCase() }),
-      ],
-      [
-        'a responsible User',
-        () => {
-          const user = buildUser({ role: Role.User });
-          return {
-            user,
-            c: exportCase({ responsibleUsers: [{ id: user.id }] }),
-          };
-        },
-      ],
-      [
-        'an OrgCoordinator of the same org',
-        () => ({
-          user: buildUser({ role: Role.OrgCoordinator, organisationId: ORG }),
-          c: exportCase(),
-        }),
-      ],
-      [
-        'a SubOrgCoordinator of the same suborg',
-        () => ({
-          user: buildUser({
-            role: Role.SubOrgCoordinator,
-            organisationId: ORG,
-            subOrganisations: [{ id: SUBORG }],
-          }),
-          c: exportCase(),
-        }),
-      ],
-    ];
-
-    const forbidden: [string, () => { user: any; c: any }][] = [
-      [
-        'a non-responsible User of the same org',
-        () => ({
-          user: buildUser({ role: Role.User, organisationId: ORG }),
-          c: exportCase(),
-        }),
-      ],
-      [
-        'a Controller',
-        () => ({ user: buildUser({ role: Role.Controller }), c: exportCase() }),
-      ],
-      [
-        'an OrgController of the same org',
-        () => ({
-          user: buildUser({ role: Role.OrgController, organisationId: ORG }),
-          c: exportCase(),
-        }),
-      ],
-      [
-        'an OrgCoordinator of another org',
-        () => ({
-          user: buildUser({
-            role: Role.OrgCoordinator,
-            organisationId: 'other-org',
-          }),
-          c: exportCase(),
-        }),
-      ],
-      [
-        'a SubOrgCoordinator of another suborg',
-        () => ({
-          user: buildUser({
-            role: Role.SubOrgCoordinator,
-            organisationId: ORG,
-            subOrganisations: [{ id: 'other-suborg' }],
-          }),
-          c: exportCase(),
-        }),
-      ],
-    ];
-
-    beforeEach(() => {
-      (PDFService.stammdatenPDF as jest.Mock).mockResolvedValue(
-        Buffer.from('pdf')
-      );
-      (PDFService.contactDocumentationPDF as jest.Mock).mockResolvedValue(
-        Buffer.from('pdf')
-      );
-      prismaMock.contactDocumentation.findMany.mockResolvedValue([]);
-      prismaMock.caseFormResponse.findMany.mockResolvedValue([]);
-    });
-
-    describe('getStammdatenPDF', () => {
-      it.each(allowed)('allows %s', async (_, setup) => {
-        const { user, c } = setup();
-        prismaMock.case.findUnique.mockResolvedValue(c);
-
-        const result = await CaseController.getStammdatenPDF(user, c.id);
-
-        expect(result.filename).toBe('Stammdaten-Familie-Test Family.pdf');
-        expect(PDFService.stammdatenPDF).toHaveBeenCalledWith(c);
-      });
-
-      it.each(forbidden)('forbids %s', async (_, setup) => {
-        const { user, c } = setup();
-        prismaMock.case.findUnique.mockResolvedValue(c);
-
-        await expect(
-          CaseController.getStammdatenPDF(user, c.id)
-        ).rejects.toThrow(ForbiddenError);
-        expect(PDFService.stammdatenPDF).not.toHaveBeenCalled();
-      });
-
-      it('throws NotFoundError when the case is missing', async () => {
-        prismaMock.case.findUnique.mockResolvedValue(null);
-
-        await expect(
-          CaseController.getStammdatenPDF(
-            buildUser({ role: Role.Admin }),
-            'missing'
-          )
-        ).rejects.toThrow(NotFoundError);
-      });
-    });
-
-    describe('getCaseExport', () => {
-      it.each(allowed)('allows %s', async (_, setup) => {
-        const { user, c } = setup();
-        prismaMock.case.findUnique.mockResolvedValue(c);
-
-        const result = await CaseController.getCaseExport(user, c.id);
-
-        expect(result.filename).toBe('Fallakte-Familie-Test Family.zip');
-        result.archive.abort();
-      });
-
-      it.each(forbidden)(
-        'forbids %s without loading any case data',
-        async (_, setup) => {
-          const { user, c } = setup();
-          prismaMock.case.findUnique.mockResolvedValue(c);
-
-          await expect(
-            CaseController.getCaseExport(user, c.id)
-          ).rejects.toThrow(ForbiddenError);
-          expect(
-            prismaMock.contactDocumentation.findMany
-          ).not.toHaveBeenCalled();
-          expect(prismaMock.caseFormResponse.findMany).not.toHaveBeenCalled();
-          expect(PDFService.stammdatenPDF).not.toHaveBeenCalled();
-          expect(PDFService.contactDocumentationPDF).not.toHaveBeenCalled();
-        }
-      );
-
-      it('throws NotFoundError when the case is missing', async () => {
-        prismaMock.case.findUnique.mockResolvedValue(null);
-
-        await expect(
-          CaseController.getCaseExport(
-            buildUser({ role: Role.Admin }),
-            'missing'
-          )
-        ).rejects.toThrow(NotFoundError);
-      });
     });
   });
 });

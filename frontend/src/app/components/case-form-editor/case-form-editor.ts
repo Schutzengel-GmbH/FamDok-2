@@ -15,10 +15,10 @@ import {
   CaseFormType,
   QuestionType,
 } from '../../../../../shared/generated/prisma/enums';
-import {
-  CaseFormCreateInput,
-  CaseFormUpdateInput,
-} from '../../../../../shared/generated/prisma/models';
+import type {
+  CaseFormCreateRequest,
+  CaseFormUpdateRequest,
+} from '../../../../../shared/api';
 
 @Component({
   selector: 'app-case-form-editor',
@@ -148,27 +148,25 @@ export class CaseFormEditorComponent implements OnInit {
     this.router.navigate(['einstellungen']);
   }
 
-  private buildCreateInput(): CaseFormCreateInput {
+  private buildCreateInput(): CaseFormCreateRequest {
     const { name, type, containsPersonalData, isPersonal } = this.form.value;
     return {
       name: name!,
       type: type!,
       containsPersonalData: containsPersonalData!,
       isPersonal: isPersonal!,
-      questions: this.questionFormService.buildQuestionsCreateInput(
-        this.questions,
-      ),
+      questions: this.questionFormService.buildQuestions(this.questions),
     };
   }
 
-  private buildUpdateInput(): CaseFormUpdateInput {
+  private buildUpdateInput(): CaseFormUpdateRequest {
     const { name, type, containsPersonalData, isPersonal } = this.form.value;
     return {
       name: name!,
       type: type!,
       containsPersonalData: containsPersonalData!,
       isPersonal: isPersonal!,
-      questions: this.questionFormService.buildQuestionsUpdateInput(
+      ...this.questionFormService.buildQuestionUpdates(
         this.questions,
         this.deletedQuestionIds,
       ),

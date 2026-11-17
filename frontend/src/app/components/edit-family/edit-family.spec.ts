@@ -267,7 +267,7 @@ describe('EditFamily', () => {
 
       const req = httpMock.expectOne(`${environment.apiUrl}/family/i/family-1`);
       expect(req.request.body.name).toBeUndefined();
-      expect(req.request.body.case.update.familienstand).toBeUndefined();
+      expect(req.request.body.case.familienstand).toBeUndefined();
       req.flush(family as any);
     });
 
@@ -282,8 +282,8 @@ describe('EditFamily', () => {
 
       const req = httpMock.expectOne(`${environment.apiUrl}/family/i/family-1`);
       expect(req.request.body.name).toBe('Neuer Name');
-      expect(req.request.body.case.update.city).toBe('Hamburg');
-      expect(req.request.body.case.update.familienstand).toBe('verheiratet');
+      expect(req.request.body.case.city).toBe('Hamburg');
+      expect(req.request.body.case.familienstand).toBe('verheiratet');
       req.flush(family as any);
 
       expect(toast.toasts()[0].severity).toBe('success');

@@ -13,6 +13,7 @@ Digitale Fachanwendung zur Dokumentation von Fällen im Bereich **Frühe Hilfen*
 - [Umgebungsvariablen](#umgebungsvariablen)
 - [Datenbankschema](#datenbankschema)
 - [Rollen & Berechtigungen](#rollen--berechtigungen)
+- [Verschlüsselung personenbezogener Daten](#verschlüsselung-personenbezogener-daten)
 - [Anwendungsrouten](#anwendungsrouten)
 - [API-Übersicht](#api-übersicht)
 - [Produktiv-Deployment](#produktiv-deployment)
@@ -41,7 +42,7 @@ Das Projekt ist als **Monorepo** aufgebaut:
 FH_Digihub/
 ├── frontend/          # Angular-SPA
 ├── backend/           # Express-REST-API
-├── shared/            # Gemeinsam genutzte generierte Typen (Prisma, Keycloak-Config)
+├── shared/            # Gemeinsam genutzte Typen (Prisma, Request-Schemas in api/, Keycloak-Config)
 ├── docker-compose.yaml          # Produktiv-Stack
 └── docker-compose-dev.yaml      # Entwicklungsinfrastruktur (Keycloak + DB)
 ```
@@ -188,6 +189,7 @@ Alle Variablen werden in **einer einzigen `.env` im Projekt-Root** gesetzt (Vorl
 | `PRODUCTION`            | Produktions-Flag                                    | `false`                                             |
 | `UPLOAD_DIR`            | Upload-Verzeichnis (Container überschreibt dies)    | `./uploads`                                         |
 | `MAX_UPLOAD_SIZE_MB`    | Maximale Upload-Größe pro Datei in MB               | `25`                                                |
+| `ORG_ENCRYPTION_ENABLED`| Bietet die Verschlüsselung personenbezogener Daten an (siehe [Verschlüsselung](#verschlüsselung-personenbezogener-daten)). **Einbahnstraße:** Sobald eine Organisation sie aktiviert hat, lässt sie sich nicht mehr abschalten; das Backend startet dann nicht mehr ohne sie | `false` |
 
 `backend/prisma/seed-prod.config.json` (Vorlage: `seed-prod.config.example.json`) bleibt bewusst eine separate, gitignorede Konfigurationsdatei – sie enthält einmalige Instanz-Seed-Daten (Organisationsname, Admin-Identität), keine Deployment-Konfiguration.
 
@@ -236,14 +238,14 @@ npx prisma generate
 | -------------------- | ---------------------------------------------------------------------------- | ------------- |
 | `Admin`              | Vollzugriff: Familien, Fälle, Formulare, User-Admin, Statistik               | `/user-admin` |
 | `Controller`         | Anonyme Statistik über alle Organisationen; verwaltet globale Formulare      | `/stats`      |
-| `OrgController`      | Wie `Controller`, beschränkt auf die eigene Organisation                     | `/stats`      |
-| `OrgCoordinator`     | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Organisation | `/dashboard`  |
+| `OrgController`      | Wie `Controller`, beschränkt auf die eigene Organisation, zusätzlich Benutzerverwaltung der eigenen Organisation | `/stats`      |
+| `OrgCoordinator`     | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Organisation und Benutzerverwaltung der eigenen Organisation | `/dashboard`  |
 | `SubOrgCoordinator`  | Wie `User`, zusätzlich Lesezugriff auf Fälle/Familien der eigenen Unterorganisation | `/dashboard`  |
 | `User`               | Standardzugriff: Familien, eigene Fälle, Formulare                           | `/dashboard`  |
 
 ### Benutzerverwaltung
 
-Admins legen Benutzer unter `/user-admin` an. Das Backend erstellt dabei das Keycloak-Konto über den Service-Account-Client `fh-backend` und gleichzeitig den App-Benutzer – Rolle und Organisation stehen damit schon vor dem ersten Login fest. Existiert in Keycloak bereits ein Konto mit derselben E-Mail, wird es verknüpft statt dupliziert. Für das erste Passwort gibt es zwei Wege:
+Admins legen Benutzer unter `/user-admin` an; `OrgController` und `OrgCoordinator` verwalten dort die Benutzer ihrer eigenen Organisation (keine Rollen `Admin`/`Controller`, kein Löschen, kein Wechsel der Organisation). Das Backend erstellt dabei das Keycloak-Konto über den Service-Account-Client `fh-backend` und gleichzeitig den App-Benutzer – Rolle und Organisation stehen damit schon vor dem ersten Login fest. Existiert in Keycloak bereits ein Konto mit derselben E-Mail, wird es verknüpft statt dupliziert. Für das erste Passwort gibt es zwei Wege:
 
 - **Einladung (Standard):** Keycloak verschickt eine Mail mit einem Link (7 Tage gültig) zum Setzen des Passworts und Bestätigen der E-Mail-Adresse.
 - **Temporäres Passwort:** Das Passwort wird dem Admin einmalig angezeigt und muss beim ersten Login geändert werden. Es wird nirgends gespeichert.
@@ -268,6 +270,40 @@ Das Dashboard (Route `/`) leitet nach dem Login automatisch rollenabhängig weit
 
 ---
 
+## Verschlüsselung personenbezogener Daten
+
+Personenbezogene Daten (Familien, Kinder, Bezugspersonen, Dokumentationstexte, Zielvereinbarungs-
+beschreibungen, Übergabenotizen, Antworten personenbezogener Fragebögen, Anhänge) werden nur im
+Browser mit dem Schlüssel der Organisation ver- und entschlüsselt. Server und Datenbank speichern
+ausschließlich Chiffrat, öffentliche Schlüssel und verpackte Schlüssel.
+
+Die Verschlüsselung ist **optional**, auf zwei Ebenen:
+
+- **Server:** Nur wenn das Backend mit `ORG_ENCRYPTION_ENABLED=true` läuft, gibt es die
+  Verschlüsselung überhaupt. Ohne die Variable (Standard) sind alle Verschlüsselungsfunktionen
+  ausgeblendet, die Schlüssel-Endpunkte abgeschaltet, und alle Daten werden wie bisher im Klartext
+  gespeichert.
+- **Organisation:** Bei eingeschalteter Variable aktivieren die OrgCoordinators/OrgControllers einer
+  Organisation die Verschlüsselung für ihre Organisation. Bis dahin arbeitet sie wie bisher.
+
+Beides ist eine **Einbahnstraße**. Die Aktivierung einer Organisation lässt sich nicht
+rückgängig machen, und sobald eine Organisation die Verschlüsselung aktiviert hat, lässt sich
+`ORG_ENCRYPTION_ENABLED` nicht mehr abschalten: Ihre Daten liegen dann verschlüsselt vor und sind
+nur mit den Verschlüsselungsfunktionen les- und schreibbar. Das Backend verweigert in diesem Fall
+den Start ohne die Variable und nennt die betroffenen Organisationen.
+
+- Ist sie aktiviert, richten Benutzer*innen unter **Verschlüsselung** (`/verschluesselung`)
+  einmalig eine Verschlüsselungs-Passphrase ein und entsperren damit pro Tab.
+- OrgCoordinators und OrgControllers aktivieren die Verschlüsselung ihrer Organisation, geben
+  Zugänge nach Fingerabdruck-Vergleich frei, frieren ein und erneuern den Schlüssel unter
+  **Schlüsselverwaltung** (`/schluesselverwaltung`). Jede neue Schlüsselversion trägt einen
+  Nachweis, der mit der vorherigen Version erstellt wurde; Browser übernehmen eine neue Version
+  nur mit gültigem Nachweis.
+- Bestandsdaten werden unter `/schluesselverwaltung/migration` verschlüsselt; die Migration zum
+  Löschen der Klartextspalten liegt separat in `backend/prisma/pending-migrations/`.
+
+Wie die Verschlüsselung durch den Code läuft, beschreibt [OrgEncryption.md](OrgEncryption.md).
+
 ## Anwendungsrouten
 
 | Route                             | Komponente                     | Erlaubte Rollen                                    |
@@ -286,7 +322,7 @@ Das Dashboard (Route `/`) leitet nach dem Login automatisch rollenabhängig weit
 | `/allgemeine-formulare/*`         | Formular-Editor (allgemein)    | Admin, Controller, OrgController                   |
 | `/fallbezogene-formulare/*`       | Formular-Editor (fallbezogen)  | Admin, Controller, OrgController                   |
 | `/me`                             | Eigenes Profil                 | alle Rollen                                        |
-| `/user-admin`                     | Benutzerverwaltung             | Admin                                              |
+| `/user-admin`                     | Benutzerverwaltung             | Admin, OrgController, OrgCoordinator               |
 | `/import/survey`                  | Formulardefinition importieren | Admin                                              |
 | `/all-stats`                      | Rohdaten-Ansicht               | authentifiziert                                    |
 | `/error`                          | Fehlerseite                    | –                                                   |
@@ -308,6 +344,17 @@ Alle Endpunkte erfordern einen gültigen Keycloak Bearer-Token im `Authorization
 | `/me`                   | MeRouter                     | Eigenes Profil                                          |
 | `/org`                  | OrgController                | Organisationen & Sub-Organisationen                     |
 | `/stats`                | StatsController              | Anonymisierte Statistiken & Auswertungen                |
+
+### Requests
+
+Jede Route akzeptiert genau ein Eingabeformat: ein Zod-Schema aus `shared/api`, abgeleitet von den generierten Prisma-Schemas, aber ohne verschachtelte Schreibzugriffe. Komponente, Service, Route und Controller nutzen denselben Typ. Filter werden serverseitig immer mit dem kombiniert, was der Benutzer sehen darf (`visibleCaseWhere` u. Ä.), Berechtigungen gehören also nie in Frontend-Filter.
+
+So kommt eine neue Route dazu:
+
+1. Schema in `shared/api` anlegen: Felder aus dem generierten `XCreateManyInput` per `.pick` übernehmen, `.strict()` nicht vergessen. Relationen sind einfache IDs, den Prisma-Aufruf baut der Controller.
+2. Route mit `route()` aus `backend/util/routerUtils.ts` anlegen. Der Handler bekommt nur geparste Eingaben; `req.body` und `req.query` sind in Routern tabu (`routes/__tests__/noRawInput.test.ts`).
+3. Im Frontend den Typ per `import type` nutzen, Queries mit `toQuery` aus `util/apiUtils.ts` serialisieren.
+4. Eine Zeile in `controller/__tests__/requestSchemas.test.ts` ergänzen, die prüft, dass das Schema verschachtelte Schreibzugriffe ablehnt.
 
 ---
 

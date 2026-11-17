@@ -1,0 +1,62 @@
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-database-lock"></i>{{ " " }}
+    <strong>Bestandsdaten verschlüsseln</strong>
+  </div>
+  <div class="card-body" style="max-width: 48rem">
+    @if (!session.isUnlocked()) {
+      <div class="alert alert-info">
+        <a routerLink="/verschluesselung">Entsperren</a> Sie zuerst Ihren Schlüssel.
+      </div>
+    } @else {
+      <p>
+        Daten, die vor dem Einrichten der Verschlüsselung gespeichert wurden, liegen noch im
+        Klartext auf dem Server. Ihr Browser verschlüsselt sie jetzt; danach löscht der Server
+        den Klartext. Die Arbeit in der Organisation kann währenddessen weiterlaufen.
+      </p>
+      <div class="alert alert-warning">
+        Der Klartext bleibt in alten Datensicherungen erhalten, bis diese turnusgemäß gelöscht
+        werden.
+      </div>
+
+      @if (status()) {
+        <table class="table table-sm">
+          <tbody>
+            @for (r of rows(); track r.model) {
+              <tr>
+                <td>{{ label(r.model) }}</td>
+                <td class="text-end">{{ r.count }}</td>
+              </tr>
+            }
+            <tr>
+              <td>Dateiinhalte von Anhängen</td>
+              <td class="text-end">{{ status()!.attachmentContents }}</td>
+            </tr>
+          </tbody>
+        </table>
+      }
+
+      @if (progress(); as p) {
+        <div class="progress mb-3" role="progressbar">
+          <div
+            class="progress-bar"
+            [style.width.%]="p.total ? (p.done / p.total) * 100 : 100"></div>
+        </div>
+      }
+      @if (error()) {
+        <div class="alert alert-danger">{{ error() }}</div>
+      }
+
+      @if (remaining() === 0 && status()) {
+        <div class="alert alert-success">Alle Bestandsdaten sind verschlüsselt.</div>
+      } @else {
+        <button class="btn btn-primary" [disabled]="running()" (click)="start()">
+          @if (running()) {
+            <span class="spinner-border spinner-border-sm"></span>
+          }
+          {{ remaining() }} Einträge verschlüsseln
+        </button>
+      }
+    }
+  </div>
+</div>

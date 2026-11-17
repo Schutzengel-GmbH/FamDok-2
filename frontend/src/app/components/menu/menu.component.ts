@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { MeService } from 'src/app/services/me.service';
+import { KeySessionService } from 'src/app/services/key-session.service';
 import { sortByNumProperty } from 'src/app/util/generalUtils';
 import Keycloak from 'keycloak-js';
 import { Role } from '../../../../../shared/generated/prisma/enums';
@@ -24,6 +25,8 @@ export class MenuComponent {
   private meService = inject(MeService);
   private keycloak = inject(Keycloak);
   private activatedRoute = inject(ActivatedRoute);
+  // the header loads the key status; the menu only reads it
+  private keys = inject(KeySessionService);
 
   isController = signal(false);
   isAdmin = signal(false);
@@ -34,6 +37,8 @@ export class MenuComponent {
   // page (not just their own), so it needs the same "Alle Formulardaten" label Controller/
   // OrgController get, not "Meine Eingaben".
   isCoordinator = signal(false);
+  // OrgCoordinator keeps the case-working nav, plus the user admin OrgController gets.
+  isOrgCoordinator = signal(false);
 
   constructor() {
     this.meService.getMe().subscribe((user) => {
@@ -41,8 +46,10 @@ export class MenuComponent {
       this.isController.set(user.role === Role.Controller);
       this.isOrgController.set(user.role === Role.OrgController);
       this.isCoordinator.set(
-        user.role === Role.OrgCoordinator || user.role === Role.SubOrgCoordinator,
+        user.role === Role.OrgCoordinator ||
+          user.role === Role.SubOrgCoordinator,
       );
+      this.isOrgCoordinator.set(user.role === Role.OrgCoordinator);
     });
   }
 
@@ -54,7 +61,7 @@ export class MenuComponent {
     const adminLinks: LinkData[] = [
       {
         priority: 0,
-        icon: '',
+        icon: 'bi-people',
         label: 'Benutzerverwaltung',
         link: '/user-admin',
       },
@@ -156,8 +163,31 @@ export class MenuComponent {
         link: '/sonstiges',
       }, */
     ];
+    const userAdminLink: LinkData = {
+      priority: 0,
+      icon: 'bi-people',
+      label: 'Benutzerverwaltung',
+      link: '/user-admin',
+    };
+    // key managers only; listed right after the user admin (the sort is stable)
+    const keyManagementLink: LinkData = {
+      priority: 0,
+      icon: 'bi-key',
+      label: 'Schlüsselverwaltung',
+      link: '/schluesselverwaltung',
+    };
+    // only when the server offers the encryption at all (ORG_ENCRYPTION_ENABLED)
+    const keyLinks = this.keys.encryptionEnabled() ? [keyManagementLink] : [];
     if (this.isAdmin()) return adminLinks.sort(sortByNumProperty('priority'));
-    if (this.isController() || this.isOrgController())
+    if (this.isOrgController())
+      return [userAdminLink, ...keyLinks, ...controllerLinks].sort(
+        sortByNumProperty('priority'),
+      );
+    if (this.isOrgCoordinator())
+      return [userAdminLink, ...keyLinks, ...baseLinks].sort(
+        sortByNumProperty('priority'),
+      );
+    if (this.isController())
       return controllerLinks.sort(sortByNumProperty('priority'));
     return baseLinks.sort(sortByNumProperty('priority'));
   });
@@ -165,6 +195,17 @@ export class MenuComponent {
   bottomLinks = computed(
     () =>
       [
+        // only once the org activated the (optional) encryption; key managers activate it
+        // from the key management
+        ...(this.isAdmin() || this.isController() || !this.keys.encryptionActive()
+          ? []
+          : [
+              {
+                icon: 'bi-shield-lock',
+                label: 'Verschlüsselung',
+                link: '/verschluesselung',
+              },
+            ]),
         {
           icon: 'bi-gear',
           label: 'Einstellungen',

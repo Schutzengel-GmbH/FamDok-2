@@ -1,0 +1,90 @@
+@use "abstracts" as *;
+
+:host {
+  display: block;
+}
+
+.user-card {
+  @include panel($padding: 1.1rem);
+}
+
+.user-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.user-card__header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.user-card__name {
+  font-weight: 700;
+  font-size: 1.02rem;
+  color: var(--bs-heading-color, var(--bs-body-color));
+}
+
+.user-card__badges,
+.user-card__footer-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.user-card__temp-password {
+  display: block;
+}
+
+.user-card__fields {
+  @include form-field-grid;
+}
+
+.user-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.user-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem 1.25rem;
+  margin-left: auto;
+}
+
+.user-card__action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@include media-down("md") {
+  .user-card__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .user-card__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .user-card__footer-status:empty {
+    display: none;
+  }
+
+  .user-card__actions {
+    flex-direction: column;
+    margin-left: 0;
+  }
+
+  .user-card__action-group .btn {
+    flex: 1 1 auto;
+  }
+}

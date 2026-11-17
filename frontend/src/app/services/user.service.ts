@@ -6,11 +6,13 @@ import {
   FullUser,
   UserWithTempPassword,
 } from '../../../../shared/types';
-import {
-  UserUpdateInput,
-  UserWhereInput,
-} from '../../../../shared/generated/prisma/models';
-import type { UserCreateRequest } from '../../../../shared/zodTypes';
+import type {
+  OrgUsersQuery,
+  UserCreateRequest,
+  UserUpdateRequest,
+} from '../../../../shared/api';
+import { Observable } from 'rxjs';
+import { toQuery } from '../util/apiUtils';
 
 @Injectable({
   providedIn: 'root',
@@ -19,24 +21,19 @@ export class UserService {
   private http = inject(HttpClient);
   private userApiUrl = environment.apiUrl + '/user';
 
-  getAllUsers(filter?: UserWhereInput) {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
+  getAllUsers() {
+    return this.http.get<AdminUser[]>(this.userApiUrl);
+  }
 
-    return this.http.get<AdminUser[]>(
-      this.userApiUrl + '?' + params.toString(),
+  getOrgUsers(orgId: string, where?: OrgUsersQuery['where']) {
+    return this.http.get<FullUser[]>(
+      this.userApiUrl + '/org/' + orgId + toQuery({ where }),
     );
   }
 
-  getOrgUsers(orgId: string, filter?: UserWhereInput) {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
-
-    return this.http.get<FullUser[]>(
-      this.userApiUrl + '/org/' + orgId + '?' + params.toString(),
-    );
+  // helper to use when we expect the user to get managed users returned, i.e. for orgControllers and orgCoordinators
+  getManagedOrgUsers(orgId: string) {
+    return this.getOrgUsers(orgId) as Observable<AdminUser[]>;
   }
 
   /** Creates the user in Keycloak and the app. Admin only. */
@@ -64,7 +61,7 @@ export class UserService {
     });
   }
 
-  updateUser(id: string, update: UserUpdateInput) {
+  updateUser(id: string, update: UserUpdateRequest) {
     return this.http.put<FullUser>(this.userApiUrl + '/i/' + id, update);
   }
 

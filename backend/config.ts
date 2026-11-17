@@ -80,3 +80,13 @@ export const UPLOAD_DIR: string =
 export const MAX_UPLOAD_SIZE_MB: number = Number(
   process.env['MAX_UPLOAD_SIZE_MB'] ?? 25
 );
+
+/**
+ * Whether the org encryption is available, default false. Without it the key endpoints and all
+ * encryption UI are off, and every organisation stores its data in plaintext as before. Once
+ * any organisation has activated its encryption this can't be turned off again: the server
+ * refuses to start (see util/encryptionConfig.ts).
+ */
+export const ORG_ENCRYPTION_ENABLED: boolean =
+  process.env['ORG_ENCRYPTION_ENABLED']?.toLowerCase() === 'true' ||
+  process.env['ORG_ENCRYPTION_ENABLED'] === '1';

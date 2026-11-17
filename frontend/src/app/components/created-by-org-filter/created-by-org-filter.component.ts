@@ -3,8 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { OrgService } from 'src/app/services/organisation.service';
 import { FullOrganisation } from '../../../../../shared/types';
-import { UserWhereInput } from '../../../../../shared/generated/prisma/models';
 import { isEmptyObject } from 'src/app/util/generalUtils';
+import type { CreatedByWhere } from '../../../../../shared/api';
 
 /** Filters a "Erstellt von" column by the creator's organisation and (optionally) one of its
  * sub-organisations. Emits a `createdBy` where-filter fragment. */
@@ -20,7 +20,7 @@ import { isEmptyObject } from 'src/app/util/generalUtils';
   imports: [FormsModule],
 })
 export class CreatedByOrgFilter {
-  filterChanged = output<UserWhereInput>();
+  filterChanged = output<CreatedByWhere>();
 
   private modalService = inject(NgbModal);
   private orgService = inject(OrgService);
@@ -47,7 +47,7 @@ export class CreatedByOrgFilter {
   }
 
   apply() {
-    const filter: UserWhereInput = {
+    const filter: CreatedByWhere = {
       ...(this.organisationId
         ? { organisationId: this.organisationId }
         : {}),

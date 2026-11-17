@@ -1,0 +1,58 @@
+@use "abstracts" as *;
+@use "patterns/list-page" as *;
+
+:host {
+  display: block;
+  padding: clamp(0.9rem, 1.5vw, 1.5rem);
+}
+
+.user-admin-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@include page-header($h1-max: 2.4rem, $p-margin: 0.35rem 0 0);
+
+.page-header__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.search-field {
+  @include search-field-frame;
+
+  input {
+    @include search-input(52px, 0 1rem 0 2.9rem, 0.98rem);
+  }
+}
+
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.empty-state {
+  @include empty-state(1.5rem, $radius-panel, 0.4rem 0 0);
+}
+
+@include media-down("md") {
+  :host {
+    padding: 0.9rem;
+  }
+
+  .page-header__top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header__top .btn {
+    width: 100%;
+  }
+}

@@ -1,137 +1,92 @@
 import { Router } from 'express';
 import { FamilyController } from '../controller/familyController';
-import { handleError } from '../util/routerUtils';
-import { Prisma } from '../../shared/generated/prisma/client';
+import { route } from '../util/routerUtils';
+import { ChildHealthDataRequest, FamilyUpdateRequest } from '../../shared/api';
 
 const FamilyRouter = Router();
 
-FamilyRouter.get('/', async (req, res) => {
-  const where = req.query['where']
-    ? (JSON.parse(req.query['where'] as string) as Prisma.FamilyWhereInput)
-    : undefined;
-  try {
-    const families = await FamilyController.getWhere(req.user!, where);
-    res.send(families);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
 
-FamilyRouter.get('/i/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const family = await FamilyController.get(req.user!, id);
-    res.send(family);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+FamilyRouter.get(
+  '/i/:id',
+  route(({ user, params }) =>
+    FamilyController.get(user, params.id)
+  )
+);
 
-FamilyRouter.get('/i/:id/caregivers', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const caregivers = await FamilyController.getCaregivers(req.user!, id);
-    res.send(caregivers);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+FamilyRouter.get(
+  '/i/:id/caregivers',
+  route(({ user, params }) =>
+    FamilyController.getCaregivers(user, params.id)
+  )
+);
 
-FamilyRouter.get('/i/:id/caregivers/:caregiverId', async (req, res) => {
-  const { id, caregiverId } = req.params;
-  try {
-    const caregiver = await FamilyController.getCaregiver(
-      req.user!,
-      caregiverId
-    );
-    res.send(caregiver);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+FamilyRouter.get(
+  '/i/:id/caregivers/:caregiverId',
+  route(({ user, params }) =>
+    FamilyController.getCaregiver(user, params.caregiverId)
+  )
+);
 
-FamilyRouter.get('/i/:id/children', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const children = await FamilyController.getChildren(req.user!, id);
-    res.send(children);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+FamilyRouter.get(
+  '/i/:id/children',
+  route(({ user, params }) =>
+    FamilyController.getChildren(user, params.id)
+  )
+);
 
-FamilyRouter.get('/i/:id/children/:childId', async (req, res) => {
-  const { id, childId } = req.params;
-  try {
-    const caregiver = await FamilyController.getChild(req.user!, childId);
-    res.send(caregiver);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+FamilyRouter.get(
+  '/i/:id/children/:childId',
+  route(({ user, params }) =>
+    FamilyController.getChild(user, params.childId)
+  )
+);
 
-FamilyRouter.post('/', async (req, res) => {
-  const familyInput = req.body as Prisma.FamilyCreateInput;
-  try {
-    const family = await FamilyController.create(req.user!, familyInput);
-    res.send(family);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
 
-FamilyRouter.put('/i/:id', async (req, res) => {
-  const { id } = req.params;
-  const updateInput = req.body as Prisma.FamilyUpdateInput;
-  try {
-    const family = await FamilyController.update(req.user!, id, updateInput);
-    res.send(family);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+FamilyRouter.put(
+  '/i/:id',
+  route({ body: FamilyUpdateRequest }, ({ user, params, body }) =>
+    FamilyController.update(user, params.id, body)
+  )
+);
 
-FamilyRouter.delete('/i/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const family = await FamilyController.delete(req.user!, id);
-    res.send(family);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+FamilyRouter.put(
+  '/i/:id/children/:childId/health-data',
+  route({ body: ChildHealthDataRequest }, ({ user, params, body }) =>
+    FamilyController.updateChildHealthData(
+      user,
+      params.id,
+      params.childId,
+      body
+    )
+  )
+);
 
-FamilyRouter.get('/my', async (req, res) => {
-  try {
-    const families = await FamilyController.getWhere(req.user!, {
-      case: { responsibleUsers: { some: { id: req.user!.id } } },
-    });
+FamilyRouter.delete(
+  '/i/:id',
+  route(({ user, params }) =>
+    FamilyController.delete(user, params.id)
+  )
+);
 
-    res.send(families);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+FamilyRouter.get(
+  '/my',
+  route(({ user }) =>
+    FamilyController.getWhere(user, { case: { responsibleUsers: { some: { id: user.id } } }, })
+  )
+);
 
-FamilyRouter.get('/stats', async (req, res) => {
-  try {
-    const families = await FamilyController.getStats();
-    res.send(families);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+FamilyRouter.get(
+  '/stats',
+  route(({ user }) =>
+    FamilyController.getStats()
+  )
+);
 
-FamilyRouter.get('/stats/my', async (req, res) => {
-  try {
-    const families = await FamilyController.getStats({
-      case: { responsibleUsers: { some: { id: req.user!.id } } },
-    });
-
-    res.send(families);
-  } catch (e) {
-    handleError(e, res);
-  }
-});
+FamilyRouter.get(
+  '/stats/my',
+  route(({ user }) =>
+    FamilyController.getStats({ case: { responsibleUsers: { some: { id: user.id } } }, })
+  )
+);
 
 export default FamilyRouter;

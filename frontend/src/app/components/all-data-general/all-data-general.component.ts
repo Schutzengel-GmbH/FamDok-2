@@ -18,12 +18,6 @@ import { NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import { MeService } from 'src/app/services/me.service';
 import { Router } from '@angular/router';
 import { GeneralFormService } from 'src/app/services/general-form.service';
-import {
-  AnswerWhereInput,
-  GeneralFormResponseWhereInput,
-  UserWhereInput,
-} from '../../../../../shared/generated/prisma/models';
-import { combineWhereFilters } from 'src/app/util/filterUtils';
 import { isEmptyObject } from 'src/app/util/generalUtils';
 import { Role } from '../../../../../shared/generated/prisma/enums';
 import { QuestionModel as Question } from '../../../../../shared/generated/prisma/models';
@@ -40,6 +34,11 @@ import {
   XlsxColumn,
   xlsxFilename,
 } from 'src/app/util/xlsxExport';
+import type {
+  AnswerWhere,
+  CreatedByWhere,
+  GeneralFormResponseWhere,
+} from '../../../../../shared/api';
 
 @Component({
   selector: 'app-allgeneral-data',
@@ -69,14 +68,14 @@ export class AllDataGeneralComponent {
   protected currentUser = toSignal(this.meService.getMe());
 
   form = input.required<FullGeneralForm>();
-  filter = signal<GeneralFormResponseWhereInput>({});
+  filter = signal<GeneralFormResponseWhere>({});
   /** createdBy filter picked via the "Erstellt von" column's org/suborg filter - kept separate
    * from `filter` since the role-based scoping below also targets `createdBy` and would
    * otherwise silently overwrite it instead of both applying. */
-  private createdByOrgFilter = signal<UserWhereInput>({});
+  private createdByOrgFilter = signal<CreatedByWhere>({});
 
   /** Per-question answer filters, each of which must independently match some answer on the response. */
-  private questionFilters = new Map<string, AnswerWhereInput>();
+  private questionFilters = new Map<string, AnswerWhere>();
 
   form$ = toObservable(this.form);
   filter$ = toObservable(this.filter);
@@ -87,30 +86,15 @@ export class AllDataGeneralComponent {
       form: this.form$,
       filter: this.filter$,
       createdByOrgFilter: this.createdByOrgFilter$,
-      user: this.meService.getMe(),
     }).pipe(
-      switchMap((o) => {
-        const roleFilter: UserWhereInput | undefined =
-          o.user.role === Role.User
-            ? { id: o.user.id }
-            : o.user.role === Role.OrgController ||
-                o.user.role === Role.OrgCoordinator
-              ? { organisationId: o.user.organisationId! }
-              : o.user.role === Role.SubOrgCoordinator
-                ? {
-                    subOrganisations: {
-                      some: {
-                        id: { in: o.user.subOrganisations.map((so) => so.id) },
-                      },
-                    },
-                  }
-                : undefined;
-        const filter: GeneralFormResponseWhereInput = {
+      switchMap((o) =>
+        this.formService.getResponsesForDefinition(o.form.id, {
           ...o.filter,
-          createdBy: combineWhereFilters(roleFilter, o.createdByOrgFilter),
-        };
-        return this.formService.getResponsesForDefinition(o.form.id, filter);
-      }),
+          createdBy: isEmptyObject(o.createdByOrgFilter)
+            ? undefined
+            : o.createdByOrgFilter,
+        }),
+      ),
     ),
   );
 
@@ -136,11 +120,11 @@ export class AllDataGeneralComponent {
     });
   }
 
-  createdByOrgFilterChanged(filter: UserWhereInput) {
+  createdByOrgFilterChanged(filter: CreatedByWhere) {
     this.createdByOrgFilter.set(filter);
   }
 
-  questionFilterChange(questionId: string, filter: AnswerWhereInput) {
+  questionFilterChange(questionId: string, filter: AnswerWhere) {
     // A cleared filter comes in as `{}` (modal Reset/dismiss) - drop it entirely instead of
     // storing an empty `answers.some` clause, which would wrongly require every response to
     // have at least one answer and hide responses with none.

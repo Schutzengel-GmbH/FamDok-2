@@ -36,26 +36,6 @@ describe('DocumentController', () => {
 
       expect(result).toBe(docs);
     });
-
-    it('applies a valid where filter', async () => {
-      const user = buildUser();
-      prismaMock.document.findMany.mockResolvedValue([]);
-
-      await DocumentController.getAll(user, { title: 'Consent' } as any);
-
-      expect(prismaMock.document.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { title: 'Consent' } })
-      );
-    });
-
-    it('throws a validation error for an unknown where field', async () => {
-      const user = buildUser();
-
-      await expect(
-        DocumentController.getAll(user, { notARealField: true } as any)
-      ).rejects.toThrow();
-      expect(prismaMock.document.findMany).not.toHaveBeenCalled();
-    });
   });
 
   describe('get', () => {
@@ -127,7 +107,7 @@ describe('DocumentController', () => {
 
       const result = await DocumentController.create(admin, file, {
         title: 'Consent form',
-        tagIds: JSON.stringify(['tag-1']),
+        tagIds: ['tag-1'],
       });
 
       expect(result).toBe(created);
@@ -150,7 +130,7 @@ describe('DocumentController', () => {
       const user = buildUser({ role: Role.Controller });
 
       await expect(
-        DocumentController.create(user, multerFile(), { title: 'x' })
+        DocumentController.create(user, multerFile(), { title: 'x', tagIds: [] })
       ).rejects.toThrow(ForbiddenError);
       expect(prismaMock.document.create).not.toHaveBeenCalled();
     });
@@ -159,17 +139,8 @@ describe('DocumentController', () => {
       const admin = buildUser({ role: Role.Admin });
 
       await expect(
-        DocumentController.create(admin, undefined, { title: 'x' })
+        DocumentController.create(admin, undefined, { title: 'x', tagIds: [] })
       ).rejects.toThrow(BadRequestError);
-      expect(prismaMock.document.create).not.toHaveBeenCalled();
-    });
-
-    it('throws a validation error when the title is missing', async () => {
-      const admin = buildUser({ role: Role.Admin });
-
-      await expect(
-        DocumentController.create(admin, multerFile(), { title: '' })
-      ).rejects.toThrow();
       expect(prismaMock.document.create).not.toHaveBeenCalled();
     });
   });
@@ -184,7 +155,7 @@ describe('DocumentController', () => {
 
       const result = await DocumentController.update(admin, existing.id, {
         title: 'Renamed',
-        tagIds: JSON.stringify(['tag-2']),
+        tagIds: ['tag-2'],
       });
 
       expect(result).toBe(updated);
@@ -203,7 +174,7 @@ describe('DocumentController', () => {
       const user = buildUser({ role: Role.Controller });
 
       await expect(
-        DocumentController.update(user, 'doc-1', { title: 'Renamed' })
+        DocumentController.update(user, 'doc-1', { title: 'Renamed', tagIds: [] })
       ).rejects.toThrow(ForbiddenError);
       expect(prismaMock.document.findUnique).not.toHaveBeenCalled();
     });
@@ -213,7 +184,7 @@ describe('DocumentController', () => {
       prismaMock.document.findUnique.mockResolvedValue(null);
 
       await expect(
-        DocumentController.update(admin, 'missing', { title: 'Renamed' })
+        DocumentController.update(admin, 'missing', { title: 'Renamed', tagIds: [] })
       ).rejects.toThrow(NotFoundError);
     });
   });

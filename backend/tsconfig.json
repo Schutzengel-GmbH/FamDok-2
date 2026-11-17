@@ -110,5 +110,5 @@
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
   "include": ["./**/*.ts", "prismaJson.d.ts", "../shared/**/*.ts", "populateDb.ts"],
-  "exclude": ["node_modules", "prisma"]
+  "exclude": ["node_modules", "prisma", "../shared/**/__tests__/**"]
 }

@@ -1,8 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from '../../services/theme.service';
+import { SidebarService } from '../../services/sidebar.service';
 import Keycloak from 'keycloak-js';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { KeySessionService } from '../../services/key-session.service';
 
 @Component({
   selector: 'app-header',
@@ -14,18 +16,24 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 export class HeaderComponent {
   private keycloak = inject(Keycloak);
   private themeSvc = inject(ThemeService);
+  protected sidebar = inject(SidebarService);
+  protected keys = inject(KeySessionService);
 
   protected authenticated = this.keycloak.authenticated;
 
   theme: 'light' | 'dark' = 'light';
 
-  constructor() {}
+  constructor() {
+    if (this.authenticated) this.keys.ensureLoaded().catch(() => {});
+  }
 
   toggleTheme() {
     this.themeSvc.toggle();
   }
 
+  /** Discards the keys of this tab, then logs out of Keycloak. */
   logout() {
+    this.keys.lock();
     this.keycloak.logout();
   }
 

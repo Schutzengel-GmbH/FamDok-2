@@ -3,13 +3,15 @@ import { inject, Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
 import { AnonCase, AnonContactDocumentation } from '../../../../shared/types';
 import { Observable } from 'rxjs';
-import {
-  CaseFormResponseWhereInput,
-  CaseWhereInput,
-  ContactDocumentationWhereInput,
-  GeneralFormResponseWhereInput,
-} from '../../../../shared/generated/prisma/models';
 import { Status } from '../../../../shared/generated/prisma/enums';
+import type {
+  AnonCaseWhere,
+  StatsCaseQuery,
+  StatsContactDocumentationQuery,
+} from '../../../../shared/api';
+import { toQuery } from '../util/apiUtils';
+
+type ActiveBetween = StatsCaseQuery['activeBetween'];
 
 @Injectable({
   providedIn: 'root',
@@ -18,17 +20,9 @@ export class StatsService {
   private http = inject(HttpClient);
   statsApiUrl = environment.apiUrl + '/stats';
 
-  getAnonCases(
-    filter?: CaseWhereInput,
-    activeBetween?: { start: Date; end: Date },
-  ) {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-      activeBetween: activeBetween ? JSON.stringify(activeBetween) : '',
-    });
-
+  getAnonCases(where?: AnonCaseWhere, activeBetween?: ActiveBetween) {
     return this.http.get<AnonCase[]>(
-      this.statsApiUrl + '/case' + '?' + params.toString(),
+      this.statsApiUrl + '/case' + toQuery({ where, activeBetween }),
     );
   }
 
@@ -36,55 +30,20 @@ export class StatsService {
     return this.http.get<string[]>(this.statsApiUrl + '/cities');
   }
 
-  countGeneralFormResponses(filter: GeneralFormResponseWhereInput) {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-    });
-
-    return this.http.get<number>(
-      this.statsApiUrl +
-        '/generalFormResponses/count' +
-        '?' +
-        params.toString(),
-    );
-  }
-
   getContactStats(
-    caseFilter: CaseWhereInput,
-    docFilter: ContactDocumentationWhereInput,
+    caseFilter: StatsContactDocumentationQuery['caseFilter'],
+    docFilter: StatsContactDocumentationQuery['docFilter'],
   ) {
-    const params = new URLSearchParams({
-      caseFilter: caseFilter ? JSON.stringify(caseFilter) : '',
-      docFilter: docFilter ? JSON.stringify(docFilter) : '',
-    });
-
     return this.http.get<AnonContactDocumentation[]>(
-      this.statsApiUrl + '/contactDocumentation' + '?' + params.toString(),
+      this.statsApiUrl +
+        '/contactDocumentation' +
+        toQuery({ caseFilter, docFilter }),
     );
   }
 
-  countCaseFormResponses(formId: string, filter: CaseFormResponseWhereInput) {
-    const params = new URLSearchParams({
-      id: formId,
-      where: filter ? JSON.stringify(filter) : '',
-    });
-
+  countCases(where: AnonCaseWhere, activeBetween?: ActiveBetween) {
     return this.http.get<number>(
-      this.statsApiUrl + '/caseFormResponses/count' + '?' + params.toString(),
-    );
-  }
-
-  countCases(
-    filter: CaseWhereInput,
-    activeBetween?: { start: Date; end: Date },
-  ) {
-    const params = new URLSearchParams({
-      where: filter ? JSON.stringify(filter) : '',
-      activeBetween: activeBetween ? JSON.stringify(activeBetween) : '',
-    });
-
-    return this.http.get<number>(
-      this.statsApiUrl + '/case/count' + '?' + params.toString(),
+      this.statsApiUrl + '/case/count' + toQuery({ where, activeBetween }),
     );
   }
 
@@ -110,8 +69,8 @@ export class StatsService {
     city?: string;
     plz?: string;
     orgId?: string;
-  }): CaseWhereInput {
-    const filter: CaseWhereInput = {};
+  }): AnonCaseWhere {
+    const filter: AnonCaseWhere = {};
 
     if (input.hasContact)
       filter.contactDocumentation = {
@@ -120,23 +79,15 @@ export class StatsService {
         },
       };
 
-    if (input.city)
-      filter.family = {
-        adress: { path: ['city'], string_contains: input.city },
-      };
+    if (input.city) filter.city = { contains: input.city };
 
-    if (input.plz)
-      filter.family = {
-        adress: { path: ['plz'], string_contains: input.plz },
-      };
+    if (input.plz) filter.plz = { contains: input.plz };
 
     if (input.hasZielvereinbarungen)
       filter.zielvereinbarungen = {
         some: {
-          AND: [
-            { startedAt: { gte: input.hasZielvereinbarungen.start } },
-            { finishBy: { lte: input.hasZielvereinbarungen.end } },
-          ],
+          startedAt: { gte: input.hasZielvereinbarungen.start },
+          finishBy: { lte: input.hasZielvereinbarungen.end },
         },
       };
 

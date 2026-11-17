@@ -1,6 +1,7 @@
 import { Component, inject, input, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { ExportService } from 'src/app/services/export.service';
 import { ContactDocumentationService } from 'src/app/services/contact-documentation.service';
 import { ContactDocumentationOptions } from '../../../../../shared/sharedGlobals';
 import { FullContactDocumentation } from '../../../../../shared/types';
@@ -15,6 +16,8 @@ import { userPipe } from 'src/app/util/tableTransformPipes';
 })
 export class ContactBrief implements OnInit {
   documentationService = inject(ContactDocumentationService);
+  /** Builds the PDF in the browser, where the documentation can be decrypted. */
+  exportService = inject(ExportService);
   doc = input.required<FullContactDocumentation>();
   hasWarning = input<boolean>(false);
   readOnly = input(false);

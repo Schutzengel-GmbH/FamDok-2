@@ -185,7 +185,7 @@ describe('WarningsController.getWarnings', () => {
 
   it('warns CLOSED_WITHOUT_DOC for a closed case missing a closing document', async () => {
     const closedAt = new Date('2026-01-15');
-    const closedCase = buildCase({ closedAt, closingDocId: null });
+    const closedCase = buildCase({ closedAt });
     prismaMock.case.findMany
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([closedCase])

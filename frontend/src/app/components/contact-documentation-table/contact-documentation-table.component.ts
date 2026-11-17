@@ -29,12 +29,6 @@ import { EditDate } from './inline-edit/edit-date/edit-date.component';
 import { EditTopic } from './inline-edit/edit-topic/edit-topic.component';
 import { EditDuration } from './inline-edit/edit-duration/edit-duration.component';
 import { Router } from '@angular/router';
-import {
-  CaseWhereInput,
-  ContactDocumentationUpdateInput,
-  ContactDocumentationWhereInput,
-  UserWhereInput,
-} from '../../../../../shared/generated/prisma/models';
 import { ContactDocumentationService } from 'src/app/services/contact-documentation.service';
 import { ContactDocumentationModel as ContactDocumentation } from '../../../../../shared/generated/prisma/models';
 import { ContactDocumentationOptions } from '../../../../../shared/sharedGlobals';
@@ -51,6 +45,12 @@ import {
   XlsxColumn,
   xlsxFilename,
 } from 'src/app/util/xlsxExport';
+import type { ContactDocumentationUpdateRequest } from '../../../../../shared/api';
+import type {
+  CaseWhere,
+  ContactDocumentationWhere,
+  CreatedByWhere,
+} from '../../../../../shared/api';
 
 type Editables = {
   date: boolean;
@@ -95,34 +95,14 @@ export class ContactDocumentationTable {
 
   protected user$ = this.meService.getMe();
 
-  protected filter = signal<ContactDocumentationWhereInput>({});
+  protected filter = signal<ContactDocumentationWhere>({});
   protected rows = toSignal(
     combineLatest({ user: this.user$, filter: toObservable(this.filter) }).pipe(
-      switchMap(({ user, filter }) => {
-        switch (user.role) {
-          case 'Admin':
-            return this.documentationService.getDocumentations(filter);
-          case 'Controller':
-            return this.documentationService.getDocumentations(filter);
-          case 'OrgController':
-          case 'OrgCoordinator':
-            return this.documentationService.getDocumentations({
-              ...filter,
-              case: { organisation: { id: user.organisationId! } },
-            });
-          case 'SubOrgCoordinator':
-            return this.documentationService.getDocumentations({
-              ...filter,
-              case: {
-                subOrganisationId: {
-                  in: user.subOrganisations.map((so) => so.id),
-                },
-              },
-            });
-          case 'User':
-            return this.documentationService.getMyDocumentations(filter);
-        }
-      }),
+      switchMap(({ user, filter }) =>
+        user.role === 'User'
+          ? this.documentationService.getMyDocumentations(filter)
+          : this.documentationService.getDocumentations(filter),
+      ),
     ),
   );
 
@@ -248,7 +228,7 @@ export class ContactDocumentationTable {
     response[field] = storedValue;
 
     // we're using the actual response values as the update input, so remove the non-existant properties
-    const update: ContactDocumentationUpdateInput = {
+    const update: ContactDocumentationUpdateRequest = {
       artDerBetreuung: response.artDerBetreuung,
       beratungsThemenAllgemein: response.beratungsThemenAllgemein,
       beratungsThemenEltern: response.beratungsThemenEltern,
@@ -284,11 +264,11 @@ export class ContactDocumentationTable {
       });
   }
 
-  caseFilterChange(filter: CaseWhereInput) {
+  caseFilterChange(filter: CaseWhere) {
     this.filter.update((f) => ({ ...f, case: filter }));
   }
 
-  createdByOrgFilterChanged(filter: UserWhereInput) {
+  createdByOrgFilterChanged(filter: CreatedByWhere) {
     this.filter.update((f) => ({ ...f, createdBy: filter }));
   }
 
@@ -318,7 +298,7 @@ export class ContactDocumentationTable {
 
   filterChanged: (
     ...args:
-      | [field: 'duration', filter?: ContactDocumentationWhereInput['duration']]
+      | [field: 'duration', filter?: ContactDocumentationWhere['duration']]
       | [
           field:
             | 'artDerBetreuung'
