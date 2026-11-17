@@ -90,16 +90,13 @@ export class ContactDocumentationService {
    * Get all (or filtered) Contact Documentation for a case
    * @param {string} caseId UUID of the case
    * @param {ContactDocumentationWhere} filter Optional filter
-   * @returns {Observable<FullContactDocumentation>} Observable emitting the Contact Documentation
+   * @returns {Observable<FullContactDocumentation[]>} Observable emitting the Contact Documentation
    */
   getDocumentationForCase(
     caseId: string,
     filter?: ContactDocumentationWhere,
-  ): Observable<FullContactDocumentation> {
-    return this.list(
-      '/i/' + caseId + '/documentation',
-      filter,
-    ) as unknown as Observable<FullContactDocumentation>;
+  ): Observable<FullContactDocumentation[]> {
+    return this.list('/i/' + caseId + '/documentation', filter);
   }
 
   /**

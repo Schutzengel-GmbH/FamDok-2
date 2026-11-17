@@ -4,18 +4,104 @@
       Neue Dokumentation
     </button>
   }
-  <h6 class="section-title">Letzte Kontakte</h6>
-  @if (latestDocs()) {
-    <div class="container d-flex gap-2 flex-column">
-      @for (doc of latestDocs(); track doc.id) {
-        <app-contact-brief
-          [doc]="doc"
-          [hasWarning]="hasWarning(doc.id)"
-          [readOnly]="readOnly()" />
-      }
+
+  <div class="mb-3">
+    <div
+      class="btn-group btn-group-sm"
+      role="group"
+      aria-label="Ansicht der Kontakte">
+      <input
+        type="radio"
+        class="btn-check"
+        name="contact-view"
+        id="contact-view-latest"
+        autocomplete="off"
+        [checked]="mode() === 'latest'"
+        (change)="mode.set('latest')" />
+      <label class="btn btn-outline-secondary" for="contact-view-latest">
+        Letzte Kontakte
+      </label>
+      <input
+        type="radio"
+        class="btn-check"
+        name="contact-view"
+        id="contact-view-filter"
+        autocomplete="off"
+        [checked]="mode() === 'filter'"
+        (change)="mode.set('filter')" />
+      <label class="btn btn-outline-secondary" for="contact-view-filter">
+        Kontakte filtern
+      </label>
     </div>
+  </div>
+
+  @if (mode() === "latest") {
+    <h6 class="section-title">Letzte Kontakte</h6>
+    @if (latestDocs()) {
+      <div class="container d-flex gap-2 flex-column">
+        @for (doc of latestDocs(); track doc.id) {
+          <app-contact-brief
+            [doc]="doc"
+            [hasWarning]="hasWarning(doc.id)"
+            [readOnly]="readOnly()" />
+        }
+      </div>
+    } @else {
+      Kein Kontakt
+    }
   } @else {
-    Kein Kontakt
+    <h6 class="section-title">Kontakte filtern</h6>
+    <form class="mb-3" role="search" (submit)="search($event)">
+      <div class="input-group">
+        <input
+          type="search"
+          class="form-control"
+          name="contact-search"
+          placeholder="Stichwort"
+          aria-label="Stichwort"
+          aria-describedby="contact-search-hint"
+          [value]="searchInput()"
+          (input)="onSearchInput($event)" />
+        <button
+          type="submit"
+          class="btn btn-outline-primary"
+          [disabled]="!canSearch() || searching()">
+          <i class="bi bi-search"></i> Suchen
+        </button>
+      </div>
+      <div id="contact-search-hint" class="form-text">
+        Sucht in Beratungsthemen, Zusammenfassung und Dokumentation (mindestens
+        {{ minSearchLength }} Zeichen).
+      </div>
+    </form>
+
+    @if (searching()) {
+      <div class="text-muted">Suche läuft …</div>
+    } @else if (searchFailed()) {
+      <div class="text-danger">Die Kontakte konnten nicht geladen werden.</div>
+    } @else if (searchedTerm() !== null) {
+      @if (searchResults().length > 0) {
+        <p class="section-subtitle mb-2">
+          {{ searchResults().length }}
+          {{ searchResults().length === 1 ? "Kontakt" : "Kontakte" }} mit „{{
+            searchedTerm()
+          }}“
+        </p>
+        <div class="container d-flex gap-2 flex-column">
+          @for (hit of searchResults(); track hit.doc.id) {
+            <app-contact-brief
+              [doc]="hit.doc"
+              [searchHit]="hit"
+              [hasWarning]="hasWarning(hit.doc.id)"
+              [readOnly]="readOnly()" />
+          }
+        </div>
+      } @else {
+        <div class="text-muted">
+          Keine Kontakte mit „{{ searchedTerm() }}“ gefunden.
+        </div>
+      }
+    }
   }
   <br />
 </div>

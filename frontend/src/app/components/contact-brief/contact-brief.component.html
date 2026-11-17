@@ -50,5 +50,33 @@
         : ""
     }}</span>
   </li>
-  <li class="list-group-item">Zusammenfassung: {{ doc().zusammenfassung }}</li>
+  @if (searchHit(); as hit) {
+    @for (field of hit.topics; track field.label) {
+      <li class="list-group-item search-result">
+        <span class="search-label">{{ field.label }}:</span>
+        @for (topic of field.topics; track $index) {
+          <app-highlighted-text [segments]="topic" />
+          @if (!$last) {
+            <span>, </span>
+          }
+        }
+      </li>
+    }
+    <li class="list-group-item search-result">
+      <span class="search-label">Zusammenfassung:</span>
+      @if (hit.zusammenfassung) {
+        <app-highlighted-text [segments]="hit.zusammenfassung" />
+      } @else {
+        <span>{{ doc().zusammenfassung }}</span>
+      }
+    </li>
+    @for (excerpt of hit.dokumentation; track $index) {
+      <li class="list-group-item search-result">
+        <span class="search-label">Dokumentation:</span>
+        <app-highlighted-text [segments]="excerpt" />
+      </li>
+    }
+  } @else {
+    <li class="list-group-item">Zusammenfassung: {{ doc().zusammenfassung }}</li>
+  }
 </ul>
