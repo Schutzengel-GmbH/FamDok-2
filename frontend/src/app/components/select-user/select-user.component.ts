@@ -23,4 +23,12 @@ export class SelectUser {
   selectUser = output<FullUser | null>();
 
   compareUsers = (a: FullUser, b: FullUser) => a?.id === b?.id;
+
+  searchFn = (term: string, user: FullUser) => {
+    return (
+      user.firstName?.toLocaleLowerCase().includes(term.toLocaleLowerCase()) ||
+      user.lastName?.toLocaleLowerCase().includes(term.toLocaleLowerCase()) ||
+      user.email.toLocaleLowerCase().includes(term.toLocaleLowerCase())
+    );
+  };
 }
