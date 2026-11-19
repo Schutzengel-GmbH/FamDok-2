@@ -2,6 +2,7 @@
   appendTo="body"
   [items]="users()"
   bindLabel="email"
+  [searchFn]="searchFn"
   [compareWith]="compareUsers"
   placeholder="Bitte auswählen"
   (change)="selectUser.emit($event)">
